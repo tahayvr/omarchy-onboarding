@@ -656,6 +656,37 @@ test("the tiling drill reports its own windows", () => {
     eq(d.windows(), { terminal: "t1", browser: "b1", active: "b1" });
 });
 
+// ================================================================ developer track (M5)
+
+test("agent notes only where known", () => {
+    ok(U.agentNote("claude").includes("Anthropic"));
+    eq(U.agentNote("muse"), "");
+});
+
+test("email validation", () => {
+    ok(U.validEmail("a@b.co") && U.validEmail("  first.last@example.org "));
+    ok(!U.validEmail("") && !U.validEmail("no-at.example.com") && !U.validEmail("a@b") && !U.validEmail("a b@c.de"));
+});
+
+test("git and ssh-keygen commands", () => {
+    eq(U.gitConfigArgvs(" Ada Lovelace ", "ada@example.org "), [
+        ["git", "config", "--global", "user.name", "Ada Lovelace"],
+        ["git", "config", "--global", "user.email", "ada@example.org"]]);
+    eq(U.sshKeygenArgv("/home/ada", "ada@example.org"),
+       ["ssh-keygen", "-t", "ed25519", "-C", "ada@example.org", "-f", "/home/ada/.ssh/id_ed25519", "-N", ""]);
+});
+
+test("editor tip mentions LazyVim only for Neovim", () => {
+    ok(U.editorTip("nvim").includes("LazyVim"));
+    ok(U.editorTip("").includes("LazyVim"), "Omarchy's fallback editor is nvim");
+    ok(!U.editorTip("zeditor").includes("LazyVim") && U.editorTip("zeditor").includes("zeditor"));
+});
+
+test("developer steps declare what they run", () => {
+    eq(MANIFEST.steps.find(s => s.id === "ai-agent").requires, ["omarchy default agent"]);
+    eq(MANIFEST.steps.find(s => s.id === "dev-basics").subtasks.map(t => t.id), ["git", "ssh", "editor"]);
+});
+
 // ================================================================ recordings
 
 function recording(name) {

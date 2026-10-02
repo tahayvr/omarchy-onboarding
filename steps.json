@@ -296,13 +296,16 @@
       "number": 14,
       "phase": 5,
       "title": "Choose your AI agent",
-      "screen": "Setting an agent installs it if needed and opens it so you can sign in.",
+      "screen": "Pick the coding agent Super + Shift + Ctrl + A opens. Omarchy installs it if needed and opens it so you can sign in.",
       "done_when": "A default agent is set, or skipped.",
       "show_if": [
         "writes-code"
       ],
       "needs": [
         "online"
+      ],
+      "requires": [
+        "omarchy default agent"
       ]
     },
     {
@@ -313,6 +316,25 @@
       "done_when": "The user presses Continue.",
       "show_if": [
         "writes-code"
+      ],
+      "requires": [
+        "git"
+      ],
+      "screen": "Three things almost every developer sets up first.",
+      "subtasks": [
+        {
+          "id": "git",
+          "label": "Your name and email for git commits"
+        },
+        {
+          "id": "ssh",
+          "label": "An SSH key for GitHub and servers"
+        },
+        {
+          "id": "editor",
+          "label": "Open your editor",
+          "keys": "Super + Shift + N"
+        }
       ]
     },
     {

@@ -2,7 +2,7 @@
 
 First-boot onboarding for [Omarchy](https://omarchy.org), built as an Omarchy shell plugin (`tahayvr.onboarding`). It teaches the keys by having you press them: an overlay watches Hyprland and ticks each step off as you do it.
 
-Work in progress. Milestones M0–M4 are done: the step flow, the state file, drill detection for steps 4–7 and 9, the overlay UI, and the action steps (network, theme, display, hardware, apps, updates). The developer track (AI agent, git and SSH) is M5. See `FINDINGS.md` for what was verified on Omarchy 4.0.4 and why things are built the way they are.
+Work in progress. Milestones M0–M5 are done: the step flow, the state file, drill detection for steps 4–7 and 9, the overlay UI, the action steps (network, theme, display, hardware, apps, updates) and the developer track (AI agent, git, SSH, editor). First-run integration is M6. See `FINDINGS.md` for what was verified on Omarchy 4.0.4 and why things are built the way they are.
 
 ## Install for development
 

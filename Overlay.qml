@@ -78,6 +78,12 @@ Item {
     property var appsTried: ({})
     property string updateStatus: ""
     property bool updating: false
+
+    // Developer track (M5).
+    property var agents: []
+    property string agentWaiting: ""
+    property var devInfo: ({})
+    property string publicKey: ""
     // A tip for a step the track turned into a one-liner.
     property string tip: ""
     property string preparedStep: ""
@@ -275,6 +281,9 @@ Item {
             appsTried: Object.keys(appsTried),
             updateStatus: updateStatus,
             updating: updating,
+            agentWaiting: agentWaiting,
+            devInfo: devInfo,
+            publicKey: publicKey !== "",
             facts: facts,
             error: error
         });
@@ -474,6 +483,84 @@ Item {
         });
     }
 
+    // ------------------------------------------------------------ developer track (M5)
+
+    // Step 14. Omarchy installs the agent if needed, then opens it; the step
+    // completes once `omarchy default agent` reads back the new choice.
+    function chooseAgent(name) {
+        var agent = agents.filter(function (a) { return a.name === name; })[0];
+        if (!agent || agentWaiting) return "no such agent";
+        if (agent.current) return keepAgent();
+        askConfirm("Make " + agent.label + " your default agent? Omarchy installs it if needed, then opens it so you can sign in.",
+                   "Use " + agent.label, function () {
+            if (dryRun) {
+                log("dry-run: would run omarchy default agent " + agent.name);
+                tick("agent");
+                next();
+                return;
+            }
+            log("run omarchy default agent " + agent.name);
+            Quickshell.execDetached(["omarchy", "default", "agent", agent.name]);
+            agentWaiting = agent.label;
+            agentWanted = agent.name;
+        });
+        return "ok";
+    }
+
+    property string agentWanted: ""
+
+    // Keeping the agent already set counts as done.
+    function keepAgent() {
+        log("keep default agent");
+        return next();
+    }
+
+    // Step 15. Saving unchanged values just confirms them.
+    function saveGit(name, email, unchanged) {
+        if (unchanged === true || unchanged === "true") {
+            tick("git");
+            return "ok";
+        }
+        if (!String(name).trim() || !Ui.validEmail(email)) return "invalid name or email";
+        var argvs = Ui.gitConfigArgvs(name, email);
+        runSystem(argvs[0], function (code) {
+            if (code !== 0) return log("git config failed with " + code);
+            runSystem(argvs[1], function (code2) {
+                if (code2 !== 0) return log("git config failed with " + code2);
+                tick("git");
+                if (!dryRun) devinfoProbe.running = true;
+            });
+        });
+        return "ok";
+    }
+
+    function createSshKey(email) {
+        askConfirm("Create an SSH key at ~/.ssh/id_ed25519? It has no passphrase, so it's protected by your disk encryption and login.",
+                   "Create key", function () {
+            var home = Quickshell.env("HOME");
+            runSystem(Ui.sshSetupArgv(home, email || devInfo.email || ""), function (code) {
+                if (code !== 0) return log("ssh-keygen failed with " + code);
+                tick("ssh");
+                if (!dryRun) devinfoProbe.running = true;
+            });
+        });
+        return "ok";
+    }
+
+    function copyPublicKey() {
+        if (!publicKey) return "no key";
+        Quickshell.execDetached(["wl-copy", publicKey.trim()]);
+        tick("ssh");
+        log("copied the public key");
+        return "ok";
+    }
+
+    function openEditor() {
+        Quickshell.execDetached(["omarchy-launch-editor"]);
+        tick("editor");
+        return "ok";
+    }
+
     function primaryAction() {
         if (!step) return;
         if (step.id === "hardware" && !primaryEnabled) return;
@@ -515,6 +602,12 @@ Item {
             hardwareState = {};
         } else if (step.id === "apps") {
             appsProbe.running = true;
+        } else if (step.id === "ai-agent") {
+            agentWaiting = "";
+            agentsProbe.running = true;
+        } else if (step.id === "dev-basics") {
+            publicKey = "";
+            devinfoProbe.running = true;
         } else if (step.id === "updates") {
             updateStatus = "checking";
             updateCheck.running = true;
@@ -768,6 +861,60 @@ Item {
         }
     }
 
+    Process {
+        id: agentsProbe
+        command: [root.pluginDir + "/bin/onboarding-agents"]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                try { root.agents = JSON.parse(text); } catch (e) { root.agents = []; }
+            }
+        }
+    }
+
+    // While an agent installs and opens, wait for the default to read back.
+    Timer {
+        interval: 1500
+        repeat: true
+        running: root.opened && root.agentWaiting !== ""
+        onTriggered: if (!agentCheck.running) agentCheck.running = true
+    }
+
+    Process {
+        id: agentCheck
+        command: ["omarchy", "default", "agent"]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                if (String(text).trim() !== root.agentWanted || !root.agentWaiting) return;
+                root.log("default agent is now " + root.agentWanted);
+                root.agentWaiting = "";
+                root.tick("agent");
+                root.next();
+            }
+        }
+    }
+
+    Process {
+        id: devinfoProbe
+        command: [root.pluginDir + "/bin/onboarding-devinfo"]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                try { root.devInfo = JSON.parse(text); } catch (e) { root.devInfo = {}; }
+                var keys = root.devInfo.keys || [];
+                if (keys.length) {
+                    keyReader.command = [root.pluginDir + "/bin/onboarding-read", keys[0]];
+                    keyReader.running = true;
+                }
+            }
+        }
+    }
+
+    Process {
+        id: keyReader
+        stdout: StdioCollector {
+            onStreamFinished: root.publicKey = String(text || "").trim()
+        }
+    }
+
     // `omarchy update available` exits 0 when there is one. Network-bound.
     Process {
         id: updateCheck
@@ -958,6 +1105,8 @@ Item {
                                : root.step.id === "welcome" ? welcomeView
                                : root.step.id === "super-key" ? superKeyView
                                : root.step.id === "theme" ? themeView
+                               : root.step.id === "ai-agent" ? agentView
+                               : root.step.id === "dev-basics" ? devView
                                : genericView
             }
         }
@@ -1009,6 +1158,16 @@ Item {
     Component {
         id: themeView
         ThemeView { host: root; step: root.copy; themes: root.themes; applying: root.themeApplying; applied: root.themeApplied }
+    }
+
+    Component {
+        id: agentView
+        AgentView { host: root; step: root.copy; agents: root.agents; waitingFor: root.agentWaiting }
+    }
+
+    Component {
+        id: devView
+        DevView { host: root; step: root.copy; info: root.devInfo; ticked: root.ticked; publicKey: root.publicKey }
     }
 
     Component {
