@@ -4,12 +4,18 @@ import Quickshell.Io
 import Quickshell.Wayland
 import Quickshell.Hyprland
 import qs.Commons
+import "ui"
 import "lib/Engine.js" as Engine
 import "lib/Drills.js" as Drills
+import "lib/Ui.js" as Ui
 
 // The onboarding overlay. It owns the flow while open: loads the state file,
-// runs the current step's drill against Hyprland's events, and saves every
-// change. The logic lives in lib/; this file wires it to the desktop.
+// runs the current step's drill against Hyprland's events, saves every
+// change, and shows the step. The logic lives in lib/; the views in ui/.
+//
+// Two windows, never both: a centered card that takes the keyboard (welcome,
+// the Super key, the pause dialog, and the later steps), and a corner card
+// for the drills that leaves the keyboard to Hyprland.
 //
 // Payload (summon): {"state": path, "step": id, "onlySkipped": bool, "record": path}
 //   state        state file instead of ~/.local/state/omarchy/onboarding.json
@@ -18,7 +24,7 @@ import "lib/Drills.js" as Drills
 //   record       also save every observation, for replay tests
 //
 // Calls (omarchy-shell shell call <id> <fn> <arg>): next, skip, pause,
-// dismiss, track ("mac" or "mac:code"), info.
+// dismiss, track ("mac" or "mac:code"), doIt, info.
 Item {
     id: root
 
@@ -42,7 +48,23 @@ Item {
 
     property var drill: null
     property var ticked: ({})
+    // The tiling drill's terminal and browser, kept for the later drills and
+    // "Do it for me", which only ever act on these.
+    property var drillWindows: ({})
     property double startedAt: 0
+
+    // Esc or ✕ shows the pause dialog over whatever step is current.
+    property bool pausing: false
+    // A tip for a step the track turned into a one-liner.
+    property string tip: ""
+    property string preparedStep: ""
+
+    // Idle tracking for the 20 s and 40 s hints.
+    property double lastProgress: 0
+    property double clock: 0
+    readonly property int hint: opened && step ? Ui.hintLevel(clock - lastProgress) : 0
+
+    property var doItQueue: []
 
     // Observations wait here while the keybindings probe runs, so the
     // probe's answer reaches the drills before the layer event it belongs to.
@@ -55,6 +77,15 @@ Item {
     property var logLines: []
 
     readonly property var step: flow && steps ? Engine.currentStep(steps, flow) : null
+    readonly property var copy: step ? Engine.copyFor(step, flow.track) : null
+    readonly property bool centered: pausing || error !== "" || (step !== null && Ui.isCentered(step.id))
+    readonly property string progressText: {
+        if (!step || !steps) return "";
+        var phase = steps.phases.filter(function (p) { return p.number === step.phase; })[0];
+        return "Step " + step.number + " of " + (steps.steps.length - 1) + (phase ? " · " + phase.title : "");
+    }
+
+    onStepChanged: stepEntered()
 
     // ------------------------------------------------------------ lifecycle
 
@@ -64,6 +95,10 @@ Item {
         if (!payload || typeof payload !== "object") payload = {};
 
         error = "";
+        pausing = false;
+        tip = "";
+        preparedStep = "";
+        drillWindows = {};
         statePath = payload.state ? String(payload.state) : defaultStatePath;
         recordPath = payload.record ? String(payload.record) : "";
         recordLines = [];
@@ -71,24 +106,51 @@ Item {
         startedAt = Date.now();
         opened = true;
 
+        flow = null;
         try {
             steps = Engine.validateManifest(JSON.parse(stepsFile.text()));
-            flow = Engine.parseState(stateFile.text(), now());
         } catch (e) {
             fault(e.message);
             return "error: " + e.message;
         }
+        // Load the state, then the log, then probe the facts, then begin.
         pendingPayload = payload;
-        factsProbe.running = true;
+        stateReader.command = [pluginDir + "/bin/onboarding-read", statePath];
+        stateReader.running = true;
         return "ok";
     }
 
-    // Idempotent: dismiss() calls it and then shell.hide(), which calls it again.
+    function stateLoaded(exitCode, text) {
+        // 3: no state file yet. Anything else but 0 is a failed read, and a
+        // fresh state must never be saved over a file that couldn't be read.
+        if (exitCode !== 0 && exitCode !== 3) {
+            fault("cannot read the state file " + statePath);
+            return;
+        }
+        try {
+            flow = Engine.parseState(exitCode === 3 ? "" : text, now());
+        } catch (e) {
+            fault(e.message);
+            return;
+        }
+        logReader.command = [pluginDir + "/bin/onboarding-read", logFile.path];
+        logReader.running = true;
+    }
+
+    function logLoaded(exitCode, text) {
+        var lines = exitCode === 0 ? String(text).split("\n").filter(function (l) { return l !== ""; }) : [];
+        logLines = lines.slice(Math.max(0, lines.length - 2000));
+        factsProbe.running = true;
+    }
+
+    // Idempotent: dismissOverlay() calls it and then shell.hide(), which calls it again.
     function close() {
         opened = false;
+        pausing = false;
         drill = null;
         ticked = {};
         queue = [];
+        doItQueue = [];
         pendingPayload = null;
     }
 
@@ -113,7 +175,7 @@ Item {
         syncDrill();
     }
 
-    // ------------------------------------------------------------ calls
+    // ------------------------------------------------------------ calls and view actions
 
     function next() { return change(function () { return Engine.complete(steps, flow, facts, now()); }, "done"); }
     function skip() { return change(function () { return Engine.skip(steps, flow, facts, now()); }, "skip"); }
@@ -125,6 +187,22 @@ Item {
         return change(function () { return Engine.chooseTrack(flow, parts[0], parts[1] === "code", now()); }, "track " + arg);
     }
 
+    // The welcome screen's Start.
+    function chooseTrack(trackId, writesCode) {
+        var result = track(trackId + (writesCode ? ":code" : ""));
+        return result === "ok" ? next() : result;
+    }
+
+    function askPause() {
+        pausing = true;
+        log("pause dialog");
+    }
+
+    function resume() {
+        pausing = false;
+        resetIdle();
+    }
+
     // `info` rather than `state`, which Item already has.
     function info() {
         return JSON.stringify({
@@ -133,6 +211,10 @@ Item {
             step: step ? step.id : null,
             drill: drill ? drill.step : null,
             ticked: Object.keys(ticked),
+            windows: drillWindows,
+            centered: centered,
+            pausing: pausing,
+            hint: hint,
             facts: facts,
             error: error
         });
@@ -140,23 +222,101 @@ Item {
 
     function change(fn, label) {
         if (!flow) return "not open";
+        var before = flow.current;
         try {
             flow = fn();
         } catch (e) {
             log(label + " refused: " + e.message);
             return e.message;
         }
+        pausing = false;
         log(label + " -> status=" + flow.status + " current=" + (step ? step.id : "none"));
+        tip = tipsSince(before);
         save();
         syncDrill();
         if (!step) dismissOverlay();
         return "ok";
     }
 
-    // ------------------------------------------------------------ drills
+    // Tips of the steps the track turned into one-liners since `fromId`.
+    function tipsSince(fromId) {
+        var from = Engine.indexOf(steps, fromId), to = step ? Engine.indexOf(steps, step.id) : -1;
+        if (from < 0 || to <= from) return "";
+        return steps.steps.slice(from + 1, to).filter(function (s) {
+            var r = flow.steps[s.id];
+            return s.tip && r && r.outcome === "auto-skipped" && /tip/.test(r.reason || "");
+        }).map(function (s) { return s.tip; }).join(" ");
+    }
+
+    // "Do it for me": runs what the step's keys would, on the drill's own windows.
+    function doIt() {
+        if (!step) return "not open";
+        var plan = Ui.doItPlan(step.id, {
+            ticked: ticked,
+            windows: drillWindows,
+            workspace: Hyprland.focusedWorkspace ? Hyprland.focusedWorkspace.id : 1
+        });
+        if (!plan) return "nothing to do";
+        log("do it for me: " + step.id + " " + JSON.stringify(plan));
+        resetIdle();
+        if (plan.special === "complete") return next();
+        if (plan.special === "skip") return skip();
+        if (plan.special === "fill") {
+            Quickshell.execDetached(["wl-copy", Ui.CLIPBOARD_SAMPLE]);
+            if (coach.item) coach.item.pasteField.text = Ui.CLIPBOARD_SAMPLE;
+            return "ok";
+        }
+        doItQueue = plan.run.slice();
+        runDoIt();
+        return "ok";
+    }
+
+    // Detached: launchers such as omarchy-launch-terminal live as long as the
+    // window they open, so nothing waits for them to exit.
+    function runDoIt() {
+        if (!doItQueue.length || doItWait.running) return;
+        var q = doItQueue.slice();
+        var item = q.shift();
+        doItQueue = q;
+        Quickshell.execDetached(item.argv);
+        doItWait.interval = Math.max(1, item.wait || 0);
+        doItWait.start();
+    }
+
+    // The clipboard step's field calls this on every change.
+    function pasted(text) {
+        if (!step || step.id !== "clipboard") return;
+        if (String(text).indexOf(Ui.CLIPBOARD_SAMPLE) >= 0) tickClipboard("paste");
+    }
+
+    // ------------------------------------------------------------ steps and drills
+
+    function stepEntered() {
+        resetIdle();
+        if (!step || step.id === preparedStep) return;
+        preparedStep = step.id;
+        if (step.id === "clipboard" && !flow.steps.clipboard) {
+            // Spec: the app opens a terminal with a sample line to copy.
+            Quickshell.execDetached(["omarchy-launch-terminal", "bash", "-c",
+                "printf '\\n  %s\\n\\n' '" + Ui.CLIPBOARD_SAMPLE + "'; exec bash"]);
+            log("clipboard: opened a terminal with the sample line");
+        }
+    }
+
+    function resetIdle() {
+        lastProgress = Date.now();
+        clock = lastProgress;
+    }
 
     function syncDrill() {
         var id = step ? step.id : "";
+        if (id === "clipboard") {
+            if (!drill || drill.step !== "clipboard") {
+                drill = { step: "clipboard" };
+                ticked = {};
+            }
+            return;
+        }
         if (Drills.DRILL_STEPS.indexOf(id) < 0) {
             drill = null;
             ticked = {};
@@ -167,6 +327,19 @@ Item {
         ticked = {};
         lastClients = null;
         log("drill " + id + " started");
+    }
+
+    function tickClipboard(id) {
+        if (ticked[id]) return;
+        var t = Object.assign({}, ticked);
+        t[id] = true;
+        ticked = t;
+        resetIdle();
+        log("drill clipboard/" + id + " ticked");
+        if (t.copy && t.paste) {
+            log("drill clipboard complete");
+            next();
+        }
     }
 
     function enqueue(obs) {
@@ -197,8 +370,9 @@ Item {
             recordLines = recordLines.concat([line]);
             recordFile.setText(recordLines.join("\n") + "\n");
         }
-        if (!drill) return;
+        if (!drill || typeof drill.observe !== "function") return;
         var changes = drill.observe(obs);
+        if (drill.windows) drillWindows = drill.windows();
         if (changes.length) {
             var t = Object.assign({}, ticked);
             changes.forEach(function (c) {
@@ -207,6 +381,7 @@ Item {
                 log("drill " + drill.step + "/" + c.subtask + (c.ticked ? " ticked" : " reset"));
             });
             ticked = t;
+            resetIdle();
         }
         if (drill.complete()) {
             log("drill " + drill.step + " complete");
@@ -217,7 +392,7 @@ Item {
     // ------------------------------------------------------------ files
 
     function save() {
-        stateFile.setText(Engine.serialize(flow));
+        if (flow) stateFile.setText(Engine.serialize(flow));
     }
 
     function log(message) {
@@ -246,9 +421,18 @@ Item {
     }
 
     FileView {
+        id: logoFile
+        path: (root.omarchyPath || "/usr/share/omarchy") + "/logo.txt"
+        blockLoading: true
+        watchChanges: false
+        printErrors: false
+    }
+
+    // Write-only: reads go through bin/onboarding-read (see stateLoaded).
+    FileView {
         id: stateFile
         path: root.statePath
-        blockLoading: true
+        preload: false
         atomicWrites: true
         watchChanges: false
         printErrors: false
@@ -258,6 +442,7 @@ Item {
         id: logFile
         // The log sits next to the state file: onboarding.json -> onboarding.log.
         path: root.statePath.replace(/\.json$/, "") + ".log"
+        preload: false
         atomicWrites: true
         watchChanges: false
         printErrors: false
@@ -266,12 +451,25 @@ Item {
     FileView {
         id: recordFile
         path: root.recordPath
+        preload: false
         atomicWrites: true
         watchChanges: false
         printErrors: false
     }
 
-    // ------------------------------------------------------------ probes
+    // ------------------------------------------------------------ probes and timers
+
+    Process {
+        id: stateReader
+        stdout: StdioCollector { id: stateText; waitForEnd: true }
+        onExited: function (exitCode) { root.stateLoaded(exitCode, stateText.text); }
+    }
+
+    Process {
+        id: logReader
+        stdout: StdioCollector { id: logText; waitForEnd: true }
+        onExited: function (exitCode) { root.logLoaded(exitCode, logText.text); }
+    }
 
     Process {
         id: factsProbe
@@ -324,9 +522,38 @@ Item {
         }
     }
 
+    // Step 8: the copy is seen when the sample line reaches the clipboard.
+    Timer {
+        interval: 800
+        repeat: true
+        running: root.opened && root.step !== null && root.step.id === "clipboard" && !root.ticked.copy
+        onTriggered: if (!clipboardProbe.running) clipboardProbe.running = true
+    }
+
+    Process {
+        id: clipboardProbe
+        command: ["wl-paste", "--no-newline"]
+        stdout: StdioCollector {
+            onStreamFinished: if (String(text).indexOf(Ui.CLIPBOARD_SAMPLE) >= 0) root.tickClipboard("copy")
+        }
+    }
+
+    Timer {
+        id: doItWait
+        onTriggered: root.runDoIt()
+    }
+
+    // Drives the idle hints.
+    Timer {
+        interval: 1000
+        repeat: true
+        running: root.opened && !root.pausing
+        onTriggered: root.clock = Date.now()
+    }
+
     Connections {
         target: Hyprland
-        enabled: root.opened && (root.drill !== null || root.recordPath !== "")
+        enabled: root.opened && ((root.drill !== null && typeof root.drill.observe === "function") || root.recordPath !== "")
         function onRawEvent(event) {
             root.enqueue({ kind: "hypr", line: String(event.name) + ">>" + String(event.data) });
         }
@@ -334,71 +561,130 @@ Item {
 
     // ------------------------------------------------------------ view
 
-    // A plain card for now; the real overlay UI is milestone M3.
+    // Centered: takes the keyboard so it can catch Super and Esc.
     PanelWindow {
-        visible: root.opened
+        visible: root.opened && root.flow !== null && root.centered
         color: "transparent"
-        anchors { top: true; right: true }
-        margins { top: Style.gapsOut * 4; right: Style.gapsOut * 4 }
-        implicitWidth: Style.space(360)
-        implicitHeight: card.implicitHeight
+        anchors { top: true; bottom: true; left: true; right: true }
         exclusionMode: ExclusionMode.Ignore
         WlrLayershell.layer: WlrLayer.Overlay
         WlrLayershell.namespace: "omarchy-onboarding"
-        // Never take the keyboard: Super bindings must reach Hyprland.
-        WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
+        WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
+
+        // Dim the desktop so the card is the one thing to look at.
+        Rectangle {
+            anchors.fill: parent
+            color: Color.background
+            opacity: 0.78
+        }
 
         Rectangle {
-            id: card
-            anchors.fill: parent
-            implicitHeight: content.implicitHeight + Style.space(32)
+            id: centerCard
+            anchors.centerIn: parent
+            width: centerView.implicitWidth + Style.space(56)
+            height: centerView.implicitHeight + Style.space(56)
             color: Color.popups.background
             border.color: Color.popups.border
             border.width: 1
             radius: Style.cornerRadius
 
-            Column {
-                id: content
-                anchors { left: parent.left; right: parent.right; top: parent.top; margins: Style.space(16) }
-                spacing: Style.space(8)
+            Loader {
+                id: centerView
+                anchors.centerIn: parent
+                width: item ? item.implicitWidth : 0
+                height: item ? item.implicitHeight : 0
+                focus: true
+                sourceComponent: root.error ? errorView
+                               : root.pausing ? pauseView
+                               : !root.step ? null
+                               : root.step.id === "welcome" ? welcomeView
+                               : root.step.id === "super-key" ? superKeyView
+                               : genericView
+            }
+        }
+    }
 
+    // Corner: the drills. Leaves the keyboard to Hyprland, except the
+    // clipboard step, whose field the user clicks to paste into.
+    PanelWindow {
+        visible: root.opened && root.step !== null && !root.centered
+        color: "transparent"
+        anchors { bottom: true; right: true }
+        margins { bottom: Style.gapsOut * 4; right: Style.gapsOut * 4 }
+        implicitWidth: coach.item ? coach.item.implicitWidth : 1
+        implicitHeight: coach.item ? coach.item.implicitHeight : 1
+        exclusionMode: ExclusionMode.Ignore
+        WlrLayershell.layer: WlrLayer.Overlay
+        WlrLayershell.namespace: "omarchy-onboarding-coach"
+        WlrLayershell.keyboardFocus: root.step && root.step.id === "clipboard" ? WlrKeyboardFocus.OnDemand
+                                                                             : WlrKeyboardFocus.None
+
+        Loader {
+            id: coach
+            anchors.fill: parent
+            sourceComponent: CoachCard {
+                host: root
+                step: root.copy
+                ticked: root.ticked
+                hint: root.hint
+                tip: root.tip
+            }
+        }
+    }
+
+    Component {
+        id: welcomeView
+        WelcomeView { host: root; logoText: logoFile.text() }
+    }
+
+    Component {
+        id: superKeyView
+        SuperKeyView { host: root; step: root.copy; hint: root.hint }
+    }
+
+    Component {
+        id: pauseView
+        PauseView { host: root }
+    }
+
+    Component {
+        id: genericView
+        StepView {
+            host: root
+            step: root.copy
+            openSteps: root.flow ? Engine.openSteps(root.steps, root.flow).map(function (s) {
+                var r = root.flow.steps[s.id];
+                return { title: s.title, reason: r ? r.reason : "" };
+            }) : []
+        }
+    }
+
+    Component {
+        id: errorView
+        FocusScope {
+            implicitWidth: Style.space(460)
+            implicitHeight: errorColumn.implicitHeight
+            Keys.onEscapePressed: root.dismissOverlay()
+            Component.onCompleted: Qt.callLater(function () { closeButton.forceActiveFocus(); })
+            Column {
+                id: errorColumn
+                width: parent.width
+                spacing: Style.space(12)
                 Text {
-                    text: root.error ? "Onboarding error"
-                        : root.step ? "Step " + root.step.number + " of " + (root.steps.steps.length - 1)
-                        : "Onboarding"
-                    color: Color.muted
-                    font.family: Style.font.family
-                    font.pixelSize: Style.font.caption
-                }
-                Text {
-                    width: parent.width
-                    text: root.error || (root.step ? root.step.title : "Starting…")
-                    color: Color.popups.text
+                    text: "Onboarding can't start"
+                    color: Color.foreground
                     font.family: Style.font.family
                     font.pixelSize: Style.font.heading
-                    wrapMode: Text.Wrap
                 }
                 Text {
                     width: parent.width
-                    visible: text !== ""
-                    text: root.step && !root.error ? (root.step.screen || root.step.goal || "") : ""
-                    color: Color.popups.text
+                    text: root.error
+                    wrapMode: Text.Wrap
+                    color: Qt.rgba(Color.foreground.r, Color.foreground.g, Color.foreground.b, 0.62)
                     font.family: Style.font.family
                     font.pixelSize: Style.font.body
-                    wrapMode: Text.Wrap
                 }
-                Repeater {
-                    model: root.step && root.step.subtasks ? root.step.subtasks : []
-                    delegate: Text {
-                        required property var modelData
-                        width: parent ? parent.width : 0
-                        text: (root.ticked[modelData.id] ? "✓  " : "○  ") + modelData.label
-                        color: root.ticked[modelData.id] ? Color.accent : Color.popups.text
-                        font.family: Style.font.family
-                        font.pixelSize: Style.font.body
-                        wrapMode: Text.Wrap
-                    }
-                }
+                Button { id: closeButton; anchors.right: parent.right; text: "Close"; primary: true; onClicked: root.dismissOverlay() }
             }
         }
     }

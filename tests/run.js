@@ -19,6 +19,7 @@ function lib(name) {
 
 const E = lib("Engine.js");
 const D = lib("Drills.js");
+const U = lib("Ui.js");
 const MANIFEST = JSON.parse(fs.readFileSync(path.join(ROOT, "steps.json"), "utf8"));
 
 let passed = 0, failed = 0;
@@ -527,6 +528,99 @@ test("every drill matches the manifest's sub-tasks", () => {
         eq(D.create(step).subtasks, want, step);
     });
     eq(D.create("theme"), null);
+});
+
+// ================================================================ ui
+
+test("track copy comes from the step's variant", () => {
+    const step = MANIFEST.steps.find(s => s.id === "super-key");
+    ok(E.copyFor(step, "mac").screen.includes("⌘"));
+    ok(E.copyFor(step, "windows").screen.includes("Windows key"));
+    eq(E.copyFor(step, "knows-linux").screen, step.screen);
+    eq(E.copyFor(step, null).screen, step.screen);
+});
+
+test("variants for unknown tracks or keys are rejected", () => {
+    const m = copy(MINIMAL);
+    m.steps.splice(1, 0, { id: "x", number: 1, phase: 0, title: "X", done_when: "y", variants: { linux: { screen: "s" } } });
+    m.steps[2].number = 2;
+    throws(() => E.validateManifest(m), "unknown track 'linux'");
+    m.steps[1].variants = { mac: { colour: "red" } };
+    throws(() => E.validateManifest(m), "unknown key 'colour'");
+});
+
+test("key caps", () => {
+    eq(U.keyCaps("Super + Shift + Return"), ["Super", "Shift", "Return"]);
+    eq(U.keyCaps("Super + Arrows"), ["Super", "←", "↑", "↓", "→"]);
+    eq(U.keyCaps("Esc"), ["Esc"]);
+    eq(U.keyCaps(""), []);
+});
+
+test("a plus between keys, but not between arrows", () => {
+    eq(U.keyCapItems("Super + J").map(c => c.plus), [false, true]);
+    eq(U.keyCapItems("Super + Arrows").map(c => c.label + (c.plus ? "+" : "")), ["Super", "←+", "↑", "↓", "→"]);
+});
+
+test("every drill sub-task names its keys", () => {
+    D.DRILL_STEPS.concat(["clipboard"]).forEach(id => {
+        MANIFEST.steps.find(s => s.id === id).subtasks.forEach(t => ok(U.keyCaps(t.keys).length > 0, id + "/" + t.id));
+    });
+});
+
+test("idle hints at 20 s and 40 s", () => {
+    eq([0, 19999, 20000, 39999, 40000, 90000].map(U.hintLevel), [0, 0, 1, 1, 2, 2]);
+});
+
+test("centered steps take the keyboard; drills stay in the corner", () => {
+    ok(U.isCentered("welcome") && U.isCentered("super-key") && U.isCentered("finish"));
+    D.DRILL_STEPS.concat(["clipboard"]).forEach(id => ok(!U.isCentered(id), id));
+});
+
+function argvs(plan) { return plan.run.map(s => s.argv.join(" ")); }
+
+test("do it for me: menu opens then closes", () => {
+    eq(argvs(U.doItPlan("menu", { ticked: {} })), ["omarchy-menu toggle", "omarchy-menu toggle"]);
+    eq(argvs(U.doItPlan("menu", { ticked: { open: true } })), ["omarchy-menu toggle"]);
+});
+
+test("do it for me: tiling works through its sub-tasks in order", () => {
+    const w = { terminal: "t1", browser: "b1", active: "b1" };
+    eq(argvs(U.doItPlan("tiling", { ticked: {}, windows: {} })), ["omarchy-launch-terminal"]);
+    eq(argvs(U.doItPlan("tiling", { ticked: { terminal: true }, windows: {} })), ["omarchy-launch-browser"]);
+    eq(argvs(U.doItPlan("tiling", { ticked: { terminal: true, browser: true }, windows: w })),
+       ["hyprctl dispatch hl.dsp.focus({ window = 'address:0xt1' })", 'hyprctl dispatch hl.dsp.layout("togglesplit")']);
+    eq(argvs(U.doItPlan("tiling", { ticked: { terminal: true, browser: true, split: true }, windows: w })),
+       ["hyprctl dispatch hl.dsp.focus({ window = 'address:0xt1' })"]);
+});
+
+test("do it for me never touches windows it doesn't know", () => {
+    eq(U.doItPlan("tiling", { ticked: { terminal: true, browser: true }, windows: {} }), { special: "skip" });
+    eq(U.doItPlan("window-controls", { ticked: {}, windows: {} }), { special: "skip" });
+    eq(U.doItPlan("window-controls", { ticked: { float: true, fullscreen: true }, windows: { terminal: "t1" } }), { special: "skip" });
+    eq(U.doItPlan("workspaces", { ticked: { switch: true }, windows: {} }), { special: "skip" });
+});
+
+test("do it for me: window controls and workspaces", () => {
+    const w = { terminal: "t1", browser: "b1" };
+    eq(argvs(U.doItPlan("window-controls", { ticked: {}, windows: w })).length, 3);
+    eq(argvs(U.doItPlan("window-controls", { ticked: { float: true, fullscreen: true }, windows: w })),
+       ["hyprctl dispatch hl.dsp.window.close({ window = 'address:0xb1' })"]);
+    eq(argvs(U.doItPlan("workspaces", { ticked: {}, workspace: 3 })),
+       ["hyprctl dispatch hl.dsp.focus({ workspace = '4' })", "hyprctl dispatch hl.dsp.focus({ workspace = '3' })"]);
+    eq(argvs(U.doItPlan("workspaces", { ticked: { switch: true }, windows: w, workspace: 9 }))[1],
+       "hyprctl dispatch hl.dsp.window.move({ workspace = '8' })");
+});
+
+test("do it for me: specials and steps without one", () => {
+    eq(U.doItPlan("super-key", {}), { special: "complete" });
+    eq(U.doItPlan("clipboard", {}), { special: "fill" });
+    eq(U.doItPlan("theme", {}), null);
+});
+
+test("the tiling drill reports its own windows", () => {
+    const d = D.create("tiling");
+    feed(d, OPEN_PAIR);
+    eq(d.windows(), { terminal: "t1", browser: "b1", active: "b1" });
 });
 
 // ================================================================ recordings

@@ -13,7 +13,7 @@
 #   --record <path>  with run: also save every observation, for replay tests
 #
 # Development calls, answered by the open overlay:
-#   next, skip, pause, dismiss, info, track <track> [--code]
+#   next, skip, pause, dismiss, do-it, info, track <track> [--code]
 
 set -euo pipefail
 
@@ -116,7 +116,7 @@ cmd_call() {
   out=$(shell_call call "$PLUGIN" "$@") || die "the Omarchy shell is not running"
   [[ $out == unknown ]] && die "onboarding is not open"
   echo "$out"
-  [[ $out == ok || $1 == info ]]
+  [[ $out == ok || $1 == info || $out == "nothing to do" ]]
 }
 
 while (($#)); do
@@ -137,6 +137,7 @@ case $command in
   reset) cmd_reset "$@" ;;
   steps) jq -r '.steps[] | "\(.id | . + (" " * (16 - length))) \(.title)"' "$DIR/steps.json" ;;
   next | skip | pause | dismiss | info) cmd_call "$command" "" ;;
+  do-it) cmd_call doIt "" ;;
   track)
     [[ -n ${1:-} ]] || die "track needs a track name"
     arg=$1

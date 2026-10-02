@@ -1,0 +1,7 @@
+#!/bin/bash
+# Prints a file for the overlay. Exits 3 when it doesn't exist, so the overlay
+# can tell "no state yet" from a read that failed. Reading through a process
+# rather than FileView avoids racing the load right after the path changes.
+exec </dev/null
+[[ -e $1 ]] || exit 3
+exec cat -- "$1"

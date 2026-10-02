@@ -72,8 +72,17 @@
       "title": "Meet the Super key",
       "core": true,
       "goal": "One concept before any drills.",
-      "screen": "Press Super once.",
-      "done_when": "The app sees the key press while focused."
+      "screen": "Super is the key with the Windows logo, between Ctrl and Alt. Almost every Omarchy shortcut starts with it. Press it once.",
+      "done_when": "The app sees the key press while focused.",
+      "keys": "Super",
+      "variants": {
+        "mac": {
+          "screen": "Super sits where ⌘ is on a Mac. Almost every Omarchy shortcut starts with it, the way ⌘ does on macOS. Press it once."
+        },
+        "windows": {
+          "screen": "Super is the Windows key. In Omarchy it starts almost every shortcut. Press it once."
+        }
+      }
     },
     {
       "id": "menu",
@@ -86,11 +95,13 @@
       "subtasks": [
         {
           "id": "open",
-          "label": "Press Super + Space"
+          "label": "Open the menu",
+          "keys": "Super + Space"
         },
         {
           "id": "close",
-          "label": "Press Esc to close it"
+          "label": "Close it again",
+          "keys": "Esc"
         }
       ]
     },
@@ -104,21 +115,26 @@
       "subtasks": [
         {
           "id": "terminal",
-          "label": "Super + Return opens a terminal"
+          "label": "Open a terminal",
+          "keys": "Super + Return"
         },
         {
           "id": "browser",
-          "label": "Super + Shift + Return opens the browser"
+          "label": "Open the browser",
+          "keys": "Super + Shift + Return"
         },
         {
           "id": "split",
-          "label": "Super + J toggles the split"
+          "label": "Flip the split",
+          "keys": "Super + J"
         },
         {
           "id": "focus",
-          "label": "Super + Arrow moves focus"
+          "label": "Move focus to the other window",
+          "keys": "Super + Arrows"
         }
-      ]
+      ],
+      "screen": "Omarchy places windows side by side for you. Open two and watch them tile behind this card."
     },
     {
       "id": "window-controls",
@@ -133,17 +149,21 @@
       "subtasks": [
         {
           "id": "float",
-          "label": "Super + T floats the terminal, and again to tile it"
+          "label": "Float a window, then tile it again",
+          "keys": "Super + T"
         },
         {
           "id": "fullscreen",
-          "label": "Super + F goes full screen, and again to return"
+          "label": "Go full screen, then back",
+          "keys": "Super + F"
         },
         {
           "id": "close",
-          "label": "Super + W closes the browser"
+          "label": "Close the browser",
+          "keys": "Super + W"
         }
-      ]
+      ],
+      "screen": "Any window can float above the others, fill the screen, or close."
     },
     {
       "id": "workspaces",
@@ -155,13 +175,16 @@
       "subtasks": [
         {
           "id": "switch",
-          "label": "Super + 2 jumps, Super + 1 returns"
+          "label": "Jump to workspace 2, then back with Super + 1",
+          "keys": "Super + 2"
         },
         {
           "id": "move",
-          "label": "Super + Shift + 2 sends the terminal over"
+          "label": "Send the terminal to workspace 2",
+          "keys": "Super + Shift + 2"
         }
-      ]
+      ],
+      "screen": "Each number is a workspace: a separate desktop. Super + a number jumps there."
     },
     {
       "id": "clipboard",
@@ -172,6 +195,19 @@
       "done_when": "The field contains the expected text.",
       "hide_tracks": [
         "knows-linux"
+      ],
+      "screen": "Super + C, V and X copy, paste and cut everywhere, even in the terminal. Select the line in the terminal that opened, copy it, then paste it below.",
+      "subtasks": [
+        {
+          "id": "copy",
+          "label": "Select the line in the terminal and copy it",
+          "keys": "Super + C"
+        },
+        {
+          "id": "paste",
+          "label": "Click the field below and paste",
+          "keys": "Super + V"
+        }
       ]
     },
     {
@@ -180,12 +216,13 @@
       "phase": 2,
       "title": "Find any shortcut",
       "core": true,
-      "screen": "You don't need to memorize anything. Super + K is always there.",
+      "screen": "You don't need to memorize anything. Super + K is always there. Close it with Esc.",
       "done_when": "The bindings overlay was opened.",
       "subtasks": [
         {
           "id": "open",
-          "label": "Press Super + K"
+          "label": "Open the list of every shortcut",
+          "keys": "Super + K"
         }
       ]
     },

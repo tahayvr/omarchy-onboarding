@@ -2,7 +2,7 @@
 
 First-boot onboarding for [Omarchy](https://omarchy.org), built as an Omarchy shell plugin (`tahayvr.onboarding`). It teaches the keys by having you press them: an overlay watches Hyprland and ticks each step off as you do it.
 
-Work in progress. Milestones M0–M2 are done: the step flow, state file and drill detection for steps 4–7 and 9. The overlay UI is M3. See `FINDINGS.md` for what was verified on Omarchy 4.0.4 and why things are built the way they are.
+Work in progress. Milestones M0–M3 are done: the step flow, the state file, drill detection for steps 4–7 and 9, and the overlay UI for steps 0 and 3–9. The action steps (network, theme, display, hardware, apps, updates) are M4. See `FINDINGS.md` for what was verified on Omarchy 4.0.4 and why things are built the way they are.
 
 ## Install for development
 
@@ -12,7 +12,7 @@ omarchy-shell shell rescanPlugins
 omarchy-shell shell setPluginEnabled tahayvr.onboarding true
 ```
 
-The shell doesn't watch files through the symlink, so run `omarchy-shell shell rescanPlugins` after editing.
+The shell doesn't see edits through the symlink and can't hot-swap a plugin in use, so run `scripts/reload-shell.sh` after changing QML. Logic in `lib/` is tested with node and needs no reload.
 
 ## Use
 
@@ -23,7 +23,7 @@ bin/omarchy-onboarding status              # where the flow is
 bin/omarchy-onboarding steps               # step names
 ```
 
-While developing, always pass `--state /tmp/onboarding-test.json` (or set `OMARCHY_ONBOARDING_STATE`) so the real state in `~/.local/state/omarchy/onboarding.json` is never touched. With the overlay open, `next`, `skip`, `pause`, `dismiss`, `info` and `track <track> [--code]` drive the flow by hand.
+While developing, always pass `--state /tmp/onboarding-test.json` (or set `OMARCHY_ONBOARDING_STATE`) so the real state in `~/.local/state/omarchy/onboarding.json` is never touched. With the overlay open, `next`, `skip`, `pause`, `dismiss`, `do-it`, `info` and `track <track> [--code]` drive the flow by hand.
 
 ## Test
 

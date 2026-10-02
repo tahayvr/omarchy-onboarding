@@ -27,7 +27,8 @@ STATE="$WORK/state.json"
 CLI=("$ROOT/bin/omarchy-onboarding" --state "$STATE")
 SELECTOR='^/bin/bash /usr/share/omarchy/bin/omarchy-menu-select Keybindings'
 
-terminal="" browser=""
+terminal="" browser="" sample_terminal=""
+before_all=$(hyprctl -j clients | jq -c '[.[].address]')
 start_ws=$(hyprctl -j activeworkspace | jq -r .id)
 
 say() { printf '\033[1m> %s\033[0m\n' "$*" >&2; }
@@ -87,6 +88,12 @@ cleanup() {
   omarchy-shell shell hide tahayvr.onboarding >/dev/null 2>&1
   close_own "$browser"
   close_own "$terminal"
+  close_own "$sample_terminal"
+  # The clipboard step opens its own terminal; close anything new on the test workspaces.
+  for addr in $(hyprctl -j clients | jq -r --arg a "$WS_A" --arg b "$WS_B" --argjson before "$before_all" \
+      '.[] | select((.workspace.name == $a or .workspace.name == $b) and ((.address) as $x | $before | index($x) | not)) | .address'); do
+    close_own "$addr"
+  done
   dispatch "hl.dsp.focus({ workspace = '$start_ws' })"
   echo "--- log"
   cat "$WORK/state.log" 2>/dev/null
@@ -155,7 +162,10 @@ dispatch "hl.dsp.focus({ workspace = '$WS_A' })"; sleep 0.6
 require_active "$terminal" "the terminal"
 dispatch "hl.dsp.window.move({ workspace = '$WS_B' })"
 wait_step clipboard
-"${CLI[@]}" next >/dev/null # clipboard is checked in the overlay's own field (M3)
+# The clipboard step opens a terminal with a line to copy; wait for it so cleanup closes it.
+before=$(hyprctl -j clients | jq -c '[.[].address]')
+sample_terminal=$(wait_window '^foot$' "$WS_B" "$before")
+"${CLI[@]}" next >/dev/null # pasting into the overlay's field needs a pointer click
 wait_step shortcuts
 
 say "Step 9: Super + K"
