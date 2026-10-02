@@ -1,0 +1,147 @@
+#!/bin/bash
+
+# omarchy:summary=Learn Omarchy by doing: start, resume or replay the first-boot onboarding.
+# omarchy:args=[run [--only-skipped] | --step <name> | status [--json] | reset [--yes] | steps]
+# omarchy:examples=omarchy onboarding|omarchy onboarding --step theme|omarchy onboarding status
+
+# The onboarding runs inside the Omarchy shell as the tahayvr.onboarding
+# overlay plugin. This command summons it and reads its state file.
+#
+# Options:
+#   --state <path>   state file instead of ~/.local/state/omarchy/onboarding.json
+#                    (or OMARCHY_ONBOARDING_STATE); use it for testing
+#   --record <path>  with run: also save every observation, for replay tests
+#
+# Development calls, answered by the open overlay:
+#   next, skip, pause, dismiss, info, track <track> [--code]
+
+set -euo pipefail
+
+PLUGIN=${OMARCHY_ONBOARDING_PLUGIN:-tahayvr.onboarding}
+DIR=$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)
+DEFAULT_STATE="$HOME/.local/state/omarchy/onboarding.json"
+STATE=${OMARCHY_ONBOARDING_STATE:-}
+RECORD=""
+
+die() {
+  echo "omarchy-onboarding: $*" >&2
+  exit 1
+}
+
+# omarchy-shell splits arguments on spaces, so JSON goes over compact with
+# spaces escaped.
+payload() {
+  jq -cn "$@" | sed 's/ /\\u0020/g'
+}
+
+shell_call() {
+  omarchy-shell shell "$@"
+}
+
+summon() {
+  local out
+  out=$(shell_call summon "$PLUGIN" "$1") || die "the Omarchy shell is not running"
+  [[ $out == ok ]] || die "could not open the onboarding ($out); is the $PLUGIN plugin enabled?"
+}
+
+state_path() {
+  local path=${STATE:-$DEFAULT_STATE}
+  realpath -m -- "$path"
+}
+
+cmd_run() {
+  local only_skipped=false
+  [[ ${1:-} == --only-skipped ]] && only_skipped=true
+  local args=(--argjson onlySkipped "$only_skipped")
+  [[ -n $STATE ]] && args+=(--arg state "$(state_path)")
+  [[ -n $RECORD ]] && args+=(--arg record "$(realpath -m -- "$RECORD")")
+  summon "$(payload "${args[@]}" '$ARGS.named')"
+}
+
+cmd_step() {
+  [[ -n ${1:-} ]] || die "--step needs a step name (see: omarchy-onboarding steps)"
+  jq -e --arg id "$1" 'any(.steps[]; .id == $id)' "$DIR/steps.json" >/dev/null \
+    || die "unknown step '$1' (see: omarchy-onboarding steps)"
+  local args=(--arg step "$1")
+  [[ -n $STATE ]] && args+=(--arg state "$(state_path)")
+  summon "$(payload "${args[@]}" '$ARGS.named')"
+}
+
+cmd_status() {
+  local path
+  path=$(state_path)
+  if [[ ${1:-} == --json ]]; then
+    if [[ -f $path ]]; then cat "$path"; else echo '{"status":"not-started"}'; fi
+    return
+  fi
+  local state='{"status":"not-started","steps":{}}'
+  if [[ -f $path ]]; then
+    state=$(jq -c . "$path" 2>/dev/null) || die "state file $path is corrupt"
+  fi
+  echo "State:   $path"
+  jq -r --argjson s "$state" '
+    ($s.replay // (if $s.status == "in-progress" then $s.current else null end)) as $cur |
+    "Status:  \($s.status)",
+    "Track:   \($s.track // "not picked")\(if $s.writes_code then ", writes code" else "" end)",
+    "Current: \(if $cur then (.steps[] | select(.id == $cur) | "\(.number) \(.id) (\(.title))") else "none" end)",
+    "",
+    (.steps[] | . as $step | ($s.steps[$step.id] // null) as $r |
+      (if $step.id == $cur then ">"
+       elif $r == null then " "
+       elif $r.outcome == "done" then "x"
+       elif $r.outcome == "failed" then "!"
+       elif $r.outcome == "deferred" then "~"
+       else "-" end) as $mark |
+      "[\($mark)] \($step.number | tostring | if length < 2 then " " + . else . end) \($step.id | . + (" " * (16 - length))) \(if $step.core then "core" else "    " end) \(if $r then $r.outcome + (if $r.reason then ": " + $r.reason else "" end) else "" end)"
+      | sub(" +$"; ""))
+  ' "$DIR/steps.json"
+}
+
+cmd_reset() {
+  local path
+  path=$(state_path)
+  if [[ -z $STATE && ${1:-} != --yes ]]; then
+    die "this would delete the real state at $path; pass --yes, or use --state for a test file"
+  fi
+  if [[ -f $path ]]; then
+    rm -f -- "$path"
+    echo "Removed $path"
+  else
+    echo "No state at $path"
+  fi
+}
+
+cmd_call() {
+  local out
+  out=$(shell_call call "$PLUGIN" "$@") || die "the Omarchy shell is not running"
+  [[ $out == unknown ]] && die "onboarding is not open"
+  echo "$out"
+  [[ $out == ok || $1 == info ]]
+}
+
+while (($#)); do
+  case $1 in
+    --state) STATE=${2:?--state needs a path}; shift 2 ;;
+    --record) RECORD=${2:?--record needs a path}; shift 2 ;;
+    --step) shift; cmd_step "${1:-}"; exit ;;
+    -h | --help) sed -n '3,20p' "$0" | sed 's/^# \{0,1\}//'; exit ;;
+    *) break ;;
+  esac
+done
+
+command=${1:-run}
+shift || true
+case $command in
+  run) cmd_run "$@" ;;
+  status) cmd_status "$@" ;;
+  reset) cmd_reset "$@" ;;
+  steps) jq -r '.steps[] | "\(.id | . + (" " * (16 - length))) \(.title)"' "$DIR/steps.json" ;;
+  next | skip | pause | dismiss | info) cmd_call "$command" "" ;;
+  track)
+    [[ -n ${1:-} ]] || die "track needs a track name"
+    arg=$1
+    [[ ${2:-} == --code ]] && arg+=":code"
+    cmd_call track "$arg"
+    ;;
+  *) die "unknown command '$command' (try --help)" ;;
+esac

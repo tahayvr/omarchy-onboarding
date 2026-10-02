@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "id": "tahayvr.onboarding",
+  "name": "Onboarding",
+  "version": "0.1.0",
+  "author": "tahayvr",
+  "license": "MIT",
+  "description": "First-boot onboarding for Omarchy: learn the keys by doing, set up the essentials, skip anything.",
+  "kinds": ["overlay"],
+  "entryPoints": {
+    "overlay": "Overlay.qml"
+  }
+}

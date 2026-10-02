@@ -1,0 +1,3 @@
+# The menu opens but the recording stops before it closes.
+{"t":0,"kind":"keybindings","open":false}
+{"t":1,"kind":"hypr","line":"openlayer>>omarchy-menu"}

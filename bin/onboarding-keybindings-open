@@ -1,0 +1,14 @@
+#!/bin/bash
+# Exits 0 when the Super + K keybindings list was just opened.
+#
+# Super + K opens the same omarchy-menu layer as the menu, so the layer event
+# alone can't tell them apart. While the list shows, `omarchy-menu-select
+# Keybindings` runs. That process can outlive an overlay hidden from outside,
+# so only one started in the last 2 seconds counts.
+exec </dev/null
+
+for pid in $(pgrep -f '^/bin/bash [^ ]*/omarchy-menu-select Keybindings( |$)'); do
+  age=$(ps -o etimes= -p "$pid" 2>/dev/null) || continue
+  ((age <= 2)) && exit 0
+done
+exit 1

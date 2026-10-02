@@ -1,0 +1,97 @@
+# Live walkthrough of drills 4-7 and 9 recorded by the plugin itself (Overlay.qml,
+# Quickshell Hyprland.rawEvent) on Omarchy 4.0.4, via scripts/drive-drills.sh. Titles anonymized.
+{"t":21,"kind":"hypr","line":"openlayer>>omarchy-onboarding"}
+{"t":416,"kind":"clients","windows":[{"addr":"62d9b6e60f90","workspace":"3","x":7,"y":33,"width":2386,"height":1310},{"addr":"62d9b5bbab70","workspace":"1","x":1204,"y":33,"width":1189,"height":1310},{"addr":"62d9b743ca60","workspace":"2","x":7,"y":33,"width":2386,"height":1310},{"addr":"62d9b68a57e0","workspace":"1","x":7,"y":33,"width":1189,"height":1310}]}
+{"t":536,"kind":"keybindings","open":false}
+{"t":536,"kind":"hypr","line":"openlayer>>omarchy-menu"}
+{"t":1768,"kind":"hypr","line":"closelayer>>omarchy-menu"}
+{"t":1769,"kind":"hypr","line":"activewindow>>foot,user: shell"}
+{"t":1799,"kind":"hypr","line":"activewindowv2>>62d9b68a57e0"}
+{"t":1833,"kind":"hypr","line":"activelayout>>hl-virtual-keyboard-fcitx5,English (US)"}
+{"t":1866,"kind":"hypr","line":"activelayout>>hl-virtual-keyboard-fcitx5,English (US)"}
+{"t":1912,"kind":"hypr","line":"createworkspace>>7"}
+{"t":1975,"kind":"hypr","line":"createworkspacev2>>7,7"}
+{"t":1975,"kind":"hypr","line":"activewindow>>,"}
+{"t":1975,"kind":"hypr","line":"activewindowv2>>"}
+{"t":1975,"kind":"hypr","line":"workspace>>7"}
+{"t":1976,"kind":"hypr","line":"workspacev2>>7,7"}
+{"t":2030,"kind":"clients","windows":[{"addr":"62d9b6e60f90","workspace":"3","x":7,"y":33,"width":2386,"height":1310},{"addr":"62d9b5bbab70","workspace":"1","x":1204,"y":33,"width":1189,"height":1310},{"addr":"62d9b743ca60","workspace":"2","x":7,"y":33,"width":2386,"height":1310},{"addr":"62d9b68a57e0","workspace":"1","x":7,"y":33,"width":1189,"height":1310}]}
+{"t":2484,"kind":"hypr","line":"windowtitle>>62d9b771d170"}
+{"t":2484,"kind":"hypr","line":"windowtitlev2>>62d9b771d170,foot"}
+{"t":2538,"kind":"hypr","line":"openwindow>>62d9b771d170,7,foot,foot"}
+{"t":2583,"kind":"hypr","line":"activewindow>>foot,foot"}
+{"t":3424,"kind":"hypr","line":"activewindowv2>>62d9b771d170"}
+{"t":3469,"kind":"hypr","line":"windowtitle>>62d9b771d170"}
+{"t":3569,"kind":"hypr","line":"windowtitlev2>>62d9b771d170,user@host:~"}
+{"t":3617,"kind":"hypr","line":"activewindow>>foot,user@host:~"}
+{"t":3618,"kind":"hypr","line":"activewindowv2>>62d9b771d170"}
+{"t":3658,"kind":"hypr","line":"activelayout>>hl-virtual-keyboard-fcitx5,English (US)"}
+{"t":3700,"kind":"hypr","line":"activelayout>>hl-virtual-keyboard-fcitx5,English (US)"}
+{"t":3750,"kind":"hypr","line":"windowtitle>>62d9b7700d60"}
+{"t":3816,"kind":"hypr","line":"windowtitlev2>>62d9b7700d60,New Tab - Chromium"}
+{"t":3876,"kind":"hypr","line":"urgent>>62d9b7700d60"}
+{"t":3908,"kind":"hypr","line":"openwindow>>62d9b7700d60,7,chromium,New Tab - Chromium"}
+{"t":3950,"kind":"hypr","line":"activewindow>>chromium,New Tab - Chromium"}
+{"t":3991,"kind":"hypr","line":"activewindowv2>>62d9b7700d60"}
+{"t":4033,"kind":"hypr","line":"activelayout>>hl-virtual-keyboard-fcitx5,English (US)"}
+{"t":4075,"kind":"hypr","line":"activelayout>>hl-virtual-keyboard-fcitx5,English (US)"}
+{"t":4116,"kind":"hypr","line":"activelayout>>hl-virtual-keyboard-fcitx5,English (US)"}
+{"t":4158,"kind":"hypr","line":"activelayout>>hl-virtual-keyboard-fcitx5,English (US)"}
+{"t":4200,"kind":"clients","windows":[{"addr":"62d9b6e60f90","workspace":"3","x":7,"y":33,"width":2386,"height":1310},{"addr":"62d9b5bbab70","workspace":"1","x":1204,"y":33,"width":1189,"height":1310},{"addr":"62d9b743ca60","workspace":"2","x":7,"y":33,"width":2386,"height":1310},{"addr":"62d9b68a57e0","workspace":"1","x":7,"y":33,"width":1189,"height":1310},{"addr":"62d9b771d170","workspace":"7","x":7,"y":33,"width":1189,"height":1310},{"addr":"62d9b7700d60","workspace":"7","x":1204,"y":33,"width":1189,"height":1310}]}
+{"t":5205,"kind":"clients","windows":[{"addr":"62d9b6e60f90","workspace":"3","x":7,"y":33,"width":2386,"height":1310},{"addr":"62d9b5bbab70","workspace":"1","x":1204,"y":33,"width":1189,"height":1310},{"addr":"62d9b743ca60","workspace":"2","x":7,"y":33,"width":2386,"height":1310},{"addr":"62d9b68a57e0","workspace":"1","x":7,"y":33,"width":1189,"height":1310},{"addr":"62d9b771d170","workspace":"7","x":7,"y":33,"width":2386,"height":651},{"addr":"62d9b7700d60","workspace":"7","x":7,"y":692,"width":2386,"height":651}]}
+{"t":6379,"kind":"hypr","line":"activewindow>>foot,user@host:~"}
+{"t":6379,"kind":"hypr","line":"activewindowv2>>62d9b771d170"}
+{"t":6390,"kind":"hypr","line":"activelayout>>hl-virtual-keyboard-fcitx5,English (US)"}
+{"t":6427,"kind":"hypr","line":"activelayout>>hl-virtual-keyboard-fcitx5,English (US)"}
+{"t":6480,"kind":"clients","windows":[{"addr":"62d9b6e60f90","workspace":"3","x":7,"y":33,"width":2386,"height":1310},{"addr":"62d9b5bbab70","workspace":"1","x":1204,"y":33,"width":1189,"height":1310},{"addr":"62d9b743ca60","workspace":"2","x":7,"y":33,"width":2386,"height":1310},{"addr":"62d9b68a57e0","workspace":"1","x":7,"y":33,"width":1189,"height":1310},{"addr":"62d9b771d170","workspace":"7","x":7,"y":33,"width":2386,"height":651},{"addr":"62d9b7700d60","workspace":"7","x":7,"y":692,"width":2386,"height":651}]}
+{"t":6517,"kind":"hypr","line":"changefloatingmode>>62d9b771d170,1"}
+{"t":6805,"kind":"clients","windows":[{"addr":"62d9b6e60f90","workspace":"3","x":7,"y":33,"width":2386,"height":1310},{"addr":"62d9b5bbab70","workspace":"1","x":1204,"y":33,"width":1189,"height":1310},{"addr":"62d9b743ca60","workspace":"2","x":7,"y":33,"width":2386,"height":1310},{"addr":"62d9b68a57e0","workspace":"1","x":7,"y":33,"width":1189,"height":1310},{"addr":"62d9b7700d60","workspace":"7","x":7,"y":33,"width":2386,"height":1310},{"addr":"62d9b771d170","workspace":"7","x":-2,"y":-2,"width":2400,"height":1350}]}
+{"t":7094,"kind":"hypr","line":"changefloatingmode>>62d9b771d170,0"}
+{"t":7206,"kind":"clients","windows":[{"addr":"62d9b6e60f90","workspace":"3","x":7,"y":33,"width":2386,"height":1310},{"addr":"62d9b5bbab70","workspace":"1","x":1204,"y":33,"width":1189,"height":1310},{"addr":"62d9b743ca60","workspace":"2","x":7,"y":33,"width":2386,"height":1310},{"addr":"62d9b68a57e0","workspace":"1","x":7,"y":33,"width":1189,"height":1310},{"addr":"62d9b7700d60","workspace":"7","x":7,"y":33,"width":1189,"height":1310},{"addr":"62d9b771d170","workspace":"7","x":1204,"y":33,"width":1189,"height":1310}]}
+{"t":7700,"kind":"hypr","line":"fullscreen>>1"}
+{"t":8005,"kind":"clients","windows":[{"addr":"62d9b6e60f90","workspace":"3","x":7,"y":33,"width":2386,"height":1310},{"addr":"62d9b5bbab70","workspace":"1","x":1204,"y":33,"width":1189,"height":1310},{"addr":"62d9b743ca60","workspace":"2","x":7,"y":33,"width":2386,"height":1310},{"addr":"62d9b68a57e0","workspace":"1","x":7,"y":33,"width":1189,"height":1310},{"addr":"62d9b7700d60","workspace":"7","x":7,"y":33,"width":1189,"height":1310},{"addr":"62d9b771d170","workspace":"7","x":0,"y":0,"width":2400,"height":1350}]}
+{"t":8306,"kind":"hypr","line":"fullscreen>>0"}
+{"t":8405,"kind":"clients","windows":[{"addr":"62d9b6e60f90","workspace":"3","x":7,"y":33,"width":2386,"height":1310},{"addr":"62d9b5bbab70","workspace":"1","x":1204,"y":33,"width":1189,"height":1310},{"addr":"62d9b743ca60","workspace":"2","x":7,"y":33,"width":2386,"height":1310},{"addr":"62d9b68a57e0","workspace":"1","x":7,"y":33,"width":1189,"height":1310},{"addr":"62d9b7700d60","workspace":"7","x":7,"y":33,"width":1189,"height":1310},{"addr":"62d9b771d170","workspace":"7","x":1204,"y":33,"width":1189,"height":1310}]}
+{"t":8912,"kind":"hypr","line":"activewindow>>chromium,New Tab - Chromium"}
+{"t":8912,"kind":"hypr","line":"activewindowv2>>62d9b7700d60"}
+{"t":8921,"kind":"hypr","line":"activelayout>>hl-virtual-keyboard-fcitx5,English (US)"}
+{"t":8961,"kind":"hypr","line":"activelayout>>hl-virtual-keyboard-fcitx5,English (US)"}
+{"t":9330,"kind":"hypr","line":"closewindow>>62d9b7700d60"}
+{"t":9336,"kind":"hypr","line":"activewindow>>foot,user@host:~"}
+{"t":9375,"kind":"hypr","line":"activewindowv2>>62d9b771d170"}
+{"t":9420,"kind":"hypr","line":"activelayout>>hl-virtual-keyboard-fcitx5,English (US)"}
+{"t":9459,"kind":"hypr","line":"activelayout>>hl-virtual-keyboard-fcitx5,English (US)"}
+{"t":9533,"kind":"hypr","line":"createworkspace>>8"}
+{"t":9603,"kind":"hypr","line":"createworkspacev2>>8,8"}
+{"t":9714,"kind":"hypr","line":"activewindow>>,"}
+{"t":9759,"kind":"hypr","line":"activewindowv2>>"}
+{"t":9809,"kind":"hypr","line":"workspace>>8"}
+{"t":9851,"kind":"hypr","line":"workspacev2>>8,8"}
+{"t":9898,"kind":"clients","windows":[{"addr":"62d9b6e60f90","workspace":"3","x":7,"y":33,"width":2386,"height":1310},{"addr":"62d9b5bbab70","workspace":"1","x":1204,"y":33,"width":1189,"height":1310},{"addr":"62d9b743ca60","workspace":"2","x":7,"y":33,"width":2386,"height":1310},{"addr":"62d9b68a57e0","workspace":"1","x":7,"y":33,"width":1189,"height":1310},{"addr":"62d9b771d170","workspace":"7","x":7,"y":33,"width":2386,"height":1310}]}
+{"t":10139,"kind":"hypr","line":"activewindow>>foot,user@host:~"}
+{"t":10139,"kind":"hypr","line":"activewindowv2>>62d9b771d170"}
+{"t":10192,"kind":"hypr","line":"workspace>>7"}
+{"t":10243,"kind":"hypr","line":"workspacev2>>7,7"}
+{"t":10284,"kind":"hypr","line":"destroyworkspace>>8"}
+{"t":10385,"kind":"hypr","line":"destroyworkspacev2>>8,8"}
+{"t":10749,"kind":"hypr","line":"createworkspace>>8"}
+{"t":10786,"kind":"hypr","line":"createworkspacev2>>8,8"}
+{"t":10793,"kind":"hypr","line":"movewindow>>62d9b771d170,8"}
+{"t":10843,"kind":"hypr","line":"movewindowv2>>62d9b771d170,8,8"}
+{"t":10885,"kind":"hypr","line":"activewindow>>foot,user@host:~"}
+{"t":10926,"kind":"hypr","line":"activewindowv2>>62d9b771d170"}
+{"t":10976,"kind":"hypr","line":"workspace>>8"}
+{"t":11026,"kind":"hypr","line":"workspacev2>>8,8"}
+{"t":11076,"kind":"hypr","line":"activewindow>>foot,user@host:~"}
+{"t":11117,"kind":"hypr","line":"activewindowv2>>62d9b771d170"}
+{"t":11159,"kind":"hypr","line":"destroyworkspace>>7"}
+{"t":11232,"kind":"hypr","line":"destroyworkspacev2>>7,7"}
+{"t":11248,"kind":"clients","windows":[{"addr":"62d9b6e60f90","workspace":"3","x":7,"y":33,"width":2386,"height":1310},{"addr":"62d9b5bbab70","workspace":"1","x":1204,"y":33,"width":1189,"height":1310},{"addr":"62d9b743ca60","workspace":"2","x":7,"y":33,"width":2386,"height":1310},{"addr":"62d9b68a57e0","workspace":"1","x":7,"y":33,"width":1189,"height":1310},{"addr":"62d9b771d170","workspace":"8","x":7,"y":33,"width":2386,"height":1310}]}
+{"t":11524,"kind":"keybindings","open":true}
+{"t":11524,"kind":"hypr","line":"openlayer>>omarchy-menu"}
+{"t":11694,"kind":"hypr","line":"closelayer>>omarchy-menu"}
+{"t":11694,"kind":"hypr","line":"activewindow>>foot,user@host:~"}
+{"t":11734,"kind":"hypr","line":"activewindowv2>>62d9b771d170"}
+{"t":11776,"kind":"hypr","line":"activelayout>>hl-virtual-keyboard-fcitx5,English (US)"}
+{"t":11826,"kind":"hypr","line":"activelayout>>hl-virtual-keyboard-fcitx5,English (US)"}
+{"t":11868,"kind":"clients","windows":[{"addr":"62d9b6e60f90","workspace":"3","x":7,"y":33,"width":2386,"height":1310},{"addr":"62d9b5bbab70","workspace":"1","x":1204,"y":33,"width":1189,"height":1310},{"addr":"62d9b743ca60","workspace":"2","x":7,"y":33,"width":2386,"height":1310},{"addr":"62d9b68a57e0","workspace":"1","x":7,"y":33,"width":1189,"height":1310},{"addr":"62d9b771d170","workspace":"8","x":7,"y":33,"width":2386,"height":1310}]}

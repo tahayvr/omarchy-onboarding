@@ -1,0 +1,89 @@
+# Live walkthrough of drills 4-7 and 9 on Omarchy 4.0.4 / Hyprland 0.56.2, recorded by
+# scripts/drive-drills.sh on 2026-10-02. Window titles anonymized.
+{"t":20,"kind":"clients","windows":[{"addr":"62d9b6e60f90","workspace":"3","x":7,"y":33,"width":2386,"height":1310},{"addr":"62d9b5bbab70","workspace":"1","x":1204,"y":33,"width":1189,"height":1310},{"addr":"62d9b743ca60","workspace":"2","x":7,"y":33,"width":2386,"height":1310},{"addr":"62d9b68a57e0","workspace":"1","x":7,"y":33,"width":1189,"height":1310}]}
+{"t":999,"kind":"keybindings","open":false}
+{"t":999,"kind":"hypr","line":"openlayer>>omarchy-menu"}
+{"t":2202,"kind":"hypr","line":"closelayer>>omarchy-menu"}
+{"t":2202,"kind":"hypr","line":"activewindow>>foot,user: shell"}
+{"t":2202,"kind":"hypr","line":"activewindowv2>>62d9b68a57e0"}
+{"t":2205,"kind":"hypr","line":"activelayout>>hl-virtual-keyboard-fcitx5,English (US)"}
+{"t":2208,"kind":"hypr","line":"activelayout>>hl-virtual-keyboard-fcitx5,English (US)"}
+{"t":3210,"kind":"hypr","line":"createworkspace>>7"}
+{"t":3210,"kind":"hypr","line":"createworkspacev2>>7,7"}
+{"t":3210,"kind":"hypr","line":"activewindow>>,"}
+{"t":3210,"kind":"hypr","line":"activewindowv2>>"}
+{"t":3210,"kind":"hypr","line":"workspace>>7"}
+{"t":3210,"kind":"hypr","line":"workspacev2>>7,7"}
+{"t":3786,"kind":"hypr","line":"windowtitle>>62d9b7419970"}
+{"t":3787,"kind":"hypr","line":"windowtitlev2>>62d9b7419970,foot"}
+{"t":3837,"kind":"hypr","line":"openwindow>>62d9b7419970,7,foot,foot"}
+{"t":3838,"kind":"hypr","line":"activewindow>>foot,foot"}
+{"t":3838,"kind":"hypr","line":"activewindowv2>>62d9b7419970"}
+{"t":3894,"kind":"hypr","line":"windowtitle>>62d9b7419970"}
+{"t":3894,"kind":"hypr","line":"windowtitlev2>>62d9b7419970,user@host:~"}
+{"t":3894,"kind":"hypr","line":"activewindow>>foot,user@host:~"}
+{"t":3894,"kind":"hypr","line":"activewindowv2>>62d9b7419970"}
+{"t":3898,"kind":"hypr","line":"activelayout>>hl-virtual-keyboard-fcitx5,English (US)"}
+{"t":3901,"kind":"hypr","line":"activelayout>>hl-virtual-keyboard-fcitx5,English (US)"}
+{"t":4227,"kind":"clients","windows":[{"addr":"62d9b6e60f90","workspace":"3","x":7,"y":33,"width":2386,"height":1310},{"addr":"62d9b5bbab70","workspace":"1","x":1204,"y":33,"width":1189,"height":1310},{"addr":"62d9b743ca60","workspace":"2","x":7,"y":33,"width":2386,"height":1310},{"addr":"62d9b68a57e0","workspace":"1","x":7,"y":33,"width":1189,"height":1310},{"addr":"62d9b7419970","workspace":"7","x":7,"y":33,"width":2386,"height":1310}]}
+{"t":4736,"kind":"hypr","line":"windowtitle>>62d9b76fede0"}
+{"t":4736,"kind":"hypr","line":"windowtitlev2>>62d9b76fede0,New Tab - Chromium"}
+{"t":4797,"kind":"hypr","line":"urgent>>62d9b76fede0"}
+{"t":4798,"kind":"hypr","line":"openwindow>>62d9b76fede0,7,chromium,New Tab - Chromium"}
+{"t":4798,"kind":"hypr","line":"activewindow>>chromium,New Tab - Chromium"}
+{"t":4798,"kind":"hypr","line":"activewindowv2>>62d9b76fede0"}
+{"t":4817,"kind":"hypr","line":"activelayout>>hl-virtual-keyboard-fcitx5,English (US)"}
+{"t":4826,"kind":"hypr","line":"activelayout>>hl-virtual-keyboard-fcitx5,English (US)"}
+{"t":4940,"kind":"hypr","line":"activelayout>>hl-virtual-keyboard-fcitx5,English (US)"}
+{"t":4948,"kind":"hypr","line":"activelayout>>hl-virtual-keyboard-fcitx5,English (US)"}
+{"t":5069,"kind":"clients","windows":[{"addr":"62d9b6e60f90","workspace":"3","x":7,"y":33,"width":2386,"height":1310},{"addr":"62d9b5bbab70","workspace":"1","x":1204,"y":33,"width":1189,"height":1310},{"addr":"62d9b743ca60","workspace":"2","x":7,"y":33,"width":2386,"height":1310},{"addr":"62d9b68a57e0","workspace":"1","x":7,"y":33,"width":1189,"height":1310},{"addr":"62d9b7419970","workspace":"7","x":7,"y":33,"width":1189,"height":1310},{"addr":"62d9b76fede0","workspace":"7","x":1204,"y":33,"width":1189,"height":1310}]}
+{"t":6751,"kind":"clients","windows":[{"addr":"62d9b6e60f90","workspace":"3","x":7,"y":33,"width":2386,"height":1310},{"addr":"62d9b5bbab70","workspace":"1","x":1204,"y":33,"width":1189,"height":1310},{"addr":"62d9b743ca60","workspace":"2","x":7,"y":33,"width":2386,"height":1310},{"addr":"62d9b68a57e0","workspace":"1","x":7,"y":33,"width":1189,"height":1310},{"addr":"62d9b7419970","workspace":"7","x":7,"y":33,"width":2386,"height":651},{"addr":"62d9b76fede0","workspace":"7","x":7,"y":692,"width":2386,"height":651}]}
+{"t":7695,"kind":"hypr","line":"activewindow>>foot,user@host:~"}
+{"t":7695,"kind":"hypr","line":"activewindowv2>>62d9b7419970"}
+{"t":7705,"kind":"hypr","line":"activelayout>>hl-virtual-keyboard-fcitx5,English (US)"}
+{"t":7708,"kind":"hypr","line":"activelayout>>hl-virtual-keyboard-fcitx5,English (US)"}
+{"t":8307,"kind":"hypr","line":"changefloatingmode>>62d9b7419970,1"}
+{"t":8434,"kind":"clients","windows":[{"addr":"62d9b6e60f90","workspace":"3","x":7,"y":33,"width":2386,"height":1310},{"addr":"62d9b5bbab70","workspace":"1","x":1204,"y":33,"width":1189,"height":1310},{"addr":"62d9b743ca60","workspace":"2","x":7,"y":33,"width":2386,"height":1310},{"addr":"62d9b68a57e0","workspace":"1","x":7,"y":33,"width":1189,"height":1310},{"addr":"62d9b76fede0","workspace":"7","x":7,"y":33,"width":2386,"height":1310},{"addr":"62d9b7419970","workspace":"7","x":-2,"y":-2,"width":2400,"height":1350}]}
+{"t":8913,"kind":"hypr","line":"changefloatingmode>>62d9b7419970,0"}
+{"t":9275,"kind":"clients","windows":[{"addr":"62d9b6e60f90","workspace":"3","x":7,"y":33,"width":2386,"height":1310},{"addr":"62d9b5bbab70","workspace":"1","x":1204,"y":33,"width":1189,"height":1310},{"addr":"62d9b743ca60","workspace":"2","x":7,"y":33,"width":2386,"height":1310},{"addr":"62d9b68a57e0","workspace":"1","x":7,"y":33,"width":1189,"height":1310},{"addr":"62d9b76fede0","workspace":"7","x":7,"y":33,"width":1189,"height":1310},{"addr":"62d9b7419970","workspace":"7","x":1204,"y":33,"width":1189,"height":1310}]}
+{"t":9519,"kind":"hypr","line":"fullscreen>>1"}
+{"t":9696,"kind":"clients","windows":[{"addr":"62d9b6e60f90","workspace":"3","x":7,"y":33,"width":2386,"height":1310},{"addr":"62d9b5bbab70","workspace":"1","x":1204,"y":33,"width":1189,"height":1310},{"addr":"62d9b743ca60","workspace":"2","x":7,"y":33,"width":2386,"height":1310},{"addr":"62d9b68a57e0","workspace":"1","x":7,"y":33,"width":1189,"height":1310},{"addr":"62d9b76fede0","workspace":"7","x":7,"y":33,"width":1189,"height":1310},{"addr":"62d9b7419970","workspace":"7","x":0,"y":0,"width":2400,"height":1350}]}
+{"t":10125,"kind":"hypr","line":"fullscreen>>0"}
+{"t":10537,"kind":"clients","windows":[{"addr":"62d9b6e60f90","workspace":"3","x":7,"y":33,"width":2386,"height":1310},{"addr":"62d9b5bbab70","workspace":"1","x":1204,"y":33,"width":1189,"height":1310},{"addr":"62d9b743ca60","workspace":"2","x":7,"y":33,"width":2386,"height":1310},{"addr":"62d9b68a57e0","workspace":"1","x":7,"y":33,"width":1189,"height":1310},{"addr":"62d9b76fede0","workspace":"7","x":7,"y":33,"width":1189,"height":1310},{"addr":"62d9b7419970","workspace":"7","x":1204,"y":33,"width":1189,"height":1310}]}
+{"t":10730,"kind":"hypr","line":"activewindow>>chromium,New Tab - Chromium"}
+{"t":10730,"kind":"hypr","line":"activewindowv2>>62d9b76fede0"}
+{"t":10738,"kind":"hypr","line":"activelayout>>hl-virtual-keyboard-fcitx5,English (US)"}
+{"t":10741,"kind":"hypr","line":"activelayout>>hl-virtual-keyboard-fcitx5,English (US)"}
+{"t":11151,"kind":"hypr","line":"closewindow>>62d9b76fede0"}
+{"t":11152,"kind":"hypr","line":"activewindow>>foot,user@host:~"}
+{"t":11152,"kind":"hypr","line":"activewindowv2>>62d9b7419970"}
+{"t":11198,"kind":"hypr","line":"activelayout>>hl-virtual-keyboard-fcitx5,English (US)"}
+{"t":11201,"kind":"hypr","line":"activelayout>>hl-virtual-keyboard-fcitx5,English (US)"}
+{"t":11379,"kind":"clients","windows":[{"addr":"62d9b6e60f90","workspace":"3","x":7,"y":33,"width":2386,"height":1310},{"addr":"62d9b5bbab70","workspace":"1","x":1204,"y":33,"width":1189,"height":1310},{"addr":"62d9b743ca60","workspace":"2","x":7,"y":33,"width":2386,"height":1310},{"addr":"62d9b68a57e0","workspace":"1","x":7,"y":33,"width":1189,"height":1310},{"addr":"62d9b7419970","workspace":"7","x":7,"y":33,"width":2386,"height":1310}]}
+{"t":11947,"kind":"hypr","line":"createworkspace>>8"}
+{"t":11947,"kind":"hypr","line":"createworkspacev2>>8,8"}
+{"t":11947,"kind":"hypr","line":"activewindow>>,"}
+{"t":11947,"kind":"hypr","line":"activewindowv2>>"}
+{"t":11947,"kind":"hypr","line":"workspace>>8"}
+{"t":11947,"kind":"hypr","line":"workspacev2>>8,8"}
+{"t":12553,"kind":"hypr","line":"activewindow>>foot,user@host:~"}
+{"t":12553,"kind":"hypr","line":"activewindowv2>>62d9b7419970"}
+{"t":12553,"kind":"hypr","line":"workspace>>7"}
+{"t":12553,"kind":"hypr","line":"workspacev2>>7,7"}
+{"t":12553,"kind":"hypr","line":"destroyworkspace>>8"}
+{"t":12553,"kind":"hypr","line":"destroyworkspacev2>>8,8"}
+{"t":13164,"kind":"hypr","line":"createworkspace>>8"}
+{"t":13164,"kind":"hypr","line":"createworkspacev2>>8,8"}
+{"t":13164,"kind":"hypr","line":"movewindow>>62d9b7419970,8"}
+{"t":13164,"kind":"hypr","line":"movewindowv2>>62d9b7419970,8,8"}
+{"t":13164,"kind":"hypr","line":"activewindow>>foot,user@host:~"}
+{"t":13164,"kind":"hypr","line":"activewindowv2>>62d9b7419970"}
+{"t":13164,"kind":"hypr","line":"workspace>>8"}
+{"t":13164,"kind":"hypr","line":"workspacev2>>8,8"}
+{"t":13164,"kind":"hypr","line":"activewindow>>foot,user@host:~"}
+{"t":13164,"kind":"hypr","line":"activewindowv2>>62d9b7419970"}
+{"t":13164,"kind":"hypr","line":"destroyworkspace>>7"}
+{"t":13164,"kind":"hypr","line":"destroyworkspacev2>>7,7"}
+{"t":13481,"kind":"clients","windows":[{"addr":"62d9b6e60f90","workspace":"3","x":7,"y":33,"width":2386,"height":1310},{"addr":"62d9b5bbab70","workspace":"1","x":1204,"y":33,"width":1189,"height":1310},{"addr":"62d9b743ca60","workspace":"2","x":7,"y":33,"width":2386,"height":1310},{"addr":"62d9b68a57e0","workspace":"1","x":7,"y":33,"width":1189,"height":1310},{"addr":"62d9b7419970","workspace":"8","x":7,"y":33,"width":2386,"height":1310}]}
+{"t":14331,"kind":"keybindings","open":true}
+{"t":14331,"kind":"hypr","line":"openlayer>>omarchy-menu"}

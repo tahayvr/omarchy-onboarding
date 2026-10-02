@@ -1,0 +1,270 @@
+{
+  "phases": [
+    {
+      "number": 0,
+      "title": "Start"
+    },
+    {
+      "number": 1,
+      "title": "Get set up"
+    },
+    {
+      "number": 2,
+      "title": "Learn to move"
+    },
+    {
+      "number": 3,
+      "title": "Make it yours"
+    },
+    {
+      "number": 4,
+      "title": "Hardware and apps"
+    },
+    {
+      "number": 5,
+      "title": "For people who code"
+    },
+    {
+      "number": 6,
+      "title": "Stay safe and finish"
+    }
+  ],
+  "steps": [
+    {
+      "id": "welcome",
+      "number": 0,
+      "phase": 0,
+      "title": "Welcome",
+      "core": true,
+      "goal": "Set expectations and choose how deep to go.",
+      "screen": "About 10 minutes. Every step is skippable.",
+      "done_when": "A track is picked."
+    },
+    {
+      "id": "personal-setup",
+      "number": 1,
+      "phase": 1,
+      "title": "Personal setup",
+      "goal": "Finish the setup the installer deferred.",
+      "screen": "This password also unlocks the encrypted disk at every boot.",
+      "done_when": "The deferred setup reports success.",
+      "show_if": [
+        "owner-setup-deferred"
+      ]
+    },
+    {
+      "id": "internet",
+      "number": 2,
+      "phase": 1,
+      "title": "Connect to the internet",
+      "core": true,
+      "goal": "Get online, because updates, agents and web apps need it.",
+      "screen": "Press Super + Ctrl + W to open the network panel.",
+      "done_when": "Online.",
+      "skip_if": [
+        "online"
+      ]
+    },
+    {
+      "id": "super-key",
+      "number": 3,
+      "phase": 1,
+      "title": "Meet the Super key",
+      "core": true,
+      "goal": "One concept before any drills.",
+      "screen": "Press Super once.",
+      "done_when": "The app sees the key press while focused."
+    },
+    {
+      "id": "menu",
+      "number": 4,
+      "phase": 2,
+      "title": "Open the Omarchy menu",
+      "core": true,
+      "screen": "Almost everything lives in here. When you're lost, start here.",
+      "done_when": "The menu opens and closes.",
+      "subtasks": [
+        {
+          "id": "open",
+          "label": "Press Super + Space"
+        },
+        {
+          "id": "close",
+          "label": "Press Esc to close it"
+        }
+      ]
+    },
+    {
+      "id": "tiling",
+      "number": 5,
+      "phase": 2,
+      "title": "Launch and tile two apps",
+      "core": true,
+      "done_when": "A terminal and a browser are open on the same workspace and focus has moved once.",
+      "subtasks": [
+        {
+          "id": "terminal",
+          "label": "Super + Return opens a terminal"
+        },
+        {
+          "id": "browser",
+          "label": "Super + Shift + Return opens the browser"
+        },
+        {
+          "id": "split",
+          "label": "Super + J toggles the split"
+        },
+        {
+          "id": "focus",
+          "label": "Super + Arrow moves focus"
+        }
+      ]
+    },
+    {
+      "id": "window-controls",
+      "number": 6,
+      "phase": 2,
+      "title": "Close, float and full screen",
+      "tip": "Super + T floats a window, Super + F goes full screen, Super + W closes.",
+      "done_when": "Each event is seen once.",
+      "hide_tracks": [
+        "knows-linux"
+      ],
+      "subtasks": [
+        {
+          "id": "float",
+          "label": "Super + T floats the terminal, and again to tile it"
+        },
+        {
+          "id": "fullscreen",
+          "label": "Super + F goes full screen, and again to return"
+        },
+        {
+          "id": "close",
+          "label": "Super + W closes the browser"
+        }
+      ]
+    },
+    {
+      "id": "workspaces",
+      "number": 7,
+      "phase": 2,
+      "title": "Workspaces",
+      "core": true,
+      "done_when": "A workspace switch and a move-to-workspace are seen.",
+      "subtasks": [
+        {
+          "id": "switch",
+          "label": "Super + 2 jumps, Super + 1 returns"
+        },
+        {
+          "id": "move",
+          "label": "Super + Shift + 2 sends the terminal over"
+        }
+      ]
+    },
+    {
+      "id": "clipboard",
+      "number": 8,
+      "phase": 2,
+      "title": "Copy and paste the Omarchy way",
+      "tip": "Super + C, V and X copy, paste and cut everywhere, including the terminal.",
+      "done_when": "The field contains the expected text.",
+      "hide_tracks": [
+        "knows-linux"
+      ]
+    },
+    {
+      "id": "shortcuts",
+      "number": 9,
+      "phase": 2,
+      "title": "Find any shortcut",
+      "core": true,
+      "screen": "You don't need to memorize anything. Super + K is always there.",
+      "done_when": "The bindings overlay was opened.",
+      "subtasks": [
+        {
+          "id": "open",
+          "label": "Press Super + K"
+        }
+      ]
+    },
+    {
+      "id": "theme",
+      "number": 10,
+      "phase": 3,
+      "title": "Pick a theme",
+      "core": true,
+      "screen": "Arrow keys preview, Enter applies. Super + Ctrl + Space cycles backgrounds later.",
+      "done_when": "A theme is applied (keeping the current one counts)."
+    },
+    {
+      "id": "display",
+      "number": 11,
+      "phase": 3,
+      "title": "Display and comfort",
+      "screen": "Super + / scales up, Super + Alt + / scales down. Super + Ctrl + N toggles nightlight.",
+      "done_when": "The user confirms it looks right."
+    },
+    {
+      "id": "hardware",
+      "number": 12,
+      "phase": 4,
+      "title": "Quick hardware check",
+      "done_when": "Each shown item is done or skipped."
+    },
+    {
+      "id": "apps",
+      "number": 13,
+      "phase": 4,
+      "title": "Your everyday apps",
+      "screen": "Each app has its own hotkey. Try one.",
+      "done_when": "The user presses Continue."
+    },
+    {
+      "id": "ai-agent",
+      "number": 14,
+      "phase": 5,
+      "title": "Choose your AI agent",
+      "screen": "Setting an agent installs it if needed and opens it so you can sign in.",
+      "done_when": "A default agent is set, or skipped.",
+      "show_if": [
+        "writes-code"
+      ],
+      "needs": [
+        "online"
+      ]
+    },
+    {
+      "id": "dev-basics",
+      "number": 15,
+      "phase": 5,
+      "title": "Developer basics",
+      "done_when": "The user presses Continue.",
+      "show_if": [
+        "writes-code"
+      ]
+    },
+    {
+      "id": "updates",
+      "number": 16,
+      "phase": 6,
+      "title": "Updates and snapshots",
+      "core": true,
+      "screen": "Always update with omarchy update, not pacman -Syu, so you get a snapshot first.",
+      "done_when": "The update finishes or the user chooses Later.",
+      "needs": [
+        "online"
+      ]
+    },
+    {
+      "id": "finish",
+      "number": 17,
+      "phase": 6,
+      "title": "You're ready",
+      "core": true,
+      "screen": "Re-run any lesson later with omarchy onboarding --step <name>.",
+      "done_when": "The user presses Finish."
+    }
+  ]
+}

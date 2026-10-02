@@ -1,0 +1,27 @@
+# Hand-written walkthrough of steps 4-7 and 9, shaped like the live events
+# recorded on Omarchy 4.0.4. Replaced by a real recording later in M2.
+# Step 4: menu opens and closes.
+{"t":0,"kind":"keybindings","open":false}
+{"t":1,"kind":"hypr","line":"openlayer>>omarchy-menu"}
+{"t":900,"kind":"hypr","line":"closelayer>>omarchy-menu"}
+# Step 5: terminal, browser, split, focus.
+{"t":1500,"kind":"hypr","line":"openwindow>>a1,1,foot,foot"}
+{"t":1501,"kind":"hypr","line":"activewindowv2>>a1"}
+{"t":2500,"kind":"hypr","line":"openwindow>>b1,1,chromium,New Tab - Chromium"}
+{"t":2501,"kind":"hypr","line":"activewindowv2>>b1"}
+{"t":2800,"kind":"clients","windows":[{"addr":"a1","workspace":"1","x":0,"y":0,"width":960,"height":1080},{"addr":"b1","workspace":"1","x":960,"y":0,"width":960,"height":1080}]}
+{"t":3600,"kind":"clients","windows":[{"addr":"a1","workspace":"1","x":0,"y":0,"width":1920,"height":540},{"addr":"b1","workspace":"1","x":0,"y":540,"width":1920,"height":540}]}
+{"t":4200,"kind":"hypr","line":"activewindowv2>>a1"}
+# Step 6: float and back, full screen and back, close the browser.
+{"t":5000,"kind":"hypr","line":"changefloatingmode>>a1,1"}
+{"t":5600,"kind":"hypr","line":"changefloatingmode>>a1,0"}
+{"t":6200,"kind":"hypr","line":"fullscreen>>1"}
+{"t":6800,"kind":"hypr","line":"fullscreen>>0"}
+{"t":7400,"kind":"hypr","line":"closewindow>>b1"}
+# Step 7: switch away and back, then send the terminal over.
+{"t":8000,"kind":"hypr","line":"workspacev2>>2,2"}
+{"t":8600,"kind":"hypr","line":"workspacev2>>1,1"}
+{"t":9200,"kind":"hypr","line":"movewindowv2>>a1,2,2"}
+# Step 9: Super + K.
+{"t":10000,"kind":"keybindings","open":true}
+{"t":10001,"kind":"hypr","line":"openlayer>>omarchy-menu"}
