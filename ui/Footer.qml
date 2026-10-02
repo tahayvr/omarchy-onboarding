@@ -10,6 +10,10 @@ Item {
     property bool canDoIt: false
     // What to say after 20 s without progress; views with their own hint pass "".
     property string idleText: "Take your time. The keys are on the right."
+    // An optional main button, e.g. "Looks right" or "Continue".
+    property string primaryText: ""
+    property bool primaryEnabled: true
+    signal primary()
 
     width: parent ? parent.width : implicitWidth
     implicitHeight: buttons.implicitHeight
@@ -32,8 +36,15 @@ Item {
         Button {
             visible: footer.canDoIt && footer.hint > 1
             text: "Do it for me"
-            primary: true
+            primary: footer.primaryText === ""
             onClicked: footer.host.doIt()
+        }
+        Button {
+            visible: footer.primaryText !== ""
+            text: footer.primaryText
+            primary: footer.primaryEnabled
+            opacity: footer.primaryEnabled ? 1 : 0.5
+            onClicked: if (footer.primaryEnabled) footer.primary()
         }
     }
 }

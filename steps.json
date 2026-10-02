@@ -59,10 +59,24 @@
       "title": "Connect to the internet",
       "core": true,
       "goal": "Get online, because updates, agents and web apps need it.",
-      "screen": "Press Super + Ctrl + W to open the network panel.",
+      "screen": "Updates, AI agents and web apps need the internet. Open the network panel and pick your Wi-Fi.",
       "done_when": "Online.",
       "skip_if": [
         "online"
+      ],
+      "requires": [
+        "nmcli"
+      ],
+      "subtasks": [
+        {
+          "id": "panel",
+          "label": "Open the network panel",
+          "keys": "Super + Ctrl + W"
+        },
+        {
+          "id": "online",
+          "label": "Join a network"
+        }
       ]
     },
     {
@@ -232,31 +246,50 @@
       "phase": 3,
       "title": "Pick a theme",
       "core": true,
-      "screen": "Arrow keys preview, Enter applies. Super + Ctrl + Space cycles backgrounds later.",
-      "done_when": "A theme is applied (keeping the current one counts)."
+      "screen": "Arrow keys move, Enter applies. Everything restyles at once, this card included.",
+      "done_when": "A theme is applied (keeping the current one counts).",
+      "requires": [
+        "omarchy theme set"
+      ]
     },
     {
       "id": "display",
       "number": 11,
       "phase": 3,
       "title": "Display and comfort",
-      "screen": "Super + / scales up, Super + Alt + / scales down. Super + Ctrl + N toggles nightlight.",
-      "done_when": "The user confirms it looks right."
+      "screen": "Check that text is a comfortable size, and try the night light.",
+      "done_when": "The user confirms it looks right.",
+      "subtasks": [
+        {
+          "id": "scale",
+          "label": "Scale up, then down again (Super + Alt + /)",
+          "keys": "Super + /"
+        },
+        {
+          "id": "nightlight",
+          "label": "Try the night light (press again to turn it off)",
+          "keys": "Super + Ctrl + N"
+        }
+      ]
     },
     {
       "id": "hardware",
       "number": 12,
       "phase": 4,
       "title": "Quick hardware check",
-      "done_when": "Each shown item is done or skipped."
+      "done_when": "Each shown item is done or skipped.",
+      "screen": "A quick check that sound and your devices work. Skip anything you don't need."
     },
     {
       "id": "apps",
       "number": 13,
       "phase": 4,
       "title": "Your everyday apps",
-      "screen": "Each app has its own hotkey. Try one.",
-      "done_when": "The user presses Continue."
+      "screen": "Your everyday apps each have their own shortcut. Try one.",
+      "done_when": "The user presses Continue.",
+      "requires": [
+        "omarchy-menu-keybindings"
+      ]
     },
     {
       "id": "ai-agent",
@@ -288,10 +321,13 @@
       "phase": 6,
       "title": "Updates and snapshots",
       "core": true,
-      "screen": "Always update with omarchy update, not pacman -Syu, so you get a snapshot first.",
+      "screen": "When a circle-arrow icon appears next to the clock, click it. Always update with omarchy update, not pacman -Syu, so you get a snapshot first. If an update ever goes wrong, pick an earlier snapshot from the boot menu.",
       "done_when": "The update finishes or the user chooses Later.",
       "needs": [
         "online"
+      ],
+      "requires": [
+        "omarchy update"
       ]
     },
     {

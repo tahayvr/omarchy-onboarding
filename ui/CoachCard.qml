@@ -118,6 +118,19 @@ Rectangle {
             }
         }
 
+        // The action steps' own controls.
+        Loader {
+            width: parent.width
+            active: sourceComponent !== null
+            sourceComponent: !card.step ? null
+                : card.step.id === "internet" ? internetPanel
+                : card.step.id === "display" ? displayPanel
+                : card.step.id === "hardware" ? hardwarePanel
+                : card.step.id === "apps" ? appsPanel
+                : card.step.id === "updates" ? updatesPanel
+                : null
+        }
+
         Text {
             width: parent.width
             visible: card.tip !== ""
@@ -132,6 +145,15 @@ Rectangle {
             host: card.host
             hint: card.hint
             canDoIt: !!(card.step && Ui.doItPlan(card.step.id, { ticked: card.ticked, windows: card.host.drillWindows }))
+            primaryText: card.host.primaryText
+            primaryEnabled: card.host.primaryEnabled
+            onPrimary: card.host.primaryAction()
         }
     }
+
+    Component { id: internetPanel; InternetPanel { host: card.host } }
+    Component { id: displayPanel; DisplayPanel { host: card.host } }
+    Component { id: hardwarePanel; HardwarePanel { host: card.host } }
+    Component { id: appsPanel; AppsPanel { host: card.host } }
+    Component { id: updatesPanel; UpdatesPanel { host: card.host } }
 }

@@ -2,7 +2,7 @@
 
 First-boot onboarding for [Omarchy](https://omarchy.org), built as an Omarchy shell plugin (`tahayvr.onboarding`). It teaches the keys by having you press them: an overlay watches Hyprland and ticks each step off as you do it.
 
-Work in progress. Milestones M0–M3 are done: the step flow, the state file, drill detection for steps 4–7 and 9, and the overlay UI for steps 0 and 3–9. The action steps (network, theme, display, hardware, apps, updates) are M4. See `FINDINGS.md` for what was verified on Omarchy 4.0.4 and why things are built the way they are.
+Work in progress. Milestones M0–M4 are done: the step flow, the state file, drill detection for steps 4–7 and 9, the overlay UI, and the action steps (network, theme, display, hardware, apps, updates). The developer track (AI agent, git and SSH) is M5. See `FINDINGS.md` for what was verified on Omarchy 4.0.4 and why things are built the way they are.
 
 ## Install for development
 
@@ -23,7 +23,7 @@ bin/omarchy-onboarding status              # where the flow is
 bin/omarchy-onboarding steps               # step names
 ```
 
-While developing, always pass `--state /tmp/onboarding-test.json` (or set `OMARCHY_ONBOARDING_STATE`) so the real state in `~/.local/state/omarchy/onboarding.json` is never touched. With the overlay open, `next`, `skip`, `pause`, `dismiss`, `do-it`, `info` and `track <track> [--code]` drive the flow by hand.
+While developing, always pass `--state /tmp/onboarding-test.json` (or set `OMARCHY_ONBOARDING_STATE`) so the real state in `~/.local/state/omarchy/onboarding.json` is never touched. A test state also turns on `--dry-run`: theme changes, updates, firmware and app installs are logged instead of run, unless you add `--live`. With the overlay open, `next`, `skip`, `pause`, `dismiss`, `do-it`, `info` and `track <track> [--code]` drive the flow by hand.
 
 ## Test
 

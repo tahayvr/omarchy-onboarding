@@ -571,9 +571,36 @@ test("idle hints at 20 s and 40 s", () => {
     eq([0, 19999, 20000, 39999, 40000, 90000].map(U.hintLevel), [0, 0, 1, 1, 2, 2]);
 });
 
-test("centered steps take the keyboard; drills stay in the corner", () => {
-    ok(U.isCentered("welcome") && U.isCentered("super-key") && U.isCentered("finish"));
-    D.DRILL_STEPS.concat(["clipboard"]).forEach(id => ok(!U.isCentered(id), id));
+test("centered steps take the keyboard; drills and panel steps stay in the corner", () => {
+    ok(U.isCentered("welcome") && U.isCentered("super-key") && U.isCentered("theme") && U.isCentered("finish"));
+    D.DRILL_STEPS.concat(["clipboard", "internet", "display", "hardware", "apps", "updates"]).forEach(id => ok(!U.isCentered(id), id));
+});
+
+test("a missing command auto-skips its step and names it", () => {
+    const facts = { online: false, owner_setup_deferred: false, missing: ["omarchy theme set"] };
+    const r = started(facts, "knows-linux");
+    const shown = r.walk();
+    ok(!shown.includes("theme"), shown.join(","));
+    eq(r.s.steps.theme, { outcome: "auto-skipped", at: NOW, reason: "command 'omarchy theme set' is missing" });
+});
+
+test("every requirement is collected once", () => {
+    const all = E.allRequirements(MANIFEST);
+    ok(all.includes("omarchy theme set") && all.includes("omarchy update") && all.includes("nmcli"));
+    eq(all.length, new Set(all).size);
+});
+
+test("requires must be a list of commands", () => {
+    const m = copy(MINIMAL);
+    m.steps.splice(1, 0, { id: "x", number: 1, phase: 0, title: "X", done_when: "y", requires: "nmcli" });
+    m.steps[2].number = 2;
+    throws(() => E.validateManifest(m), "requires must be a list");
+});
+
+test("hardware items follow detection and available commands", () => {
+    eq(U.hardwareItems({ bluetooth: true, fingerprint: false }).map(i => i.id), ["audio", "bluetooth", "firmware"]);
+    eq(U.hardwareItems({ bluetooth: false, fingerprint: true, missing: ["pw-play"] }).map(i => i.id), ["fingerprint", "firmware"]);
+    ok(U.hardwareItems({}).filter(i => i.action.startsWith("run:")).every(i => i.confirm), "system changes ask first");
 });
 
 function argvs(plan) { return plan.run.map(s => s.argv.join(" ")); }
@@ -609,6 +636,12 @@ test("do it for me: window controls and workspaces", () => {
        ["hyprctl dispatch hl.dsp.focus({ workspace = '4' })", "hyprctl dispatch hl.dsp.focus({ workspace = '3' })"]);
     eq(argvs(U.doItPlan("workspaces", { ticked: { switch: true }, windows: w, workspace: 9 }))[1],
        "hyprctl dispatch hl.dsp.window.move({ workspace = '8' })");
+});
+
+test("do it for me: the network panel and display", () => {
+    eq(argvs(U.doItPlan("internet", {})), ["omarchy-shell shell toggle omarchy.network"]);
+    eq(argvs(U.doItPlan("display", { ticked: {} })), ["omarchy-hyprland-monitor-scaling up", "omarchy-hyprland-monitor-scaling down"]);
+    eq(argvs(U.doItPlan("display", { ticked: { scale: true } })), ["omarchy-toggle-nightlight", "omarchy-toggle-nightlight"]);
 });
 
 test("do it for me: specials and steps without one", () => {

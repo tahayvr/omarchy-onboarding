@@ -1,0 +1,32 @@
+#!/bin/bash
+# Prints the themes as JSON: [{name, slug, preview, current}], user themes
+# first. The preview follows omarchy-theme-switcher: preview.{png,jpg,…},
+# else the first image in backgrounds/.
+exec </dev/null
+
+user_dir="$HOME/.config/omarchy/themes"
+system_dir="${OMARCHY_PATH:-/usr/share/omarchy}/themes"
+current=$(cat "$HOME/.local/state/omarchy/current/theme.name" 2>/dev/null)
+
+preview_of() {
+  local dir=$1 ext image
+  for ext in png jpg jpeg webp gif bmp; do
+    [[ -f $dir/preview.$ext ]] && { echo "$dir/preview.$ext"; return; }
+  done
+  image=$(find "$dir/backgrounds" -maxdepth 1 -type f \( -iname '*.png' -o -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.webp' \) 2>/dev/null | sort | head -n1)
+  echo "$image"
+}
+
+declare -A seen
+{
+  for dir in "$user_dir"/*/ "$system_dir"/*/; do
+    [[ -d $dir ]] || continue
+    dir=${dir%/}
+    slug=${dir##*/}
+    [[ -n ${seen[$slug]:-} ]] && continue
+    seen[$slug]=1
+    name=$(sed -E 's/(^|-)([a-z])/\1\u\2/g; s/-/ /g' <<<"$slug")
+    jq -cn --arg name "$name" --arg slug "$slug" --arg preview "$(preview_of "$dir")" \
+      --argjson current "$([[ $slug == "$current" ]] && echo true || echo false)" '$ARGS.named'
+  done
+} | jq -cs .

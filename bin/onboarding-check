@@ -1,0 +1,17 @@
+#!/bin/bash
+# Prints each requirement that is missing, one per line. Requirements are
+# omarchy routes ("omarchy theme set") or plain programs ("pw-play"). Routes
+# come from `omarchy commands --json --all`, so a renamed command shows up as
+# missing and its step is auto-skipped instead of failing.
+exec </dev/null
+
+routes=$(omarchy commands --json --all 2>/dev/null | jq -r '.commands[].routes[]?, .commands[].route' 2>/dev/null | sort -u)
+
+for req in "$@"; do
+  if [[ $req == omarchy\ * ]]; then
+    grep -qxF -- "$req" <<<"$routes" || echo "$req"
+  else
+    command -v -- "$req" >/dev/null 2>&1 || echo "$req"
+  fi
+done
+exit 0

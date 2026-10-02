@@ -3,6 +3,8 @@
 #   1. `nmcli networking connectivity` (full, limited, portal, none, or empty)
 #   2. owner-setup-deferred: yes or no
 #   3. `omarchy default browser`
+#   4. bluetooth adapter: yes or no
+#   5. fingerprint reader: yes or no
 #
 # owner-setup-deferred is yes when the "install for another owner" first boot
 # left its log. UNVERIFIED that the log survives cleanup; check in the M6 VM.
@@ -11,3 +13,5 @@ exec </dev/null
 nmcli networking connectivity 2>/dev/null || echo
 [[ -e /var/log/omarchy-provision-owner.log ]] && echo yes || echo no
 omarchy default browser 2>/dev/null || echo
+bluetoothctl list 2>/dev/null | grep -q "^Controller " && echo yes || echo no
+omarchy hw fingerprint >/dev/null 2>&1 && echo yes || echo no

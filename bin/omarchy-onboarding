@@ -11,6 +11,10 @@
 #   --state <path>   state file instead of ~/.local/state/omarchy/onboarding.json
 #                    (or OMARCHY_ONBOARDING_STATE); use it for testing
 #   --record <path>  with run: also save every observation, for replay tests
+#   --dry-run        log system changes (theme, updates, installs) instead of running them;
+#                    on by default with --state, so test runs never change the system
+#   --live           with --state: run system changes for real
+#   --facts <json>   pin detected facts, for testing, e.g. '{"online":false}'
 #
 # Development calls, answered by the open overlay:
 #   next, skip, pause, dismiss, do-it, info, track <track> [--code]
@@ -22,6 +26,9 @@ DIR=$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)
 DEFAULT_STATE="$HOME/.local/state/omarchy/onboarding.json"
 STATE=${OMARCHY_ONBOARDING_STATE:-}
 RECORD=""
+DRY_RUN=false
+LIVE=false
+FACTS=""
 
 die() {
   echo "omarchy-onboarding: $*" >&2
@@ -52,7 +59,8 @@ state_path() {
 cmd_run() {
   local only_skipped=false
   [[ ${1:-} == --only-skipped ]] && only_skipped=true
-  local args=(--argjson onlySkipped "$only_skipped")
+  local args=(--argjson onlySkipped "$only_skipped" --argjson dryRun "$DRY_RUN")
+  [[ -n $FACTS ]] && args+=(--argjson facts "$FACTS")
   [[ -n $STATE ]] && args+=(--arg state "$(state_path)")
   [[ -n $RECORD ]] && args+=(--arg record "$(realpath -m -- "$RECORD")")
   summon "$(payload "${args[@]}" '$ARGS.named')"
@@ -62,7 +70,8 @@ cmd_step() {
   [[ -n ${1:-} ]] || die "--step needs a step name (see: omarchy-onboarding steps)"
   jq -e --arg id "$1" 'any(.steps[]; .id == $id)' "$DIR/steps.json" >/dev/null \
     || die "unknown step '$1' (see: omarchy-onboarding steps)"
-  local args=(--arg step "$1")
+  local args=(--arg step "$1" --argjson dryRun "$DRY_RUN")
+  [[ -n $FACTS ]] && args+=(--argjson facts "$FACTS")
   [[ -n $STATE ]] && args+=(--arg state "$(state_path)")
   summon "$(payload "${args[@]}" '$ARGS.named')"
 }
@@ -123,11 +132,17 @@ while (($#)); do
   case $1 in
     --state) STATE=${2:?--state needs a path}; shift 2 ;;
     --record) RECORD=${2:?--record needs a path}; shift 2 ;;
+    --dry-run) DRY_RUN=true; shift ;;
+    --live) LIVE=true; shift ;;
+    --facts) FACTS=${2:?--facts needs JSON}; jq -e 'type == "object"' <<<"$FACTS" >/dev/null 2>&1 || die "--facts needs a JSON object"; shift 2 ;;
     --step) shift; cmd_step "${1:-}"; exit ;;
-    -h | --help) sed -n '3,20p' "$0" | sed 's/^# \{0,1\}//'; exit ;;
+    -h | --help) awk 'NR > 2 && /^#/ { sub(/^# ?/, ""); print; next } NR > 2 && !/^$/ { exit } NR > 2' "$0"; exit ;;
     *) break ;;
   esac
 done
+
+# A test state means development: dry run unless --live says otherwise.
+[[ -n $STATE && $LIVE == false ]] && DRY_RUN=true
 
 command=${1:-run}
 shift || true
