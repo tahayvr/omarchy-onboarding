@@ -26,60 +26,66 @@ FocusScope {
         width: parent.width
         spacing: Style.space(14)
 
-        Text {
+        // The heading: "Welcome to", the logo and the tagline, kept tight.
+        Column {
             width: parent.width
-            text: "Welcome to"
-            horizontalAlignment: Text.AlignHCenter
-            color: Color.foreground
-            font.family: Style.font.family
-            font.pixelSize: Style.font.heading
-        }
+            spacing: Style.space(4)
 
-        // Omarchy's own logo.svg, tinted to the theme's accent the way the
-        // bar tints symbolic tray icons. It is black, so it is brightened to
-        // white first for the colorization to take.
-        Item {
-            id: logo
-            anchors.horizontalCenter: parent.horizontalCenter
-            width: Style.space(420)
-            height: Math.round(width * 285 / 1215)
-            opacity: 0
-            scale: 0.96
-
-            Image {
-                id: logoImage
-                anchors.fill: parent
-                source: view.logoPath ? "file://" + view.logoPath : ""
-                fillMode: Image.PreserveAspectFit
-                sourceSize.width: Math.round(width * Screen.devicePixelRatio)
-                sourceSize.height: Math.round(height * Screen.devicePixelRatio)
-                smooth: true
-                visible: false
-                layer.enabled: true
+            Text {
+                width: parent.width
+                text: "Welcome to"
+                horizontalAlignment: Text.AlignHCenter
+                color: Color.foreground
+                font.family: Style.font.family
+                font.pixelSize: Style.font.heading
             }
 
-            MultiEffect {
-                anchors.fill: logoImage
-                source: logoImage
-                brightness: 1.0
-                colorization: 1.0
-                colorizationColor: Color.accent
+            // Omarchy's own logo.svg, tinted to the theme's accent the way the
+            // bar tints symbolic tray icons. It is black, so it is brightened to
+            // white first for the colorization to take.
+            Item {
+                id: logo
+                anchors.horizontalCenter: parent.horizontalCenter
+                width: Style.space(420)
+                height: Math.round(width * 285 / 1215)
+                opacity: 0
+                scale: 0.96
+
+                Image {
+                    id: logoImage
+                    anchors.fill: parent
+                    source: view.logoPath ? "file://" + view.logoPath : ""
+                    fillMode: Image.PreserveAspectFit
+                    sourceSize.width: Math.round(width * Screen.devicePixelRatio)
+                    sourceSize.height: Math.round(height * Screen.devicePixelRatio)
+                    smooth: true
+                    visible: false
+                    layer.enabled: true
+                }
+
+                MultiEffect {
+                    anchors.fill: logoImage
+                    source: logoImage
+                    brightness: 1.0
+                    colorization: 1.0
+                    colorizationColor: Color.accent
+                }
+
+                ParallelAnimation {
+                    running: true
+                    NumberAnimation { target: logo; property: "opacity"; to: 1; duration: 420; easing.type: Easing.OutCubic }
+                    NumberAnimation { target: logo; property: "scale"; to: 1; duration: 520; easing.type: Easing.OutCubic }
+                }
             }
 
-            ParallelAnimation {
-                running: true
-                NumberAnimation { target: logo; property: "opacity"; to: 1; duration: 420; easing.type: Easing.OutCubic }
-                NumberAnimation { target: logo; property: "scale"; to: 1; duration: 520; easing.type: Easing.OutCubic }
+            Text {
+                width: parent.width
+                text: "Beautiful, fun & agentic Linux by DHH"
+                horizontalAlignment: Text.AlignHCenter
+                color: view.secondary
+                font.family: Style.font.family
+                font.pixelSize: Style.font.body
             }
-        }
-
-        Text {
-            width: parent.width
-            text: "Beautiful, fun & agentic Linux by DHH"
-            horizontalAlignment: Text.AlignHCenter
-            color: view.secondary
-            font.family: Style.font.family
-            font.pixelSize: Style.font.body
         }
 
         Item { width: 1; height: Style.space(4) }
