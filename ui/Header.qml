@@ -24,11 +24,17 @@ Item {
     Column {
         id: titles
         anchors { left: omi.right; leftMargin: Style.space(10); right: pauseButton.left; rightMargin: Style.space(8); verticalCenter: parent.verticalCenter }
+        // The title, or Omi's confirmation once the step is done: in the
+        // accent, faded in, as Omi's own words.
         Text {
+            id: titleText
+            readonly property bool cheering: !!header.host && header.host.cheering !== ""
             width: parent.width
-            text: header.step ? header.step.title : ""
+            text: cheering ? header.host.cheering : header.step ? header.step.title : ""
             wrapMode: Text.Wrap
-            color: Color.foreground
+            color: cheering ? Color.accent : Color.foreground
+            onCheeringChanged: if (cheering) cheerIn.restart()
+            NumberAnimation { id: cheerIn; target: titleText; property: "opacity"; from: 0; to: 1; duration: 220; easing.type: Easing.OutCubic }
             font.family: Style.font.family
             font.pixelSize: Style.font.heading
             font.weight: Font.DemiBold

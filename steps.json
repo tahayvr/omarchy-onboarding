@@ -34,7 +34,8 @@
       "goal": "One concept before any drills.",
       "screen": "This is the Super key: the one with the Windows logo, or ⌘ on a Mac keyboard, between Ctrl and Alt. Almost every shortcut I'll show you starts with it. Give it a press.",
       "done_when": "The app sees the key press while focused.",
-      "keys": "Super"
+      "keys": "Super",
+      "cheer": "That's the one!"
     },
     {
       "id": "menu",
@@ -54,7 +55,8 @@
           "label": "Close it again",
           "keys": "Esc"
         }
-      ]
+      ],
+      "cheer": "Now you know where everything lives."
     },
     {
       "id": "tiling",
@@ -84,7 +86,8 @@
           "label": "Move focus to the other window",
           "keys": "Super + Arrows"
         }
-      ]
+      ],
+      "cheer": "Look at them tile!"
     },
     {
       "id": "window-controls",
@@ -109,7 +112,8 @@
           "label": "Close the browser",
           "keys": "Super + W"
         }
-      ]
+      ],
+      "cheer": "Smooth moves!"
     },
     {
       "id": "workspaces",
@@ -134,7 +138,8 @@
           "label": "Send the terminal to workspace 2",
           "keys": "Super + Shift + 2"
         }
-      ]
+      ],
+      "cheer": "Two desktops, no sweat."
     },
     {
       "id": "clipboard",
@@ -154,7 +159,8 @@
           "label": "Click the field below and paste",
           "keys": "Super + V"
         }
-      ]
+      ],
+      "cheer": "Copied and pasted!"
     },
     {
       "id": "shortcuts",
@@ -174,7 +180,8 @@
           "label": "Close it again",
           "keys": "Esc"
         }
-      ]
+      ],
+      "cheer": "Now you'll never get lost."
     },
     {
       "id": "theme",
@@ -197,7 +204,8 @@
           "label": "Pick one and apply it",
           "keys": "← + → + Enter"
         }
-      ]
+      ],
+      "cheer": "Looking good!"
     },
     {
       "id": "display",
@@ -222,7 +230,8 @@
           "label": "Turn on the night light, then off again",
           "keys": "Super + Ctrl + N"
         }
-      ]
+      ],
+      "cheer": "Easy on the eyes."
     },
     {
       "id": "apps",
@@ -233,7 +242,8 @@
       "done_when": "The user presses Continue.",
       "requires": [
         "omarchy-menu-keybindings"
-      ]
+      ],
+      "cheer": "You're all set up."
     },
     {
       "id": "finish",

@@ -500,7 +500,11 @@ Item {
         if (!plan) return "nothing to do";
         log("do it for me: " + step.id + " " + JSON.stringify(plan));
         resetIdle();
-        if (plan.special === "complete") return next();
+        if (plan.special === "complete") {
+            omiReact("success");
+            advanceSoon();
+            return "ok";
+        }
         if (plan.special === "skip") return skip();
         if (plan.special === "fill") {
             Quickshell.execDetached(["wl-copy", Ui.CLIPBOARD_SAMPLE]);
@@ -580,8 +584,12 @@ Item {
         return "ok";
     }
 
+    // Looks right, Continue, Keep my theme: done, so Omi confirms it like a
+    // step that finished by itself.
     function primaryAction() {
-        if (step) next();
+        if (!step) return;
+        omiReact("success");
+        advanceSoon();
     }
 
     // Ticks a sub-task of a step without a drill tracker.
@@ -614,6 +622,7 @@ Item {
         // The clipboard step is over: its terminal goes.
         if (preparedStep === "clipboard") closeSample();
         preparedStep = step.id;
+        cheering = "";
         if (!tutorialHome && step.id !== "welcome")
             tutorialHome = Hyprland.focusedWorkspace ? Hyprland.focusedWorkspace.id : 0;
         if (step.id === "welcome") {
@@ -902,9 +911,12 @@ Item {
     // A step that finished by itself moves on after Omi's success has played,
     // and only if the user is still on it (they may have skipped meanwhile).
     property string advancing: ""
+    // What Omi says in place of the card's title meanwhile (the step's cheer).
+    property string cheering: ""
     function advanceSoon() {
         if (!step || advancing === step.id) return;
         advancing = step.id;
+        cheering = step.cheer || "";
         log("step " + step.id + " finished; moving on after Omi's success");
         advanceTimer.restart();
     }
@@ -914,6 +926,7 @@ Item {
         onTriggered: {
             var id = root.advancing;
             root.advancing = "";
+            root.cheering = "";
             if (root.step && root.step.id === id) root.next();
         }
     }
