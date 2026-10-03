@@ -40,7 +40,7 @@ FocusScope {
     implicitHeight: column.implicitHeight
 
     Component.onCompleted: Qt.callLater(function () { yesButton.forceActiveFocus(); })
-    // On the welcome page Esc is the same as "No, exit": no confirmation.
+    // On the welcome page Esc is the same as "Exit": no confirmation.
     // Y is "Teach me". The buttons only take Return, Enter and Space, so both
     // reach here whichever button has focus.
     Keys.onEscapePressed: view.host.closeWelcome()
@@ -222,7 +222,7 @@ FocusScope {
             }
 
             Column {
-                width: parent.width - omi.width - noButton.width - yesButton.width - Style.space(12) * 2 - Style.space(8)
+                width: parent.width - omi.width - exitButton.width - yesButton.width - Style.space(12) * 2 - Style.space(8)
                 anchors.verticalCenter: parent.verticalCenter
                 spacing: Style.space(2)
                 Text {
@@ -248,7 +248,7 @@ FocusScope {
                 anchors.verticalCenter: parent.verticalCenter
                 spacing: Style.space(8)
                 Button { id: yesButton; text: "Teach me"; key: "Y"; primary: true; onClicked: view.host.startTutorial() }
-                Button { id: noButton; text: "No, exit"; key: "Esc"; onClicked: view.host.closeWelcome() }
+                Button { id: exitButton; text: "Exit"; key: "Esc"; onClicked: view.host.closeWelcome() }
             }
         }
     }
