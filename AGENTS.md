@@ -30,6 +30,11 @@ code, because Omarchy ships only bash and QML. Built against Omarchy 4.0.4
   changes never need code.
 - `bin/omarchy-onboarding` is the CLI. The `onboarding-*` scripts are probes
   the overlay runs.
+- `omi/` is Omi, the Omarchy mascot, copied from Meet Omi
+  (github.com/tahayvr/meet-omi) by `scripts/sync-omi.sh`; `omi/SOURCE` says
+  from which commit. Don't edit it here: fix Meet Omi and sync. New Omi mode
+  or reaction ideas go in Meet Omi's `docs/ideas.md`. Which mode Omi shows is
+  decided in `lib/Ui.js` (`welcomeOmi`).
 - `integration/omarchy-first-run.patch` is the upstream change against
   `quattro`. It adds `omarchy-onboarding login` to `autostart.lua`, and skips
   `welcome.sh` and `wifi.sh` when onboarding is installed. It keeps the agent

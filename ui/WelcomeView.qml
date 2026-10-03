@@ -1,9 +1,11 @@
 import QtQuick
 import QtQuick.Effects
 import qs.Commons
+import "../omi"
+import "../lib/Ui.js" as Ui
 
 // The welcome screen: the logo, a short checklist (Wi-Fi, the Omarchy update,
-// where every shortcut lives), and the way into the tutorial.
+// where every shortcut lives), and Omi offering the tutorial.
 FocusScope {
     id: view
 
@@ -12,6 +14,25 @@ FocusScope {
     property string logoPath: ""
     // From Ui.welcomeChecklist: [{id, done, info, title, detail, action, keys}].
     property var rows: []
+    // From Ui.welcomeOmi: what Omi shows while the checklist is in this state.
+    property string omiMode: "idle"
+
+    // Omi starts as the plain logo and comes to life once the card is up.
+    property bool omiAwake: false
+    property string omiBefore: ""
+    onOmiModeChanged: {
+        const reaction = Ui.welcomeOmiReaction(omiBefore, omiMode);
+        omiBefore = omiMode;
+        if (omiAwake && reaction) omi.react(reaction);
+    }
+    Timer {
+        interval: 450
+        running: true
+        onTriggered: {
+            view.omiBefore = view.omiMode;
+            view.omiAwake = true;
+        }
+    }
 
     readonly property color secondary: Qt.rgba(Color.foreground.r, Color.foreground.g, Color.foreground.b, 0.62)
 
@@ -20,7 +41,7 @@ FocusScope {
 
     Component.onCompleted: Qt.callLater(function () { yesButton.forceActiveFocus(); })
     // On the welcome page Esc is the same as "No, exit": no confirmation.
-    // Y is "Yes". The buttons only take Return, Enter and Space, so both
+    // Y is "Teach me". The buttons only take Return, Enter and Space, so both
     // reach here whichever button has focus.
     Keys.onEscapePressed: view.host.closeWelcome()
     Keys.onPressed: function (event) {
@@ -181,20 +202,54 @@ FocusScope {
         // --- the tutorial, set apart from the checklist by space alone
         Item { width: 1; height: Style.space(14) }
 
+        // Omi offers the tour: Omi, what it offers, and the two answers.
         Row {
             width: parent.width
-            spacing: Style.space(8)
-            Text {
-                width: parent.width - noButton.width - yesButton.width - Style.space(16)
+            spacing: Style.space(12)
+
+            // Omi, the Omarchy mascot, in the theme's accent. It starts as the
+            // plain logo and comes to life once the card is up.
+            Omi {
+                id: omi
                 anchors.verticalCenter: parent.verticalCenter
-                text: "Want a tutorial on how Omarchy works?"
-                wrapMode: Text.Wrap
-                color: Color.foreground
-                font.family: Style.font.family
-                font.pixelSize: Style.font.title
+                width: Style.space(76)
+                height: width
+                color: Color.accent
+                // At this size a bob is a few pixels, and snapped to whole
+                // pixels it steps rather than glides; the face still moves.
+                bodyMotion: false
+                mode: view.omiAwake ? view.omiMode : "mark"
             }
-            Button { id: yesButton; text: "Yes"; key: "Y"; primary: true; onClicked: view.host.startTutorial() }
-            Button { id: noButton; text: "No, exit"; key: "Esc"; onClicked: view.host.closeWelcome() }
+
+            Column {
+                width: parent.width - omi.width - noButton.width - yesButton.width - Style.space(12) * 2 - Style.space(8)
+                anchors.verticalCenter: parent.verticalCenter
+                spacing: Style.space(2)
+                Text {
+                    width: parent.width
+                    text: "Meet Omi"
+                    wrapMode: Text.Wrap
+                    color: Color.foreground
+                    font.family: Style.font.family
+                    font.pixelSize: Style.font.title
+                    font.weight: Font.DemiBold
+                }
+                Text {
+                    width: parent.width
+                    text: "Omi can walk you through how Omarchy works."
+                    wrapMode: Text.Wrap
+                    color: view.secondary
+                    font.family: Style.font.family
+                    font.pixelSize: Style.font.body
+                }
+            }
+
+            Row {
+                anchors.verticalCenter: parent.verticalCenter
+                spacing: Style.space(8)
+                Button { id: yesButton; text: "Teach me"; key: "Y"; primary: true; onClicked: view.host.startTutorial() }
+                Button { id: noButton; text: "No, exit"; key: "Esc"; onClicked: view.host.closeWelcome() }
+            }
         }
     }
 }

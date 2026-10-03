@@ -507,6 +507,23 @@ test("centered steps take the keyboard; drills and panel steps stay in the corne
     D.DRILL_STEPS.concat(["clipboard", "theme", "display", "apps"]).forEach(id => ok(!U.isCentered(id), id));
 });
 
+test("welcome Omi follows the checklist", () => {
+    eq(U.welcomeOmi({ online: false }), "offline-searching");
+    eq(U.welcomeOmi({ online: false, update: "current" }), "offline-searching", "offline wins");
+    eq(U.welcomeOmi({ online: true }), "thinking", "the check hasn't landed");
+    eq(U.welcomeOmi({ online: true, update: "checking" }), "thinking");
+    eq(U.welcomeOmi({ online: true, update: "current" }), "idle");
+    eq(U.welcomeOmi({ online: true, update: "available" }), "idle");
+    eq(U.welcomeOmi({ online: true, update: "updating" }), "updating");
+    eq(U.welcomeOmi({ online: true, update: "unknown" }), "confused");
+    eq(U.welcomeOmiReaction("offline-searching", "thinking"), "success", "came online");
+    eq(U.welcomeOmiReaction("updating", "idle"), "success", "update finished");
+    eq(U.welcomeOmiReaction("updating", "confused"), "", "update failed");
+    eq(U.welcomeOmiReaction("thinking", "idle"), "", "a check landing isn't news");
+    eq(U.welcomeOmiReaction("idle", "offline-searching"), "", "going offline");
+    eq(U.welcomeOmiReaction("idle", "idle"), "");
+});
+
 test("the corner card moves out of the way while tiling", () => {
     eq(U.coachPlacement("menu", {}), "bottom-right");
     eq(U.coachPlacement("theme", {}), "bottom-center", "under the theme picker");

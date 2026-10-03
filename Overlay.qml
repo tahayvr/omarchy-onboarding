@@ -1053,7 +1053,12 @@ Item {
 
     Component {
         id: welcomeView
-        WelcomeView { host: root; logoPath: (root.omarchyPath || "/usr/share/omarchy") + "/logo.svg"; rows: root.checklist }
+        WelcomeView {
+            host: root
+            logoPath: (root.omarchyPath || "/usr/share/omarchy") + "/logo.svg"
+            rows: root.checklist
+            omiMode: Ui.welcomeOmi({ online: root.facts.online === true, update: root.updating ? "updating" : root.updateStatus })
+        }
     }
 
     Component {
