@@ -1,7 +1,8 @@
 import QtQuick
 import qs.Commons
 
-// "Step 4 of 17 · Learn to move", the step title, and a pause button.
+// The step's title and a pause button. Progress is the line along the card's
+// top border (ProgressLine).
 Item {
     id: header
 
@@ -14,13 +15,6 @@ Item {
     Column {
         id: titles
         anchors { left: parent.left; right: pauseButton.left; rightMargin: Style.space(8) }
-        spacing: Style.space(2)
-        Text {
-            text: header.host ? header.host.progressText : ""
-            color: Qt.rgba(Color.foreground.r, Color.foreground.g, Color.foreground.b, 0.62)
-            font.family: Style.font.family
-            font.pixelSize: Style.font.caption
-        }
         Text {
             width: parent.width
             text: header.step ? header.step.title : ""

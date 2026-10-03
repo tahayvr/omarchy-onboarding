@@ -117,13 +117,14 @@ Item {
     readonly property string primaryText: !step ? "" : step.id === "display" ? "Looks right"
                                         : step.id === "apps" ? "Continue" : ""
     readonly property bool primaryEnabled: true
-    readonly property string progressText: {
-        if (!step || !steps) return "";
-        var tutorial = Engine.tutorialSteps(steps);
-        var i = tutorial.map(function (s) { return s.id; }).indexOf(step.id);
-        if (i < 0) return "";
-        var phase = steps.phases.filter(function (p) { return p.number === step.phase; })[0];
-        return "Tutorial " + (i + 1) + " of " + tutorial.length + (phase ? " · " + phase.title : "");
+    // How far through the tutorial, 0 to 1: the current tutorial step counts,
+    // and the finish screen is full. -1 (no line) on the welcome page.
+    readonly property real progress: {
+        if (!step || !steps) return -1;
+        if (step.id === Engine.FINISH) return 1;
+        var tutorial = Engine.tutorialSteps(steps).map(function (s) { return s.id; });
+        var i = tutorial.indexOf(step.id);
+        return i < 0 ? -1 : (i + 1) / tutorial.length;
     }
 
     onStepChanged: stepEntered()
@@ -941,6 +942,10 @@ Item {
             border.color: Color.popups.border
             border.width: 1
             radius: Style.cornerRadius
+
+            ProgressLine {
+                progress: root.pausing || root.confirm || root.error ? -1 : root.progress
+            }
 
             Loader {
                 id: centerView

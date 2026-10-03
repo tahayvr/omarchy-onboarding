@@ -20,6 +20,8 @@ Rectangle {
 
     implicitWidth: Style.space(460)
     implicitHeight: column.implicitHeight + Style.space(32)
+
+    ProgressLine { progress: card.host ? card.host.progress : -1 }
     color: Color.popups.background
     border.color: Color.popups.border
     border.width: 1
