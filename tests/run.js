@@ -465,9 +465,11 @@ test("window controls need the round trip", () => {
     eq(feed(D.create("window-controls"), [hypr("changefloatingmode>>a,0"), hypr("fullscreen>>0")]), []);
 });
 
-test("workspaces: switch and move", () => {
+test("workspaces: switch, back and move", () => {
     eq(feed(D.create("workspaces"), [hypr("workspacev2>>2,2"), hypr("workspacev2>>1,1"), hypr("movewindowv2>>a,2,2")]),
-       ticks(["switch", "move"]));
+       ticks(["switch", "back", "move"]));
+    eq(feed(D.create("workspaces"), [hypr("workspacev2>>5,5"), hypr("workspacev2>>3,3")]),
+       ticks(["switch", "back"]), "anywhere and back counts");
 });
 
 test("every drill matches the manifest's sub-tasks", () => {
@@ -615,7 +617,7 @@ test("do it for me never touches windows it doesn't know", () => {
     eq(U.doItPlan("tiling", { ticked: { terminal: true, browser: true }, windows: {} }), { special: "skip" });
     eq(U.doItPlan("window-controls", { ticked: {}, windows: {} }), { special: "skip" });
     eq(U.doItPlan("window-controls", { ticked: { float: true, fullscreen: true }, windows: { terminal: "t1" } }), { special: "skip" });
-    eq(U.doItPlan("workspaces", { ticked: { switch: true }, windows: {} }), { special: "skip" });
+    eq(U.doItPlan("workspaces", { ticked: { switch: true, back: true }, windows: {} }), { special: "skip" });
 });
 
 test("do it for me: window controls and workspaces", () => {
@@ -625,13 +627,24 @@ test("do it for me: window controls and workspaces", () => {
        ["hyprctl dispatch hl.dsp.window.close({ window = 'address:0xb1' })"]);
     eq(argvs(U.doItPlan("workspaces", { ticked: {}, workspace: 3 })),
        ["hyprctl dispatch hl.dsp.focus({ workspace = '4' })", "hyprctl dispatch hl.dsp.focus({ workspace = '3' })"]);
-    eq(argvs(U.doItPlan("workspaces", { ticked: { switch: true }, windows: w, workspace: 9 }))[1],
+    eq(argvs(U.doItPlan("workspaces", { ticked: { switch: true }, workspace: 4, home: 3 })),
+       ["hyprctl dispatch hl.dsp.focus({ workspace = '3' })"], "back to where the step began");
+    eq(argvs(U.doItPlan("workspaces", { ticked: { switch: true, back: true }, windows: w, workspace: 9 }))[1],
        "hyprctl dispatch hl.dsp.window.move({ workspace = '8' })");
 });
 
 test("do it for me: display", () => {
     eq(argvs(U.doItPlan("display", { ticked: {} })), ["omarchy-hyprland-monitor-scaling up", "omarchy-hyprland-monitor-scaling down"]);
-    eq(argvs(U.doItPlan("display", { ticked: { scale: true } })), ["omarchy-toggle-nightlight", "omarchy-toggle-nightlight"]);
+    eq(argvs(U.doItPlan("display", { ticked: { up: true } })), ["omarchy-hyprland-monitor-scaling down"]);
+    eq(argvs(U.doItPlan("display", { ticked: { up: true, down: true } })), ["omarchy-toggle-nightlight", "omarchy-toggle-nightlight"]);
+});
+
+test("scaling up and down", () => {
+    eq(U.scaleChange([1.6], [1.75]), "up");
+    eq(U.scaleChange([1.75], [1.6]), "down");
+    eq(U.scaleChange([1.6], [1.6]), "");
+    eq(U.scaleChange(null, [1.6]), "", "the first reading");
+    eq(U.scaleChange([1, 2], [1, 1.5]), "down", "the second display");
 });
 
 test("do it for me: specials and steps without one", () => {
@@ -715,10 +728,10 @@ function replay(name, from) {
     return { w, events };
 }
 
-// The M2 done condition, from a live walkthrough on Omarchy 4.0.4: every
+// The M2 done condition, from a live walkthrough through the plugin: every
 // drill sub-task ticks, in order, with no resets.
 test("live walkthrough ticks every drill sub-task", () => {
-    const { w, events } = replay("walkthrough-4.0.4.jsonl");
+    const { w, events } = replay("walkthrough-live.jsonl");
     ok(w.done(), "all drills complete");
     D.DRILL_STEPS.forEach(step => {
         MANIFEST.steps.find(s => s.id === step).subtasks.forEach(t => {
@@ -736,6 +749,15 @@ test("plugin-recorded walkthrough ticks every drill sub-task", () => {
     ok(w.done(), "all drills complete");
     ok(!events.some(e => e.type === "tick" && !e.ticked), "no resets");
     eq(events.filter(e => e.type === "complete").map(e => e.step), D.DRILL_STEPS);
+});
+
+// Recorded before the shortcuts step asked to close the list: it ends with
+// the list open, so every drill completes but that one.
+test("socket2 walkthrough predates closing the shortcut list", () => {
+    const { w, events } = replay("walkthrough-4.0.4.jsonl");
+    eq(events.filter(e => e.type === "complete").map(e => e.step), D.DRILL_STEPS.slice(0, -1));
+    eq(w.drill.step, "shortcuts");
+    eq(Object.keys(w.drill.ticked), ["open"]);
 });
 
 test("synthetic walkthrough completes too", () => {

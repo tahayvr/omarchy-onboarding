@@ -112,7 +112,7 @@ Rectangle {
                     anchors.fill: parent
                     verticalAlignment: Text.AlignVCenter
                     visible: !field.text && !field.activeFocus
-                    text: "Click here, then press Super + V"
+                    text: "Click here and paste"
                     color: Qt.rgba(Color.foreground.r, Color.foreground.g, Color.foreground.b, 0.62)
                     font: field.font
                 }

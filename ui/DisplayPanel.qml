@@ -17,7 +17,7 @@ Column {
     Line {
         visible: panel.host.monitors.length > 1
         secondary: true
-        text: "With more than one screen, Display settings (Super + Ctrl + D) arranges them."
+        text: "With more than one screen, Display settings arranges them."
     }
-    Button { text: "Display settings"; onClicked: panel.host.openPanel("omarchy.monitor") }
+    Button { text: "Display settings"; key: "Super + Ctrl + D"; onClicked: panel.host.openPanel("omarchy.monitor") }
 }

@@ -61,6 +61,8 @@ Item {
     // The tiling drill's terminal and browser, kept for the later drills and
     // "Do it for me", which only ever act on these.
     property var drillWindows: ({})
+    // The workspace a drill began on: "Do it for me" comes back to it.
+    property int drillHome: 1
     property double startedAt: 0
 
     // Esc or ✕ shows the pause dialog over whatever step is current.
@@ -87,7 +89,8 @@ Item {
     // against what it was when the step began.
     property string themeBaseline: ""
     property var monitors: []
-    property var baselineScales: null
+    // The last scales read, to tell scaling up from scaling down.
+    property var lastScales: null
     property string sunsetBaseline: ""
     property bool sunsetSeen: false
     property var apps: []
@@ -427,7 +430,8 @@ Item {
         var plan = Ui.doItPlan(step.id, {
             ticked: ticked,
             windows: drillWindows,
-            workspace: Hyprland.focusedWorkspace ? Hyprland.focusedWorkspace.id : 1
+            workspace: Hyprland.focusedWorkspace ? Hyprland.focusedWorkspace.id : 1,
+            home: drillHome
         });
         if (!plan) return "nothing to do";
         log("do it for me: " + step.id + " " + JSON.stringify(plan));
@@ -550,7 +554,7 @@ Item {
             themeBaseline = "";
             themeProbe.running = true;
         } else if (step.id === "display") {
-            baselineScales = null;
+            lastScales = null;
             sunsetBaseline = "";
             sunsetSeen = false;
         } else if (step.id === "apps") {
@@ -579,6 +583,7 @@ Item {
         }
         if (drill && drill.step === id) return;
         drill = Drills.create(id, { defaultBrowser: defaultBrowser });
+        drillHome = Hyprland.focusedWorkspace ? Hyprland.focusedWorkspace.id : 1;
         ticked = {};
         lastClients = null;
         log("drill " + id + " started");
@@ -858,9 +863,11 @@ Item {
                 var list;
                 try { list = JSON.parse(text); } catch (e) { return; }
                 root.monitors = list.map(function (m) { return { name: m.name, width: m.width, height: m.height, scale: m.scale }; });
-                var scales = root.monitors.map(function (m) { return m.scale; }).join(",");
-                if (root.baselineScales === null) root.baselineScales = scales;
-                else if (scales !== root.baselineScales) root.tick("scale");
+                var scales = root.monitors.map(function (m) { return m.scale; });
+                var change = Ui.scaleChange(root.lastScales, scales);
+                root.lastScales = scales;
+                if (change === "up") root.tick("up");
+                else if (change === "down" && root.ticked.up) root.tick("down");
             }
         }
     }

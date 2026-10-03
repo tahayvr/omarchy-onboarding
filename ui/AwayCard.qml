@@ -32,8 +32,13 @@ Rectangle {
                 anchors.verticalCenter: parent.verticalCenter
                 text: card.reason === "wifi" ? "Pick your network in the panel. I'll be back once you're online."
                     : card.reason === "update" ? "Omarchy is updating in the terminal. I'll be back when it's done."
-                    : "That's every shortcut, and you can search it. Press Esc and I'll be back."
+                    : "That's every shortcut, and you can search it. Close it and I'll be back."
             }
+        }
+        KeyCaps {
+            visible: card.reason === "keys"
+            anchors.right: parent.right
+            keys: "Esc"
         }
         Button {
             anchors.right: parent.right

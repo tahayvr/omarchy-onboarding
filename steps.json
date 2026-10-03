@@ -116,13 +116,18 @@
       "number": 5,
       "phase": 1,
       "title": "Workspaces",
-      "screen": "See the numbers in the bar? Each one is a workspace: a separate desktop. Super + a number jumps there.",
+      "screen": "See the numbers in the bar? Each one is a workspace: a separate desktop.",
       "done_when": "A workspace switch and a move-to-workspace are seen.",
       "subtasks": [
         {
           "id": "switch",
-          "label": "Jump to workspace 2, then back with Super + 1",
+          "label": "Jump to workspace 2",
           "keys": "Super + 2"
+        },
+        {
+          "id": "back",
+          "label": "Come back to workspace 1",
+          "keys": "Super + 1"
         },
         {
           "id": "move",
@@ -136,7 +141,7 @@
       "number": 6,
       "phase": 1,
       "title": "Copy and paste the Omarchy way",
-      "screen": "Super + C, V and X copy, paste and cut everywhere, even in the terminal. Copy the line in the terminal I opened, then paste it below.",
+      "screen": "Copy, paste and cut work the same way everywhere, even in the terminal. Copy the line in the terminal I opened, then paste it below.",
       "done_when": "The field contains the expected text.",
       "subtasks": [
         {
@@ -156,13 +161,18 @@
       "number": 7,
       "phase": 1,
       "title": "Find any shortcut",
-      "screen": "You don't have to remember any of this. Super + K lists every shortcut, any time, and Esc closes it.",
-      "done_when": "The bindings overlay was opened.",
+      "screen": "You don't have to remember any of this. Every shortcut is in one list, any time.",
+      "done_when": "The bindings list was opened and closed.",
       "subtasks": [
         {
           "id": "open",
           "label": "Open the list of every shortcut",
           "keys": "Super + K"
+        },
+        {
+          "id": "close",
+          "label": "Close it again",
+          "keys": "Esc"
         }
       ]
     },
@@ -184,8 +194,8 @@
         },
         {
           "id": "apply",
-          "label": "Pick one with the arrows and Enter",
-          "keys": "Enter"
+          "label": "Pick one and apply it",
+          "keys": "Arrows + Enter"
         }
       ]
     },
@@ -198,13 +208,18 @@
       "done_when": "The user confirms it looks right.",
       "subtasks": [
         {
-          "id": "scale",
-          "label": "Scale up, then down again (Super + Alt + /)",
+          "id": "up",
+          "label": "Scale up",
           "keys": "Super + /"
         },
         {
+          "id": "down",
+          "label": "Scale back down",
+          "keys": "Super + Alt + /"
+        },
+        {
           "id": "nightlight",
-          "label": "Try the night light (press again to turn it off)",
+          "label": "Turn on the night light, then off again",
           "keys": "Super + Ctrl + N"
         }
       ]
@@ -225,8 +240,18 @@
       "number": 11,
       "phase": 3,
       "title": "You're ready",
-      "screen": "That's the tour! Remember two keys: Super + K shows every shortcut, and Super + Space opens the menu. Run omarchy onboarding to see me again, or omarchy onboarding --step <name> for one lesson.",
-      "done_when": "The user presses Finish."
+      "screen": "That's the tour! These two are all you need to remember. Run omarchy onboarding to see me again, or omarchy onboarding --step <name> for one lesson.",
+      "done_when": "The user presses Finish.",
+      "remember": [
+        {
+          "label": "Every shortcut",
+          "keys": "Super + K"
+        },
+        {
+          "label": "The Omarchy menu",
+          "keys": "Super + Space"
+        }
+      ]
     }
   ]
 }

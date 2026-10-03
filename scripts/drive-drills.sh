@@ -166,8 +166,10 @@ sample_terminal=$(wait_window '^foot$' "$WS_B" "$before")
 "${CLI[@]}" next >/dev/null # pasting into the overlay's field needs a pointer click
 wait_step shortcuts
 
-say "Step 9: Super + K"
+say "Step 9: Super + K, then Esc"
 setsid -f omarchy-menu-keybindings >/dev/null 2>&1 </dev/null
+sleep 1.5
+omarchy-menu toggle # what Esc does to the list: the menu's layer closes
 wait_step theme
 
 say "All drills completed their steps."

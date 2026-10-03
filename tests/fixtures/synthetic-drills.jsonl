@@ -25,3 +25,4 @@
 # Step 9: Super + K.
 {"t":10000,"kind":"keybindings","open":true}
 {"t":10001,"kind":"hypr","line":"openlayer>>omarchy-menu"}
+{"t":11000,"kind":"hypr","line":"closelayer>>omarchy-menu"}

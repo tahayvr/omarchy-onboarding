@@ -35,6 +35,34 @@ FocusScope {
             font.pixelSize: Style.font.title
         }
 
+        // Keys worth remembering (the finish screen's `remember`).
+        Column {
+            visible: !!(view.step && view.step.remember)
+            width: parent.width
+            spacing: Style.space(8)
+            Repeater {
+                model: view.step && view.step.remember ? view.step.remember : []
+                delegate: Item {
+                    required property var modelData
+                    width: parent.width
+                    implicitHeight: Math.max(rememberCaps.implicitHeight, rememberLabel.implicitHeight)
+                    Text {
+                        id: rememberLabel
+                        anchors.verticalCenter: parent.verticalCenter
+                        text: modelData.label
+                        color: Color.foreground
+                        font.family: Style.font.family
+                        font.pixelSize: Style.font.body
+                    }
+                    KeyCaps {
+                        id: rememberCaps
+                        anchors { right: parent.right; verticalCenter: parent.verticalCenter }
+                        keys: modelData.keys
+                    }
+                }
+            }
+        }
+
         Column {
             visible: view.finishing && view.openSteps.length > 0
             width: parent.width

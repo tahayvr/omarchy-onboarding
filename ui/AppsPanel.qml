@@ -7,10 +7,17 @@ Column {
     property var host
     spacing: Style.space(8)
 
-    Line {
+    Row {
         visible: panel.host.apps.length === 0
-        secondary: true
-        text: "I couldn't read your app shortcuts, but Super + K lists them all."
+        width: panel.width
+        spacing: Style.space(8)
+        Line {
+            width: parent.width - listCaps.width - parent.spacing
+            anchors.verticalCenter: parent.verticalCenter
+            secondary: true
+            text: "I couldn't read your app shortcuts, but the full list has them all."
+        }
+        KeyCaps { id: listCaps; anchors.verticalCenter: parent.verticalCenter; keys: "Super + K" }
     }
 
     Repeater {
