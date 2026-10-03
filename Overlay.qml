@@ -639,14 +639,6 @@ Item {
         watchChanges: false
     }
 
-    FileView {
-        id: logoFile
-        path: (root.omarchyPath || "/usr/share/omarchy") + "/logo.txt"
-        blockLoading: true
-        watchChanges: false
-        printErrors: false
-    }
-
     // Write-only: reads go through bin/onboarding-read (see stateLoaded).
     FileView {
         id: stateFile
@@ -992,7 +984,7 @@ Item {
 
     Component {
         id: welcomeView
-        WelcomeView { host: root; logoText: logoFile.text(); rows: root.checklist }
+        WelcomeView { host: root; logoPath: (root.omarchyPath || "/usr/share/omarchy") + "/logo.svg"; rows: root.checklist }
     }
 
     Component {

@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Effects
 import qs.Commons
 
 // The welcome screen: the logo, a short checklist (Wi-Fi, the Omarchy update,
@@ -7,7 +8,8 @@ FocusScope {
     id: view
 
     property var host
-    property string logoText: ""
+    // Omarchy's logo.svg: black on transparent, tinted to the theme's accent.
+    property string logoPath: ""
     // From Ui.welcomeChecklist: [{id, done, info, title, detail, action, keys}].
     property var rows: []
 
@@ -33,23 +35,41 @@ FocusScope {
             font.pixelSize: Style.font.heading
         }
 
-        // Omarchy's own text logo, revealed line by line in the theme's accent.
-        Column {
+        // Omarchy's own logo.svg, tinted to the theme's accent the way the
+        // bar tints symbolic tray icons. It is black, so it is brightened to
+        // white first for the colorization to take.
+        Item {
+            id: logo
             anchors.horizontalCenter: parent.horizontalCenter
-            Repeater {
-                model: view.logoText ? view.logoText.replace(/\n+$/, "").split("\n") : []
-                delegate: Text {
-                    id: logoLine
-                    required property string modelData
-                    required property int index
-                    text: modelData
-                    color: Color.accent
-                    font.family: Style.font.family
-                    font.pixelSize: Math.max(6, Math.round(Style.font.caption * 0.8))
-                    opacity: 0
-                    Behavior on opacity { NumberAnimation { duration: 260; easing.type: Easing.OutCubic } }
-                    Timer { interval: 40 * index + 1; running: true; onTriggered: logoLine.opacity = 1 }
-                }
+            width: Style.space(420)
+            height: Math.round(width * 285 / 1215)
+            opacity: 0
+            scale: 0.96
+
+            Image {
+                id: logoImage
+                anchors.fill: parent
+                source: view.logoPath ? "file://" + view.logoPath : ""
+                fillMode: Image.PreserveAspectFit
+                sourceSize.width: Math.round(width * Screen.devicePixelRatio)
+                sourceSize.height: Math.round(height * Screen.devicePixelRatio)
+                smooth: true
+                visible: false
+                layer.enabled: true
+            }
+
+            MultiEffect {
+                anchors.fill: logoImage
+                source: logoImage
+                brightness: 1.0
+                colorization: 1.0
+                colorizationColor: Color.accent
+            }
+
+            ParallelAnimation {
+                running: true
+                NumberAnimation { target: logo; property: "opacity"; to: 1; duration: 420; easing.type: Easing.OutCubic }
+                NumberAnimation { target: logo; property: "scale"; to: 1; duration: 520; easing.type: Easing.OutCubic }
             }
         }
 
