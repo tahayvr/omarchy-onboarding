@@ -36,6 +36,9 @@ FocusScope {
         }
     }
 
+    // The update row's button (Update or Try again), which U presses.
+    readonly property bool updateAction: rows.some(function (r) { return r.id === "update" && r.action !== ""; })
+
     readonly property color secondary: Qt.rgba(Color.foreground.r, Color.foreground.g, Color.foreground.b, 0.62)
 
     implicitWidth: Style.space(600)
@@ -43,13 +46,17 @@ FocusScope {
 
     Component.onCompleted: Qt.callLater(function () { yesButton.forceActiveFocus(); })
     // On the welcome page Esc is the same as "Exit": no confirmation.
-    // Y is "Teach me". The buttons only take Return, Enter and Space, so both
-    // reach here whichever button has focus.
+    // Y is "Teach me" and U the update row's button. The buttons only take
+    // Return, Enter and Space, so these reach here whichever button has focus.
     Keys.onEscapePressed: view.host.closeWelcome()
     Keys.onPressed: function (event) {
-        if (event.key === Qt.Key_Y && !(event.modifiers & (Qt.ControlModifier | Qt.AltModifier | Qt.MetaModifier))) {
+        if (event.modifiers & (Qt.ControlModifier | Qt.AltModifier | Qt.MetaModifier)) return;
+        if (event.key === Qt.Key_Y) {
             event.accepted = true;
             view.host.startTutorial();
+        } else if (event.key === Qt.Key_U && view.updateAction) {
+            event.accepted = true;
+            view.host.checklistAction("update");
         }
     }
 
@@ -184,6 +191,7 @@ FocusScope {
                         Button {
                             visible: row.modelData.action !== ""
                             text: row.modelData.action
+                            key: row.modelData.id === "update" ? "U" : ""
                             primary: row.modelData.id !== "keys"
                             onClicked: view.host.checklistAction(row.modelData.id)
                         }

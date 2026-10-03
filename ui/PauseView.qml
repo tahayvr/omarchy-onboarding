@@ -12,6 +12,12 @@ FocusScope {
 
     Component.onCompleted: Qt.callLater(function () { keepGoing.forceActiveFocus(); })
     Keys.onEscapePressed: view.host.resume()
+    // R and Q, as shown on their buttons; Esc keeps going.
+    Keys.onPressed: function (event) {
+        if (event.modifiers & (Qt.ControlModifier | Qt.AltModifier | Qt.MetaModifier)) return;
+        if (event.key === Qt.Key_R) { event.accepted = true; view.host.pause(); }
+        else if (event.key === Qt.Key_Q) { event.accepted = true; view.host.dismiss(); }
+    }
 
     Column {
         id: column
@@ -41,9 +47,9 @@ FocusScope {
         Row {
             anchors.right: parent.right
             spacing: Style.space(8)
-            Button { text: "Quit onboarding"; onClicked: view.host.dismiss() }
-            Button { text: "Remind me later"; onClicked: view.host.pause() }
-            Button { id: keepGoing; text: "Keep going"; primary: true; onClicked: view.host.resume() }
+            Button { text: "Quit onboarding"; key: "Q"; onClicked: view.host.dismiss() }
+            Button { text: "Remind me later"; key: "R"; onClicked: view.host.pause() }
+            Button { id: keepGoing; text: "Keep going"; key: "Esc"; primary: true; onClicked: view.host.resume() }
         }
     }
 }

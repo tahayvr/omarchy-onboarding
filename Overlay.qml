@@ -82,7 +82,8 @@ Item {
     property string ssid: ""
     property string updateStatus: ""
     property bool updating: false
-    // What the checklist stepped aside for: "", "wifi", "update" or "keys".
+    // What the checklist stepped aside for: "", "wifi", "update", "keys", "menu"
+    // or "panel".
     property string away: ""
     readonly property var checklist: Ui.welcomeChecklist({
         online: facts.online === true,
@@ -122,21 +123,48 @@ Item {
     readonly property var step: flow && steps ? Engine.currentStep(steps, flow) : null
     readonly property bool centered: away === "" && (pausing || confirm !== null || error !== ""
                                                      || (step !== null && Ui.isCentered(step.id)))
-    // Ctrl + / skips while a tutorial step is up. It's a Hyprland
-    // bind (bin/onboarding-skip-bind), because the corner card never takes the
-    // keyboard. skipKey is "" when the user has the combo bound to something else.
-    readonly property bool skipBindWanted: opened && flow !== null && step !== null
-                                           && step.id !== "welcome" && step.id !== "finish"
-                                           && away === "" && !pausing && confirm === null && error === ""
-    property string skipKey: ""
-    onSkipBindWantedChanged: setSkipBind()
-    // A shell restart mid-tutorial leaves the bind behind.
-    Component.onCompleted: setSkipBind()
+    // The tutorial cards' buttons as keys. They're Hyprland binds
+    // (bin/onboarding-binds), because the corner card never takes the
+    // keyboard; each calls key(), which acts only while its button is shown.
+    // tutorialKeys has the label of each one bound: none for a combo the user
+    // has bound to something else.
+    readonly property var tutorialKeyLabels: ({ skip: "Ctrl + /", primary: "Ctrl + Enter", doit: "Ctrl + .", pause: "Ctrl + Esc" })
+    readonly property bool tutorialKeysWanted: opened && flow !== null && step !== null
+                                               && step.id !== "welcome" && step.id !== "finish"
+                                               && away === "" && !pausing && confirm === null && error === ""
+    property var tutorialKeys: ({})
+    onTutorialKeysWantedChanged: setTutorialKeys()
+    // A shell restart mid-tutorial leaves the binds behind.
+    Component.onCompleted: setTutorialKeys()
 
-    function setSkipBind() {
-        skipBinder.running = false;
-        skipBinder.command = [pluginDir + "/bin/onboarding-skip-bind", skipBindWanted ? "on" : "off"];
-        skipBinder.running = true;
+    // Removing runs detached: hiding the overlay unloads the plugin, which
+    // would kill a process of its own halfway and leave binds behind.
+    function setTutorialKeys() {
+        binder.running = false;
+        if (!tutorialKeysWanted) {
+            tutorialKeys = {};
+            Quickshell.execDetached([pluginDir + "/bin/onboarding-binds", "off"]);
+            return;
+        }
+        binder.command = [pluginDir + "/bin/onboarding-binds", "on"];
+        binder.running = true;
+    }
+    Component.onDestruction: Quickshell.execDetached([pluginDir + "/bin/onboarding-binds", "off"])
+
+    // "Do it for me" is offered after 40 s without progress, where a step has one.
+    readonly property bool canDoIt: !!step && hint > 1 && (step.id === "super-key"
+        || Ui.doItPlan(step.id, { ticked: ticked, windows: drillWindows }) !== null)
+
+    // A tutorial key: the same as clicking its button, and only while it's shown.
+    function key(action) {
+        if (!tutorialKeysWanted || advancing !== "") return "not now";
+        switch (String(action)) {
+        case "skip": return skip();
+        case "primary": return primaryText !== "" ? (primaryAction(), "ok") : "no button";
+        case "doit": return canDoIt ? doIt() : "not offered yet";
+        case "pause": askPause(); return "ok";
+        default: return "unknown key " + action;
+        }
     }
 
     // Omi on every card but the welcome page (which follows its checklist).
@@ -288,9 +316,9 @@ Item {
                     root.log("clipboard: its terminal is already open");
                     return;
                 }
-                Quickshell.execDetached(["omarchy-launch-terminal", "--app-id=" + Ui.SAMPLE_APP_ID, "bash", "-c",
-                    "printf '\\n  %s\\n\\n' '" + Ui.CLIPBOARD_SAMPLE + "'; exec bash"]);
-                root.log("clipboard: opened a terminal with the sample line");
+                Quickshell.execDetached(["omarchy-launch-terminal", "--app-id=" + Ui.SAMPLE_APP_ID,
+                    root.pluginDir + "/bin/onboarding-clipboard-sample", Ui.CLIPBOARD_SAMPLE]);
+                root.log("clipboard: opened a terminal to paste into");
             }
         }
     }
@@ -471,6 +499,29 @@ Item {
         return "ok";
     }
 
+    // The welcome card takes the keyboard, so whatever the user opens from it
+    // by key needs it to step aside, as its buttons do: the network panel
+    // (Super + Ctrl + W) or another shell panel, the keybindings list
+    // (Super + K) or the menu. It comes back when that closes.
+    readonly property string panelLayer: "omarchy-keyboard-panel"
+    function welcomeLayer(name, data) {
+        if (away === "" && !centeredBusy()) {
+            if (name === "openlayer" && data === panelLayer) {
+                away = facts.online === true ? "panel" : "wifi";
+                log("stepped aside for a panel");
+            } else if (name === "openlayer" && data === Drills.MENU_LAYER) {
+                // The list and the menu share a layer; the probe tells them apart.
+                if (!welcomeMenuProbe.running) welcomeMenuProbe.running = true;
+            }
+        } else if ((away === "wifi" || away === "panel") && name === "closelayer" && data === panelLayer) {
+            comeBack();
+        } else if ((away === "keys" || away === "menu") && name === "closelayer" && data === Drills.MENU_LAYER) {
+            comeBack();
+        }
+    }
+    // A dialog over the welcome card (an update confirmation) keeps it.
+    function centeredBusy() { return confirm !== null || pausing || error !== ""; }
+
     // The corner card's "Back to the checklist".
     function comeBack() {
         away = "";
@@ -506,11 +557,7 @@ Item {
             return "ok";
         }
         if (plan.special === "skip") return skip();
-        if (plan.special === "fill") {
-            Quickshell.execDetached(["wl-copy", Ui.CLIPBOARD_SAMPLE]);
-            if (coach.item && coach.item.pasteField) coach.item.pasteField.text = Ui.CLIPBOARD_SAMPLE;
-            return "ok";
-        }
+
         doItQueue = plan.run.slice();
         runDoIt();
         return "ok";
@@ -601,6 +648,8 @@ Item {
         resetIdle();
         log("step " + (step ? step.id : "?") + "/" + id + " ticked");
         omiReact("success");
+        // Copied from the card: the keyboard goes to the terminal for the paste.
+        if (step && step.id === "clipboard" && id === "copy" && !t.paste) focusSample();
         // A new theme: the restyle lands while Omi celebrates.
         if (step && step.id === "theme" && id === "apply") advanceSoon();
         if (step && step.id === "clipboard" && t.copy && t.paste) {
@@ -609,9 +658,17 @@ Item {
         }
     }
 
-    // The clipboard step's field calls this on every change.
-    function pasted(text) {
-        if (step && step.id === "clipboard" && String(text).indexOf(Ui.CLIPBOARD_SAMPLE) >= 0) tick("paste");
+    // The clipboard step's terminal calls this once the line is pasted into
+    // it (bin/onboarding-clipboard-sample).
+    function pastedInTerminal() {
+        if (!step || step.id !== "clipboard") return "not now";
+        tick("paste");
+        return "ok";
+    }
+
+    // The clipboard step's terminal, focused for the paste.
+    function focusSample() {
+        Quickshell.execDetached(["hyprctl", "dispatch", "hl.dsp.focus({ window = 'class:^" + Ui.SAMPLE_APP_ID + "$' })"]);
     }
 
     // ------------------------------------------------------------ steps and drills
@@ -792,10 +849,30 @@ Item {
     }
 
     Process {
-        id: skipBinder
-        onExited: function (code) {
-            root.skipKey = root.skipBindWanted && code === 0 ? "Ctrl + /" : "";
-            if (root.skipBindWanted && code !== 0) root.log("skip key not bound: Ctrl + / is taken");
+        id: welcomeMenuProbe
+        command: [root.pluginDir + "/bin/onboarding-keybindings-open"]
+        onExited: function (exitCode) {
+            if (!root.step || root.step.id !== "welcome" || root.away !== "") return;
+            root.away = exitCode === 0 ? "keys" : "menu";
+            root.log("stepped aside for the " + (exitCode === 0 ? "keybindings list" : "menu"));
+        }
+    }
+
+    Process {
+        id: binder
+        stdout: StdioCollector {
+            onStreamFinished: {
+                var keys = {};
+                if (root.tutorialKeysWanted) {
+                    String(text).split("\n").forEach(function (a) {
+                        if (root.tutorialKeyLabels[a]) keys[a] = root.tutorialKeyLabels[a];
+                    });
+                    Object.keys(root.tutorialKeyLabels).forEach(function (a) {
+                        if (!keys[a]) root.log("key not bound: " + root.tutorialKeyLabels[a] + " is taken");
+                    });
+                }
+                root.tutorialKeys = keys;
+            }
         }
     }
 
@@ -1045,17 +1122,17 @@ Item {
 
     Connections {
         target: Hyprland
-        enabled: root.opened && (root.drill !== null || root.recordPath !== "" || root.away === "keys"
-                                 || (root.step !== null && root.step.id === "theme"))
+        enabled: root.opened && (root.drill !== null || root.recordPath !== ""
+                                 || (root.step !== null && (root.step.id === "theme" || root.step.id === "welcome")))
         function onRawEvent(event) {
+            var name = String(event.name), data = String(event.data);
             // The theme step ticks when Omarchy's picker opens.
             if (root.step && root.step.id === "theme" && !root.drill) {
-                if (String(event.name) === "openlayer" && String(event.data) === "omarchy-image-selector") root.tick("open");
+                if (name === "openlayer" && data === "omarchy-image-selector") root.tick("open");
                 return;
             }
-            // The checklist comes back when the keybindings list closes.
-            if (root.away === "keys") {
-                if (String(event.name) === "closelayer" && String(event.data) === Drills.MENU_LAYER) root.comeBack();
+            if (root.step && root.step.id === "welcome") {
+                root.welcomeLayer(name, data);
                 return;
             }
             root.enqueue({ kind: "hypr", line: String(event.name) + ">>" + String(event.data) });
@@ -1070,7 +1147,7 @@ Item {
         function onRawEvent(event) {
             if (String(event.name) !== "configreloaded") return;
             root.keepCornerCardOnTop();
-            if (root.skipBindWanted) root.setSkipBind();
+            if (root.tutorialKeysWanted) root.setTutorialKeys();
         }
     }
 
@@ -1147,8 +1224,11 @@ Item {
         exclusionMode: ExclusionMode.Normal
         WlrLayershell.layer: WlrLayer.Overlay
         WlrLayershell.namespace: "omarchy-onboarding-coach"
-        WlrLayershell.keyboardFocus: root.away === "" && root.step && root.step.id === "clipboard"
-                                     ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
+        // The clipboard step: the card has the keyboard until its line is
+        // copied, so Super + C copies it; then the terminal gets it for the
+        // paste. Every other step leaves the keyboard to Hyprland.
+        WlrLayershell.keyboardFocus: root.away === "" && root.step && root.step.id === "clipboard" && !root.ticked.copy
+                                     ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
 
         Loader {
             id: coach
@@ -1237,7 +1317,7 @@ Item {
                     font.family: Style.font.family
                     font.pixelSize: Style.font.body
                 }
-                Button { id: closeButton; anchors.right: parent.right; text: "Close"; primary: true; onClicked: root.dismissOverlay() }
+                Button { id: closeButton; anchors.right: parent.right; text: "Close"; key: "Esc"; primary: true; onClicked: root.dismissOverlay() }
             }
         }
     }

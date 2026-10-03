@@ -1,0 +1,61 @@
+#!/bin/bash
+# Adds or removes the Hyprland binds for the tutorial cards' buttons:
+#   onboarding-binds on|off
+#
+# The corner card never takes the keyboard, so Super shortcuts reach
+# Hyprland; a key on the card itself would never arrive. So each button's key
+# is a bind that calls the overlay's `key` function, which only acts while
+# that button is on screen. They live only while a tutorial step is up, and a
+# config reload drops them, so the overlay sets them again on `configreloaded`.
+#
+# `on` prints the actions it bound, one per line. A combo the user has bound
+# to something else is left alone, and its action isn't printed.
+exec </dev/null
+
+# action, Hyprland keys, modmask, key name as `hyprctl binds -j` reports it
+BINDS=(
+  "skip CTRL + SLASH 4 SLASH"
+  "primary CTRL + RETURN 4 RETURN"
+  "doit CTRL + PERIOD 4 PERIOD"
+  "pause CTRL + ESCAPE 4 ESCAPE"
+)
+PREFIX="Onboarding: "
+# The single skip bind from before this script, cleaned up the same way.
+OLD_DESCRIPTION="Skip this onboarding step"
+
+binds=$(hyprctl binds -j 2>/dev/null)
+
+# What's on a combo now: nothing, ours, or something else.
+bound_to() {
+  jq -r --argjson m "$1" --arg k "$2" --arg p "$PREFIX" --arg old "$OLD_DESCRIPTION" \
+    '[.[] | select(.modmask == $m and (.key | ascii_upcase) == $k and .submap == "")]
+     | if length == 0 then "nothing"
+       elif any(.description | startswith($p) or . == $old) then "ours"
+       else "other" end' <<<"$binds"
+}
+
+case ${1:-} in
+  on | off) ;;
+  *)
+    echo "usage: onboarding-binds on|off" >&2
+    exit 2
+    ;;
+esac
+
+for entry in "${BINDS[@]}"; do
+  read -r action rest <<<"$entry"
+  keys=${rest% * *}
+  read -r modmask key <<<"${rest##"$keys" }"
+  state=$(bound_to "$modmask" "$key")
+  if [[ $1 == off ]]; then
+    [[ $state == ours ]] && hyprctl eval "hl.unbind(\"$keys\")" >/dev/null
+    continue
+  fi
+  case $state in
+    other) continue ;;
+    ours) hyprctl eval "hl.unbind(\"$keys\")" >/dev/null ;;
+  esac
+  hyprctl eval "hl.bind(\"$keys\", hl.dsp.exec_cmd(\"omarchy-shell shell call tahayvr.onboarding key $action\"), { description = \"$PREFIX$action\" })" >/dev/null
+  echo "$action"
+done
+exit 0

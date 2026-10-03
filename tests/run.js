@@ -678,7 +678,12 @@ test("scaling up and down", () => {
 
 test("do it for me: specials and steps without one", () => {
     eq(U.doItPlan("super-key", {}), { special: "complete" });
-    eq(U.doItPlan("clipboard", {}), { special: "fill" });
+    eq(argvs(U.doItPlan("clipboard", {})), ["wl-copy " + U.CLIPBOARD_SAMPLE], "copies the line");
+    eq(argvs(U.doItPlan("clipboard", { ticked: { copy: true } })),
+       ["hyprctl dispatch hl.dsp.focus({ window = 'class:^org.omarchy.onboarding-sample$' })",
+        "hyprctl dispatch hl.dsp.send_key_state({ mods = 'SHIFT', key = 'Insert', state = 'down' })",
+        "hyprctl dispatch hl.dsp.send_key_state({ mods = 'SHIFT', key = 'Insert', state = 'up' })"],
+       "then pastes it in the terminal, as Super + V does there");
     eq(argvs(U.doItPlan("theme", {})), ["omarchy-menu toggle theme"], "opens Omarchy's own picker");
     eq(U.doItPlan("welcome", {}), null);
 });

@@ -146,17 +146,17 @@
       "number": 6,
       "phase": 1,
       "title": "Copy and paste the Omarchy way",
-      "screen": "Copy, paste and cut work the same way everywhere, even in the terminal. Copy the line in the terminal I opened, then paste it below.",
-      "done_when": "The field contains the expected text.",
+      "screen": "Copy and paste work the same way everywhere, even in the terminal. Copy the line below, then paste it into the terminal I opened.",
+      "done_when": "The line is copied from the card and pasted into the terminal.",
       "subtasks": [
         {
           "id": "copy",
-          "label": "Select the line in the terminal and copy it",
+          "label": "Copy the line below",
           "keys": "Super + C"
         },
         {
           "id": "paste",
-          "label": "Click the field below and paste",
+          "label": "Paste it in the terminal",
           "keys": "Super + V"
         }
       ],

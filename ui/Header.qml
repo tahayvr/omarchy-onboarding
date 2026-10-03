@@ -23,7 +23,7 @@ Item {
 
     Column {
         id: titles
-        anchors { left: omi.right; leftMargin: Style.space(10); right: pauseButton.left; rightMargin: Style.space(8); verticalCenter: parent.verticalCenter }
+        anchors { left: omi.right; leftMargin: Style.space(10); right: pauseKey.visible ? pauseKey.left : pauseButton.left; rightMargin: Style.space(8); verticalCenter: parent.verticalCenter }
         // The title, or Omi's confirmation once the step is done: in the
         // accent, faded in, as Omi's own words.
         Text {
@@ -39,6 +39,13 @@ Item {
             font.pixelSize: Style.font.heading
             font.weight: Font.DemiBold
         }
+    }
+
+    // The ✕'s key, while the tutorial's keys are bound (Ctrl + Esc).
+    KeyChip {
+        id: pauseKey
+        anchors { right: pauseButton.left; rightMargin: Style.space(8); verticalCenter: pauseButton.verticalCenter }
+        key: header.host && header.host.tutorialKeys ? (header.host.tutorialKeys.pause || "") : ""
     }
 
     Text {

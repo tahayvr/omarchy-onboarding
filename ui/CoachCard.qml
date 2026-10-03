@@ -3,9 +3,9 @@ import Quickshell.Hyprland
 import qs.Commons
 import "../lib/Ui.js" as Ui
 
-// The corner card for the "Learn to move" drills. It never takes the
-// keyboard (the drills need Super shortcuts to reach Hyprland), except the
-// clipboard step's field, which the user clicks to paste into.
+// The corner card for the tutorial's steps. It never takes the keyboard (the
+// drills need Super shortcuts to reach Hyprland), except on the clipboard
+// step until its line is copied.
 Rectangle {
     id: card
 
@@ -13,7 +13,6 @@ Rectangle {
     property var step: null
     property var ticked: ({})
     property int hint: 0
-    property alias pasteField: field
 
     readonly property bool isWorkspaces: step && step.id === "workspaces"
     readonly property bool isClipboard: step && step.id === "clipboard"
@@ -86,35 +85,39 @@ Rectangle {
             }
         }
 
-        // Step 8's target: paste the copied line here with Super + V.
+        // The clipboard step's line to copy: selected and holding the keyboard
+        // (the card takes it until the copy), so Super + C copies it as is.
         Rectangle {
             visible: card.isClipboard
             width: parent.width
-            height: field.implicitHeight + Style.space(16)
+            height: sample.implicitHeight + Style.space(16)
             radius: Style.cornerRadius
             color: Style.normalFill
-            border.width: field.activeFocus ? 2 : 1
-            border.color: field.activeFocus ? Color.accent : Style.normalBorderColor
+            border.width: sample.activeFocus ? 2 : 1
+            border.color: sample.activeFocus ? Color.accent : Style.normalBorderColor
 
             TextInput {
-                id: field
+                id: sample
                 anchors { fill: parent; margins: Style.space(8) }
                 verticalAlignment: TextInput.AlignVCenter
                 clip: true
+                readOnly: true
+                persistentSelection: true
+                selectByMouse: true
+                text: Ui.CLIPBOARD_SAMPLE
                 color: Color.foreground
                 selectionColor: Style.selectionFill
+                selectedTextColor: Color.foreground
                 font.family: Style.font.family
                 font.pixelSize: Style.font.body
-                onTextChanged: card.host.pasted(text)
                 Keys.onEscapePressed: card.host.askPause()
-
-                Text {
-                    anchors.fill: parent
-                    verticalAlignment: Text.AlignVCenter
-                    visible: !field.text && !field.activeFocus
-                    text: "Click here and paste"
-                    color: Qt.rgba(Color.foreground.r, Color.foreground.g, Color.foreground.b, 0.62)
-                    font: field.font
+                // Selected and focused while there's a copy to make.
+                readonly property bool waiting: card.isClipboard && !card.ticked.copy
+                onWaitingChanged: if (waiting) grab()
+                Component.onCompleted: if (waiting) grab()
+                function grab() {
+                    selectAll();
+                    forceActiveFocus();
                 }
             }
         }

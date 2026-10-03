@@ -18,6 +18,11 @@ FocusScope {
     Component.onCompleted: Qt.callLater(function () { primary.forceActiveFocus(); })
     // On the finish screen Esc is the same as Finish.
     Keys.onEscapePressed: view.finishing ? view.host.next() : view.host.askPause()
+    // M opens the step's link (the manual), as shown on its button.
+    Keys.onPressed: function (event) {
+        if (event.modifiers & (Qt.ControlModifier | Qt.AltModifier | Qt.MetaModifier)) return;
+        if (event.key === Qt.Key_M && view.step && view.step.link) { event.accepted = true; view.host.openLink(); }
+    }
 
     Column {
         id: column
@@ -82,6 +87,7 @@ FocusScope {
                 id: linkButton
                 anchors { right: parent.right; verticalCenter: parent.verticalCenter }
                 text: view.step && view.step.link ? view.step.link.label : ""
+                key: "M"
                 onClicked: view.host.openLink()
             }
         }
@@ -126,6 +132,7 @@ FocusScope {
             Button {
                 id: primary
                 text: view.finishing ? "Finish" : "Continue"
+                key: "Enter"
                 primary: true
                 onClicked: view.host.next()
             }

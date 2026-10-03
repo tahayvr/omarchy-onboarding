@@ -1,7 +1,8 @@
 #!/bin/bash
-# Walks the "Learn to move" drills (steps 4–7 and 9) through the real plugin on
-# the live desktop, by running what each binding runs. Each drill must complete
-# its step by itself; the run passes when the flow reaches the theme step.
+# Walks the "Learn the keys" steps (menu to shortcuts, the clipboard step
+# included) through the real plugin on the live desktop, by running what each
+# binding runs. Each must complete its step by itself; the run passes when the
+# flow reaches the theme step. The clipboard is restored afterwards.
 #
 #   scripts/drive-drills.sh [recording.jsonl]
 #
@@ -25,6 +26,7 @@ ROOT=$(cd "$(dirname "$0")/.." && pwd)
 WORK=$(mktemp -d)
 STATE="$WORK/state.json"
 CLI=("$ROOT/bin/omarchy-onboarding" --state "$STATE")
+SAMPLE="Omarchy copies and pastes the same way everywhere" # Ui.CLIPBOARD_SAMPLE
 SELECTOR='^/bin/bash /usr/share/omarchy/bin/omarchy-menu-select Keybindings'
 
 terminal="" browser="" sample_terminal=""
@@ -165,8 +167,18 @@ before=$(hyprctl -j clients | jq -c '[.[].address]')
 dispatch "hl.dsp.window.move({ workspace = '$WS_B' })"
 wait_step clipboard
 sample_terminal=$(wait_window '^org\.omarchy\.onboarding-sample$' "^($WS_A|$WS_B)$" "$before")
-"${CLI[@]}" next >/dev/null # pasting into the overlay's field needs a pointer click
+
+say "Step 8: Super + C on the card's line, Super + V in the terminal"
+saved_clipboard=$(wl-paste --no-newline 2>/dev/null || true)
+wl-copy "$SAMPLE" # what Super + C on the card's selected line does
+sleep 1.5          # the overlay sees it, ticks, and focuses the terminal
+require_active "$sample_terminal" "the clipboard terminal"
+# What Super + V does in a terminal: Shift + Insert to the focused surface.
+dispatch "hl.dsp.send_key_state({ mods = 'SHIFT', key = 'Insert', state = 'down' })"
+sleep 0.06
+dispatch "hl.dsp.send_key_state({ mods = 'SHIFT', key = 'Insert', state = 'up' })"
 wait_step shortcuts
+printf '%s' "$saved_clipboard" | wl-copy
 
 say "Step 9: Super + K, then Esc"
 setsid -f omarchy-menu-keybindings >/dev/null 2>&1 </dev/null

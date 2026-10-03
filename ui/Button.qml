@@ -42,27 +42,10 @@ Rectangle {
             font.weight: button.primary ? Font.DemiBold : Font.Normal
         }
 
-        // A muted chip, not a second button: the theme's background showing
-        // through faintly on the accent fill, the foreground faintly on the
-        // plain one. No border, so it doesn't echo the button's own outline.
-        Rectangle {
-            visible: button.key !== ""
+        KeyChip {
             anchors.verticalCenter: parent.verticalCenter
-            implicitWidth: Math.max(implicitHeight, keyLabel.implicitWidth + Style.space(8))
-            implicitHeight: keyLabel.implicitHeight + Style.space(4)
-            radius: Math.max(Style.cornerRadius, Style.space(3))
-            color: button.primary ? Qt.rgba(Color.background.r, Color.background.g, Color.background.b, 0.22)
-                                  : Qt.rgba(Color.foreground.r, Color.foreground.g, Color.foreground.b, 0.1)
-
-            Text {
-                id: keyLabel
-                anchors.centerIn: parent
-                text: button.key
-                color: Qt.rgba(button.ink.r, button.ink.g, button.ink.b, 0.6)
-                font.family: Style.font.family
-                font.pixelSize: Style.font.bodySmall
-                font.weight: Font.Normal
-            }
+            key: button.key
+            onAccent: button.primary
         }
     }
 

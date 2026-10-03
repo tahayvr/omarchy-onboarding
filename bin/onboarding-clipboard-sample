@@ -1,0 +1,37 @@
+#!/bin/bash
+# The clipboard step's terminal: waits for the line the user copied from
+# onboarding's card to be pasted here, then tells the overlay.
+#
+#   onboarding-clipboard-sample "<the line>"
+#
+# It reads key by key, so the paste counts the moment it lands, with no Enter
+# to press: Super + V stays the only key the step asks for. Then it leaves a
+# plain shell; onboarding closes this terminal when the step is over.
+line=${1:?the line to wait for}
+buffer=""
+
+printf '\n  Paste the line here.\n\n  > '
+while IFS= read -r -s -n 1 char; do
+  case $char in
+    $'\x7f' | $'\b') # backspace
+      if [[ -n $buffer ]]; then
+        buffer=${buffer%?}
+        printf '\b \b'
+      fi
+      ;;
+    "") # Enter: start over if it isn't there yet
+      [[ $buffer == *"$line"* ]] && break
+      buffer=""
+      printf '\n  > '
+      ;;
+    *)
+      buffer+=$char
+      printf '%s' "$char"
+      ;;
+  esac
+  [[ $buffer == *"$line"* ]] && break
+done
+
+printf '\n\n  Pasted!\n\n'
+omarchy-shell shell call tahayvr.onboarding pastedInTerminal '' >/dev/null 2>&1
+exec bash

@@ -97,20 +97,30 @@ code, because Omarchy ships only bash and QML. Built against Omarchy 4.0.4
     keyboard focus and is used for welcome, the Super key, finish, pause and
     confirm.
   - `omarchy-onboarding-coach` is the corner card. Its keyboard focus is `None`,
-    so Super binds reach Hyprland. The clipboard step switches it to `OnDemand`
-    so its field can be clicked. It uses `ExclusionMode.Normal`, so it sits
-    below the bar.
+    so Super binds reach Hyprland. The clipboard step switches it to
+    `Exclusive` until its line is copied, so Super + C copies the selected
+    line; then the terminal is focused for the paste, and
+    `bin/onboarding-clipboard-sample`, running in it, reports the paste
+    through `pastedInTerminal`. Omarchy's Super + C and V send their keys to
+    the focused surface, layers included (Ctrl + Insert / Shift + Insert when
+    the active window is tagged terminal). It uses `ExclusionMode.Normal`, so
+    it sits below the bar.
 - **Keeping the corner card above dimming.** Menus and pickers dim everything
   beneath them. The fix is a Hyprland layer rule set at runtime:
   `hl.layer_rule({ name = "omarchy-onboarding-coach", …, order = -10 })`,
   applied through `hyprctl eval`. Each level is drawn sorted by `order`
   descending, so a negative order draws last, on top. Named rules replace each
   other, so re-applying the rule is safe.
-- **Keys for the corner card have to be Hyprland binds**, since it never has
-  the keyboard. Ctrl + / (skip) is added with `hl.bind` through
-  `bin/onboarding-skip-bind` while a tutorial step is up, removed after, and
-  re-added on `configreloaded`. It's left alone when the user has bound that
-  combo, and then the Skip button shows no key.
+- **Keyboard first: every button has a key.** Centered cards have the
+  keyboard, so plain keys work there (Y, U, R, Q, M, Enter, Esc). The corner
+  card never has it, so its buttons' keys are Hyprland binds, added with
+  `hl.bind` by `bin/onboarding-binds` while a tutorial step is up, removed
+  after, and re-added on `configreloaded`: Ctrl + / (skip), Ctrl + Enter
+  (the main button), Ctrl + . (do it for me), Ctrl + Esc (pause). Each calls
+  the overlay's `key()`, which acts only while that button is shown. A combo
+  the user has bound is left alone, and its button shows no key. Keys the
+  welcome checklist shows (Super + Ctrl + W, Super + K) open the panel or list
+  through Omarchy's own binds; the card sees the layer open and steps aside.
 - **Card placement** is `Ui.coachPlacement` and depends on the step, its ticked
   sub-tasks and the bar position from `onboarding-facts`.
 - A bare Super press reaches the centered card as `Qt.Key_Super_L`, because

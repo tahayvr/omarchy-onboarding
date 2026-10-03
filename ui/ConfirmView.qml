@@ -15,6 +15,10 @@ FocusScope {
 
     Component.onCompleted: Qt.callLater(function () { yes.forceActiveFocus(); })
     Keys.onEscapePressed: view.host.answerConfirm(false)
+    // Enter confirms wherever the focus is (Tab can move it to Not now, which
+    // takes Enter itself).
+    Keys.onReturnPressed: view.host.answerConfirm(true)
+    Keys.onEnterPressed: view.host.answerConfirm(true)
 
     Column {
         id: column
@@ -45,8 +49,8 @@ FocusScope {
         Row {
             anchors.right: parent.right
             spacing: Style.space(8)
-            Button { text: "Not now"; onClicked: view.host.answerConfirm(false) }
-            Button { id: yes; text: view.confirmText; primary: true; onClicked: view.host.answerConfirm(true) }
+            Button { text: "Not now"; key: "Esc"; onClicked: view.host.answerConfirm(false) }
+            Button { id: yes; text: view.confirmText; key: "Enter"; primary: true; onClicked: view.host.answerConfirm(true) }
         }
     }
 }

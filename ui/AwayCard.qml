@@ -8,7 +8,7 @@ Rectangle {
     id: card
 
     property var host
-    // "wifi", "update" or "keys".
+    // "wifi", "update", "keys", "menu" or "panel" (another shell panel).
     property string reason: ""
 
     implicitWidth: Style.space(400)
@@ -32,11 +32,14 @@ Rectangle {
                 anchors.verticalCenter: parent.verticalCenter
                 text: card.reason === "wifi" ? "Pick your network in the panel. I'll be back once you're online."
                     : card.reason === "update" ? "Omarchy is updating in the terminal. I'll be back when it's done."
+                    : card.reason === "menu" ? "Have a look around the menu. Close it and I'll be back."
+                    : card.reason === "panel" ? "Take your time in the panel. Close it and I'll be back."
                     : "That's every shortcut, and you can search it. Close it and I'll be back."
             }
         }
+        // What closes it: everything but the update terminal closes with Esc.
         KeyCaps {
-            visible: card.reason === "keys"
+            visible: card.reason !== "update"
             anchors.right: parent.right
             keys: "Esc"
         }
