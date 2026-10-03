@@ -55,13 +55,14 @@ wait_step() {
   exit 1
 }
 
-# Waits for a window of CLASS (a jq regex) to appear on workspace WS and prints its address.
+# Waits for a window of CLASS (a jq regex) to appear on a workspace named WS
+# (a name, or a jq regex starting with ^) and prints its address.
 wait_window() {
   local class=$1 ws=$2 before=$3
   for _ in $(seq 1 50); do
     local addr
     addr=$(hyprctl -j clients | jq -r --arg c "$class" --arg ws "$ws" --argjson before "$before" \
-      '[.[] | select((.class | test($c)) and .workspace.name == $ws and ((.address) as $a | $before | index($a) | not))][0].address // ""')
+      '[.[] | select((.class | test($c)) and (if ($ws | startswith("^")) then (.workspace.name | test($ws)) else .workspace.name == $ws end) and ((.address) as $a | $before | index($a) | not))][0].address // ""')
     if [[ -n $addr ]]; then
       echo "$addr"
       return
@@ -158,11 +159,12 @@ say "Step 7: Super + $WS_B, Super + $WS_A, Super + Shift + $WS_B"
 dispatch "hl.dsp.focus({ workspace = '$WS_B' })"; sleep 0.6
 dispatch "hl.dsp.focus({ workspace = '$WS_A' })"; sleep 0.6
 require_active "$terminal" "the terminal"
+# The clipboard step opens a terminal with a line to copy as it begins, on
+# whichever test workspace is focused then: note the windows before it can.
+before=$(hyprctl -j clients | jq -c '[.[].address]')
 dispatch "hl.dsp.window.move({ workspace = '$WS_B' })"
 wait_step clipboard
-# The clipboard step opens a terminal with a line to copy; wait for it so cleanup closes it.
-before=$(hyprctl -j clients | jq -c '[.[].address]')
-sample_terminal=$(wait_window '^foot$' "$WS_B" "$before")
+sample_terminal=$(wait_window '^foot$' "^($WS_A|$WS_B)$" "$before")
 "${CLI[@]}" next >/dev/null # pasting into the overlay's field needs a pointer click
 wait_step shortcuts
 

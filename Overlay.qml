@@ -542,11 +542,11 @@ Item {
         resetIdle();
         log("step " + (step ? step.id : "?") + "/" + id + " ticked");
         omiReact("success");
-        // A new theme: let the restyle land before moving on.
-        if (step && step.id === "theme" && id === "apply") themeDone.start();
+        // A new theme: the restyle lands while Omi celebrates.
+        if (step && step.id === "theme" && id === "apply") advanceSoon();
         if (step && step.id === "clipboard" && t.copy && t.paste) {
             log("drill clipboard complete");
-            next();
+            advanceSoon();
         }
     }
 
@@ -644,9 +644,9 @@ Item {
             resetIdle();
             if (changes.some(function (c) { return c.ticked; })) omiReact("success");
         }
-        if (drill.complete()) {
+        if (drill.complete() && advancing !== drill.step) {
             log("drill " + drill.step + " complete");
-            next();
+            advanceSoon();
         }
     }
 
@@ -840,10 +840,23 @@ Item {
         }
     }
 
+    // A step that finished by itself moves on after Omi's success has played,
+    // and only if the user is still on it (they may have skipped meanwhile).
+    property string advancing: ""
+    function advanceSoon() {
+        if (!step || advancing === step.id) return;
+        advancing = step.id;
+        log("step " + step.id + " finished; moving on after Omi's success");
+        advanceTimer.restart();
+    }
     Timer {
-        id: themeDone
-        interval: 1200
-        onTriggered: if (root.step && root.step.id === "theme") root.next()
+        id: advanceTimer
+        interval: Ui.CELEBRATE_MS
+        onTriggered: {
+            var id = root.advancing;
+            root.advancing = "";
+            if (root.step && root.step.id === id) root.next();
+        }
     }
 
     Process {

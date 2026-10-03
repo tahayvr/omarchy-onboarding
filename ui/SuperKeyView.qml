@@ -21,14 +21,12 @@ FocusScope {
             if (!view.pressed) {
                 view.pressed = true;
                 view.host.omiReact("success");
-                done.start();
+                view.host.advanceSoon();
             }
         }
     }
     Keys.onEscapePressed: view.host.askPause()
 
-    // Let the user see the key light up before moving on.
-    Timer { id: done; interval: 700; onTriggered: view.host.next() }
 
     Column {
         id: column
