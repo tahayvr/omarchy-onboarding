@@ -108,6 +108,17 @@ FocusScope {
             }
         }
 
+        // The card's last line (the finish screen's way back in).
+        Text {
+            width: parent.width
+            visible: text !== ""
+            text: view.step && view.step.outro ? view.step.outro : ""
+            wrapMode: Text.Wrap
+            color: Qt.rgba(Color.foreground.r, Color.foreground.g, Color.foreground.b, 0.62)
+            font.family: Style.font.family
+            font.pixelSize: Style.font.body
+        }
+
         Row {
             anchors.right: parent.right
             spacing: Style.space(8)

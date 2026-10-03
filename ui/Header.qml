@@ -37,7 +37,8 @@ Item {
 
     Text {
         id: pauseButton
-        anchors { right: parent.right; verticalCenter: parent.verticalCenter }
+        // Pinned to the top-right corner, whatever the height of Omi and the title.
+        anchors { right: parent.right; top: parent.top }
         text: "✕"
         color: closeMouse.containsMouse ? Color.foreground : Qt.rgba(Color.foreground.r, Color.foreground.g, Color.foreground.b, 0.62)
         font.family: Style.font.family

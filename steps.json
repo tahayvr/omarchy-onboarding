@@ -240,7 +240,7 @@
       "number": 11,
       "phase": 3,
       "title": "You're ready",
-      "screen": "That's the tour! These two are all you need to remember. Run omarchy onboarding to see me again, or omarchy onboarding --step <name> for one lesson.",
+      "screen": "That's the tour! These two are all you need to remember.",
       "done_when": "The user presses Finish.",
       "remember": [
         {
@@ -256,7 +256,8 @@
         "text": "Want to go deeper? The Omarchy manual covers everything, and it's in the menu under Learn too.",
         "label": "Open the manual",
         "url": "https://omarchy.org/manual/"
-      }
+      },
+      "outro": "Run omarchy onboarding to see me again, or omarchy onboarding --step <name> for one lesson."
     }
   ]
 }
