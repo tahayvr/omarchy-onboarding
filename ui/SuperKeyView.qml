@@ -31,7 +31,7 @@ FocusScope {
     Column {
         id: column
         width: parent.width
-        spacing: Style.space(16)
+        spacing: Style.space(20)
 
         Header { host: view.host; step: view.step }
 

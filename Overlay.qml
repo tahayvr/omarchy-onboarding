@@ -1215,8 +1215,9 @@ Item {
         Rectangle {
             id: centerCard
             anchors.centerIn: parent
-            width: centerView.implicitWidth + Style.space(56)
-            height: centerView.implicitHeight + Style.space(56)
+            // 32 of padding on every side.
+            width: centerView.implicitWidth + Style.space(64)
+            height: centerView.implicitHeight + Style.space(64)
             color: Color.popups.background
             border.color: Color.popups.border
             border.width: 1

@@ -12,8 +12,8 @@ Rectangle {
     signal clicked()
 
     activeFocusOnTab: true
-    implicitWidth: content.implicitWidth + Style.space(28)
-    implicitHeight: label.implicitHeight + Style.space(14)
+    implicitWidth: content.implicitWidth + Style.space(32)
+    implicitHeight: label.implicitHeight + Style.space(16)
     radius: Style.cornerRadius
     color: primary ? Color.accent
          : mouse.containsMouse || activeFocus ? Style.hoverFill : Style.normalFill

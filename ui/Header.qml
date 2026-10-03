@@ -24,8 +24,8 @@ Item {
 
     Column {
         id: titles
-        anchors { left: omi.right; leftMargin: Style.space(10); right: pauseKey.visible ? pauseKey.left : pauseButton.left; rightMargin: Style.space(8); verticalCenter: parent.verticalCenter }
-        spacing: Style.space(1)
+        anchors { left: omi.right; leftMargin: Style.space(14); right: pauseKey.visible ? pauseKey.left : pauseButton.left; rightMargin: Style.space(8); verticalCenter: parent.verticalCenter }
+        spacing: Style.space(2)
         // Where this step sits: "Learn the keys · 3 of 7".
         Text {
             width: parent.width

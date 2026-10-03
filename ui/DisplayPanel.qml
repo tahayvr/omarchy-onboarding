@@ -6,7 +6,7 @@ import "../lib/Ui.js" as Ui
 Column {
     id: panel
     property var host
-    spacing: Style.space(8)
+    spacing: Style.space(12)
 
     Repeater {
         model: panel.host.monitors

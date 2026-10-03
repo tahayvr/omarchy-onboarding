@@ -23,10 +23,10 @@ FocusScope {
     Column {
         id: column
         width: parent.width
-        spacing: Style.space(14)
+        spacing: Style.space(20)
 
         Row {
-            spacing: Style.space(10)
+            spacing: Style.space(14)
             CardOmi { host: view.host; anchors.verticalCenter: parent.verticalCenter }
             Text {
                 anchors.verticalCenter: parent.verticalCenter
@@ -48,7 +48,7 @@ FocusScope {
         Row {
             id: pauseButtons
             anchors.right: parent.right
-            spacing: Style.space(8)
+            spacing: Style.space(10)
             Button { text: "Quit onboarding"; key: "Q"; onClicked: view.host.dismiss() }
             Button { text: "Remind me later"; key: "R"; onClicked: view.host.pause() }
             Button { id: keepGoing; text: "Keep going"; key: "Esc"; primary: true; onClicked: view.host.resume() }

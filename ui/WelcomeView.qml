@@ -63,7 +63,7 @@ FocusScope {
     Column {
         id: column
         width: parent.width
-        spacing: Style.space(14)
+        spacing: Style.space(16)
 
         // The heading: "Welcome to", the logo and the tagline, kept tight.
         Column {
@@ -127,19 +127,19 @@ FocusScope {
             }
         }
 
-        Item { width: 1; height: Style.space(4) }
+        Item { width: 1; height: Style.space(8) }
 
         // --- the checklist
         Column {
             width: parent.width
-            spacing: Style.space(8)
+            spacing: Style.space(10)
             Repeater {
                 model: view.rows
                 delegate: Rectangle {
                     id: row
                     required property var modelData
                     width: parent.width
-                    height: Math.max(texts.implicitHeight, actions.implicitHeight) + Style.space(20)
+                    height: Math.max(texts.implicitHeight, actions.implicitHeight) + Style.space(24)
                     radius: Style.cornerRadius
                     color: rowMouse.containsMouse ? Style.hoverFill : Style.normalFill
                     border.width: 1
@@ -160,7 +160,7 @@ FocusScope {
                     // fills the same square, so they line up across rows.
                     GlyphIcon {
                         id: mark
-                        anchors { left: parent.left; leftMargin: Style.space(14); verticalCenter: parent.verticalCenter }
+                        anchors { left: parent.left; leftMargin: Style.space(16); verticalCenter: parent.verticalCenter }
                         size: Style.space(24)
                         glyph: row.modelData.icon || ""
                         family: row.modelData.iconFont || Style.font.family
@@ -169,7 +169,7 @@ FocusScope {
 
                     Column {
                         id: texts
-                        anchors { left: mark.right; leftMargin: Style.space(14); right: actions.left; rightMargin: Style.space(12); verticalCenter: parent.verticalCenter }
+                        anchors { left: mark.right; leftMargin: Style.space(16); right: actions.left; rightMargin: Style.space(14); verticalCenter: parent.verticalCenter }
                         spacing: Style.space(2)
                         Text {
                             width: parent.width
@@ -192,8 +192,8 @@ FocusScope {
 
                     Row {
                         id: actions
-                        anchors { right: parent.right; rightMargin: Style.space(12); verticalCenter: parent.verticalCenter }
-                        spacing: Style.space(10)
+                        anchors { right: parent.right; rightMargin: Style.space(14); verticalCenter: parent.verticalCenter }
+                        spacing: Style.space(12)
                         KeyCaps {
                             anchors.verticalCenter: parent.verticalCenter
                             visible: !!row.modelData.keys && !row.modelData.done
@@ -221,12 +221,12 @@ FocusScope {
         }
 
         // --- the tutorial, set apart from the checklist by space alone
-        Item { width: 1; height: Style.space(14) }
+        Item { width: 1; height: Style.space(20) }
 
         // Omi offers the tour: Omi, what it offers, and the two answers.
         Row {
             width: parent.width
-            spacing: Style.space(12)
+            spacing: Style.space(16)
 
             // Omi, the Omarchy mascot, in the theme's accent. It starts as the
             // plain logo and comes to life once the card is up.
@@ -243,7 +243,7 @@ FocusScope {
             }
 
             Column {
-                width: parent.width - omi.width - exitButton.width - yesButton.width - Style.space(12) * 2 - Style.space(8)
+                width: parent.width - omi.width - exitButton.width - yesButton.width - Style.space(16) * 2 - Style.space(10)
                 anchors.verticalCenter: parent.verticalCenter
                 spacing: Style.space(2)
                 Text {
@@ -275,7 +275,7 @@ FocusScope {
 
             Row {
                 anchors.verticalCenter: parent.verticalCenter
-                spacing: Style.space(8)
+                spacing: Style.space(10)
                 Button { id: yesButton; text: "Teach me"; key: "Y"; primary: true; onClicked: view.host.startTutorial() }
                 Button { id: exitButton; text: "Exit"; key: "Esc"; onClicked: view.host.closeWelcome() }
             }

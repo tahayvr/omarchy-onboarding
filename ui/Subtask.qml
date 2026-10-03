@@ -26,7 +26,7 @@ Item {
 
     Text {
         id: line
-        anchors { left: mark.right; right: caps.left; rightMargin: Style.space(10); verticalCenter: parent.verticalCenter }
+        anchors { left: mark.right; right: caps.left; rightMargin: Style.space(12); verticalCenter: parent.verticalCenter }
         text: row.label
         color: row.done ? Qt.rgba(Color.foreground.r, Color.foreground.g, Color.foreground.b, 0.62) : Color.foreground
         font.family: Style.font.family

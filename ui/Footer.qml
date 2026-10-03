@@ -21,7 +21,8 @@ Item {
     width: parent ? parent.width : implicitWidth
     // The buttons and the legend: a card never gets narrower than this row.
     implicitWidth: buttons.implicitWidth + (legendShown ? legend.implicitWidth + Style.space(16) : 0)
-    implicitHeight: buttons.implicitHeight
+    // Room above the buttons: the footer sits apart from the content.
+    implicitHeight: buttons.implicitHeight + Style.space(8)
 
     // Every key on this card is Ctrl + what its chip shows.
     Text {
@@ -37,7 +38,7 @@ Item {
     Row {
         id: buttons
         anchors { right: parent.right; bottom: parent.bottom }
-        spacing: Style.space(8)
+        spacing: Style.space(10)
         Button { visible: footer.host.canBack; text: "Back"; key: footer.host.tutorialKeys.back || ""; onClicked: footer.host.back() }
         Button { text: "Skip"; key: footer.host.tutorialKeys.skip || ""; onClicked: footer.host.skip() }
         Button {

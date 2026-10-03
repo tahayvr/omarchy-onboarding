@@ -7,7 +7,7 @@ import qs.Commons
 Column {
     id: panel
     property var host
-    spacing: Style.space(8)
+    spacing: Style.space(12)
 
     // The widest key caps, so the card can make room for them (CoachCard).
     property real capsNeed: 0
@@ -57,7 +57,7 @@ Column {
                 font.pixelSize: Style.font.title
             }
             Line {
-                anchors { left: mark.right; right: caps.left; rightMargin: Style.space(8); verticalCenter: parent.verticalCenter }
+                anchors { left: mark.right; right: caps.left; rightMargin: Style.space(12); verticalCenter: parent.verticalCenter }
                 width: undefined
                 text: row.modelData.label
                 color: row.tried ? Qt.rgba(Color.foreground.r, Color.foreground.g, Color.foreground.b, 0.62) : Color.foreground

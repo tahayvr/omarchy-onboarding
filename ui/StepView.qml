@@ -37,7 +37,7 @@ FocusScope {
     Column {
         id: column
         width: parent.width
-        spacing: Style.space(14)
+        spacing: Style.space(20)
 
         Header { host: view.host; step: view.step; omiSize: view.finishing ? Style.space(96) : Style.space(48) }
 
@@ -55,7 +55,7 @@ FocusScope {
         Column {
             visible: !!(view.step && view.step.remember)
             width: parent.width
-            spacing: Style.space(8)
+            spacing: Style.space(12)
             Repeater {
                 model: view.step && view.step.remember ? view.step.remember : []
                 delegate: Item {
@@ -111,7 +111,7 @@ FocusScope {
             Column {
                 id: openList
                 anchors { left: parent.left; right: redoButton.left; rightMargin: Style.space(12); top: parent.top }
-                spacing: Style.space(4)
+                spacing: Style.space(6)
                 Text {
                     text: "Still to do"
                     color: Qt.rgba(Color.foreground.r, Color.foreground.g, Color.foreground.b, 0.62)
@@ -154,7 +154,7 @@ FocusScope {
 
         Row {
             anchors.right: parent.right
-            spacing: Style.space(8)
+            spacing: Style.space(10)
             Button { visible: !view.finishing; text: "Skip"; onClicked: view.host.skip() }
             Button {
                 id: primary

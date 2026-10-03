@@ -20,12 +20,12 @@ Rectangle {
     // Wide enough for its widest row that can't wrap: the footer's buttons,
     // or the widest key caps with room for a label beside them. Never
     // narrower than the base width, never wider than the cap.
-    readonly property real baseWidth: Style.space(460)
+    readonly property real baseWidth: Style.space(480)
     property real capsNeed: 0
     readonly property real panelNeed: panel.item && panel.item.capsNeed !== undefined ? panel.item.capsNeed : 0
     readonly property real rowNeed: Math.max(footer.implicitWidth, Math.max(capsNeed, panelNeed) + Style.space(200))
-    implicitWidth: Math.min(Style.space(680), Math.max(baseWidth, rowNeed + Style.space(32)))
-    implicitHeight: column.implicitHeight + Style.space(32)
+    implicitWidth: Math.min(Style.space(700), Math.max(baseWidth, rowNeed + Style.space(48)))
+    implicitHeight: column.implicitHeight + Style.space(48)
 
     function measure() {
         var m = 0;
@@ -44,8 +44,8 @@ Rectangle {
 
     Column {
         id: column
-        anchors { left: parent.left; right: parent.right; top: parent.top; margins: Style.space(16) }
-        spacing: Style.space(12)
+        anchors { left: parent.left; right: parent.right; top: parent.top; margins: Style.space(24) }
+        spacing: Style.space(20)
 
         Header { host: card.host; step: card.step }
 
@@ -61,7 +61,7 @@ Rectangle {
 
         Column {
             width: parent.width
-            spacing: Style.space(8)
+            spacing: Style.space(12)
             Repeater {
                 id: subtasks
                 model: card.step && card.step.subtasks ? card.step.subtasks : []
@@ -81,7 +81,7 @@ Rectangle {
         // Mirrors the bar's workspace indicator, so the jump is easy to follow.
         Row {
             visible: card.isWorkspaces
-            spacing: Style.space(6)
+            spacing: Style.space(8)
             Repeater {
                 model: [1, 2, 3, 4]
                 delegate: Rectangle {
@@ -109,7 +109,7 @@ Rectangle {
         Rectangle {
             visible: card.isClipboard
             width: parent.width
-            height: sample.implicitHeight + Style.space(16)
+            height: sample.implicitHeight + Style.space(20)
             radius: Style.cornerRadius
             color: Style.normalFill
             border.width: sample.activeFocus ? 2 : 1
@@ -117,7 +117,7 @@ Rectangle {
 
             TextInput {
                 id: sample
-                anchors { fill: parent; margins: Style.space(8) }
+                anchors { fill: parent; margins: Style.space(10) }
                 verticalAlignment: TextInput.AlignVCenter
                 clip: true
                 readOnly: true

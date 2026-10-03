@@ -23,11 +23,11 @@ FocusScope {
     Column {
         id: column
         width: parent.width
-        spacing: Style.space(16)
+        spacing: Style.space(20)
 
         Row {
             width: parent.width
-            spacing: Style.space(10)
+            spacing: Style.space(14)
             CardOmi { id: omi; host: view.host; anchors.verticalCenter: parent.verticalCenter }
             Text {
                 width: parent.width - omi.width - parent.spacing
@@ -48,7 +48,7 @@ FocusScope {
         }
         Row {
             anchors.right: parent.right
-            spacing: Style.space(8)
+            spacing: Style.space(10)
             Button { text: "Not now"; key: "Esc"; onClicked: view.host.answerConfirm(false) }
             Button { id: yes; text: view.confirmText; key: "\u21b5"; primary: true; onClicked: view.host.answerConfirm(true) }
         }

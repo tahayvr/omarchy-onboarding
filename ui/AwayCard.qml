@@ -12,7 +12,7 @@ Rectangle {
     property string reason: ""
 
     implicitWidth: Style.space(400)
-    implicitHeight: column.implicitHeight + Style.space(32)
+    implicitHeight: column.implicitHeight + Style.space(48)
     color: Color.popups.background
     border.color: Color.popups.border
     border.width: 1
@@ -20,12 +20,12 @@ Rectangle {
 
     Column {
         id: column
-        anchors { left: parent.left; right: parent.right; top: parent.top; margins: Style.space(16) }
-        spacing: Style.space(10)
+        anchors { left: parent.left; right: parent.right; top: parent.top; margins: Style.space(24) }
+        spacing: Style.space(16)
 
         Row {
             width: parent.width
-            spacing: Style.space(10)
+            spacing: Style.space(14)
             CardOmi { id: omi; host: card.host; anchors.verticalCenter: parent.verticalCenter }
             Line {
                 width: parent.width - omi.width - parent.spacing
@@ -37,16 +37,20 @@ Rectangle {
                     : "That's every shortcut, and you can search it. Close it and I'll be back."
             }
         }
-        // What closes it: everything but the update terminal closes with Esc.
-        KeyCaps {
-            visible: card.reason !== "update"
+        // What closes it (everything but the update terminal closes with
+        // Esc), beside the way back.
+        Row {
             anchors.right: parent.right
-            keys: "Esc"
-        }
-        Button {
-            anchors.right: parent.right
-            text: "Back to the checklist"
-            onClicked: card.host.comeBack()
+            spacing: Style.space(14)
+            KeyCaps {
+                visible: card.reason !== "update"
+                anchors.verticalCenter: parent.verticalCenter
+                keys: "Esc"
+            }
+            Button {
+                text: "Back to the checklist"
+                onClicked: card.host.comeBack()
+            }
         }
     }
 }
