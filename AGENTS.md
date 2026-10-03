@@ -223,9 +223,16 @@ code, because Omarchy ships only bash and QML. Built against Omarchy 4.0.4
 
 - `node tests/run.js` covers the engine, the drills and the UI logic. It also
   replays the recorded walkthroughs in `tests/fixtures/*.jsonl`: raw event
-  lines, probe results and window positions.
-- `scripts/drive-drills.sh` walks the tutorial live through the real plugin, on
-  empty workspaces 7 and 8. Pass it a path to record a new fixture.
+  lines, probe results and window positions. With `--record`, the plugin also
+  writes `{kind: "flow"}` lines for each flow change, `{kind: "app"}` for an
+  app tick and `{kind: "apps"}` for the app list, so a recording can be
+  replayed through the engine as well as the drills.
+- `scripts/drive-drills.sh` walks the whole tutorial live through the real
+  plugin, on empty workspaces 7 and 8: the drills, Back, the apps tick and
+  Do them now, to completion. Pass it a path to record a new fixture.
+- **Don't pipe a script that runs `wl-copy`.** It forks a server that keeps
+  the caller's stdout open, so `| tail` never ends. Send its output to
+  `/dev/null`, or write to a file.
 - **Check the lock first:** run `omarchy-shell lock isLocked`, without `-q`,
   which hides the answer. While locked, `hl.dsp.focus` returns `ok` but
   nothing moves.

@@ -29,7 +29,7 @@ While developing, always pass `--state /tmp/onboarding-test.json` (or set `OMARC
 
 ```bash
 node tests/run.js              # engine, drills and recorded walkthroughs; no display needed
-scripts/drive-drills.sh        # live: walks drills 4–7 and 9 through the real plugin
+scripts/drive-drills.sh        # live: the whole tutorial through the real plugin
 ```
 
-`drive-drills.sh` uses empty workspaces 7 and 8. It only acts on windows it opened, and it refuses to run while the screen is locked. Pass a path to save the walkthrough as a new fixture.
+`drive-drills.sh` uses empty workspaces 7 and 8. It only acts on windows it opened, and it refuses to run while the screen is locked. It walks every drill, Back, the apps step ticking on a real app window, and Do them now from the finish screen, through to completion, in about 35 seconds. Pass a path to save the walkthrough as a new fixture; `tests/fixtures/walkthrough-flow.jsonl` is one, and the tests replay its flow changes through the engine.

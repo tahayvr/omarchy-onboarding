@@ -945,6 +945,45 @@ test("socket2 walkthrough predates closing the shortcut list", () => {
     eq(Object.keys(w.drill.ticked), ["open"]);
 });
 
+// A whole tutorial recorded through the plugin, flow changes included
+// ({kind: "flow"} lines from Overlay.change): Back from the menu step and
+// forward again, the drills, two skips, an app ticking on its own window
+// ({kind: "app"}, with the app list in {kind: "apps"}), and Do them now from
+// the finish screen through the skipped steps to completion. The engine is
+// driven by the same actions and must land where the plugin did.
+test("live walkthrough: Back, the apps tick and Do them now, through to completion", () => {
+    const lines = recording("walkthrough-flow.jsonl");
+    const r = run(ONLINE).start(); // the welcome page, as the plugin opens
+    let apps = [], lastEvent = null;
+    const ticked = [];
+    lines.forEach(l => {
+        if (l.kind === "apps") apps = l.apps;
+        else if (l.kind === "hypr") lastEvent = D.parseEvent(l.line);
+        else if (l.kind === "app") {
+            eq(U.appOpened(apps, lastEvent), l.label, "the recorded window is the app that ticked");
+            ticked.push(l.label);
+        } else if (l.kind === "flow") {
+            switch (l.action) {
+            case "start tutorial": case "done": r.done(); break;
+            case "skip": r.skip(); break;
+            case "back": r.s = E.back(MANIFEST, r.s, NOW); break;
+            case "redo": r.s = E.redoOpen(MANIFEST, r.s, ONLINE, NOW); break;
+            default: throw new Error("unexpected flow action " + l.action);
+            }
+            eq(r.current(), l.current, "after " + l.action);
+            eq(r.s.status, l.status, "status after " + l.action);
+        }
+    });
+    const flow = lines.filter(l => l.kind === "flow").map(l => l.action + ">" + (l.current || "-"));
+    ok(flow.includes("back>super-key"), "went back to the Super key step");
+    ok(flow.includes("redo>theme"), "Do them now re-entered the first skipped step");
+    eq(flow[flow.length - 1], "done>-", "finished");
+    eq(r.s.status, "completed");
+    eq(ticked.length, 1, "one app ticked");
+    const { w } = replay("walkthrough-flow.jsonl");
+    ok(w.done(), "every drill completed on the way");
+});
+
 test("synthetic walkthrough completes too", () => {
     ok(replay("synthetic-drills.jsonl").w.done());
 });

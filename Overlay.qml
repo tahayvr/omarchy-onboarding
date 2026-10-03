@@ -441,6 +441,7 @@ Item {
             monitors: monitors,
             apps: apps.map(function (a) { return a.label; }),
             appsTried: Object.keys(appsTried),
+            openSteps: openSteps.map(function (s) { return s.id; }),
             facts: facts,
             error: error
         });
@@ -458,6 +459,7 @@ Item {
         pausing = false;
         away = "";
         log(label + " -> status=" + flow.status + " current=" + (step ? step.id : "none"));
+        record({ kind: "flow", action: label, status: flow.status, current: step ? step.id : null });
         logSkips(beforeSteps);
         save();
         markDone();
@@ -644,6 +646,7 @@ Item {
         resetIdle();
         omiReact("success");
         log("app opened: " + label);
+        record({ kind: "app", label: label });
     }
 
     // Apps, from a script (`tryApp <label>`). An app that installs on first use asks first.
@@ -778,12 +781,17 @@ Item {
         }
     }
 
+    // With --record: one JSON line per observation and per flow change, for
+    // tests/run.js to replay (tests/fixtures/*.jsonl).
+    function record(obs) {
+        if (!recordPath) return;
+        var line = JSON.stringify(Object.assign({ t: Math.round(Date.now() - startedAt) }, obs));
+        recordLines = recordLines.concat([line]);
+        recordFile.setText(recordLines.join("\n") + "\n");
+    }
+
     function observe(obs) {
-        if (recordPath) {
-            var line = JSON.stringify(Object.assign({ t: Math.round(Date.now() - startedAt) }, obs));
-            recordLines = recordLines.concat([line]);
-            recordFile.setText(recordLines.join("\n") + "\n");
-        }
+        record(obs);
         if (!drill) return;
         var changes = drill.observe(obs);
         if (drill.windows) {
@@ -1048,6 +1056,7 @@ Item {
         stdout: StdioCollector {
             onStreamFinished: {
                 try { root.apps = JSON.parse(text); } catch (e) { root.apps = []; }
+                root.record({ kind: "apps", apps: root.apps });
             }
         }
     }
@@ -1169,6 +1178,7 @@ Item {
             }
             // The apps step ticks an app whose window or panel opens.
             if (root.step && root.step.id === "apps" && !root.drill) {
+                root.record({ kind: "hypr", line: name + ">>" + data });
                 var label = Ui.appOpened(root.apps, Drills.parseEvent(name + ">>" + data));
                 if (label) root.appTried(label);
                 return;

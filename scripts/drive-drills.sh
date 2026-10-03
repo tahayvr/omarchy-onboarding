@@ -1,8 +1,11 @@
 #!/bin/bash
-# Walks the "Learn the keys" steps (menu to shortcuts, the clipboard step
-# included) through the real plugin on the live desktop, by running what each
-# binding runs. Each must complete its step by itself; the run passes when the
-# flow reaches the theme step. The clipboard is restored afterwards.
+# Walks the whole tutorial through the real plugin on the live desktop, by
+# running what each binding runs: the "Learn the keys" drills (menu to
+# shortcuts, the clipboard step included), each of which must complete its
+# step by itself, then Back and forward again, the apps step ticking on an
+# app's window, and Do them now from the finish screen through the skipped
+# steps. The run passes when the flow completes. The clipboard is restored
+# afterwards.
 #
 #   scripts/drive-drills.sh [recording.jsonl]
 #
@@ -38,6 +41,7 @@ dispatch() { hyprctl dispatch "$1" >/dev/null; }
 active() { hyprctl -j activewindow | jq -r '.address // ""'; }
 ws_windows() { hyprctl -j clients | jq --arg ws "$1" '[.[] | select(.workspace.name == $ws)] | length'; }
 current_step() { "${CLI[@]}" info | jq -r '.step // ""'; }
+info() { "${CLI[@]}" info | jq -r "$1"; }
 
 require_active() {
   if [[ $(active) != "$1" ]]; then
@@ -119,9 +123,15 @@ record=()
 [[ -n $OUT ]] && record=(--record "$OUT")
 "${CLI[@]}" "${record[@]}" run
 wait_step welcome
-"${CLI[@]}" tutorial >/dev/null # "Start the tutorial" on the welcome checklist
+"${CLI[@]}" tutorial >/dev/null # "Teach me" on the welcome page
 wait_step super-key
 "${CLI[@]}" next >/dev/null # super-key needs the overlay's key catcher (M3)
+wait_step menu
+
+say "Back (Ctrl + ,) to the Super key step, then forward again"
+"${CLI[@]}" previous >/dev/null
+wait_step super-key
+"${CLI[@]}" next >/dev/null
 wait_step menu
 
 say "Step 4: Super + Space, then close"
@@ -170,7 +180,7 @@ sample_terminal=$(wait_window '^org\.omarchy\.onboarding-sample$' "^($WS_A|$WS_B
 
 say "Step 8: Super + C on the card's line, Super + V in the terminal"
 saved_clipboard=$(wl-paste --no-newline 2>/dev/null || true)
-wl-copy "$SAMPLE" # what Super + C on the card's selected line does
+wl-copy "$SAMPLE" >/dev/null 2>&1 # wl-copy forks a server that keeps stdout open; what Super + C on the card's selected line does
 sleep 1.5          # the overlay sees it, ticks, and focuses the terminal
 require_active "$sample_terminal" "the clipboard terminal"
 # What Super + V does in a terminal: Shift + Insert to the focused surface.
@@ -178,7 +188,7 @@ dispatch "hl.dsp.send_key_state({ mods = 'SHIFT', key = 'Insert', state = 'down'
 sleep 0.06
 dispatch "hl.dsp.send_key_state({ mods = 'SHIFT', key = 'Insert', state = 'up' })"
 wait_step shortcuts
-printf '%s' "$saved_clipboard" | wl-copy
+printf '%s' "$saved_clipboard" | wl-copy >/dev/null 2>&1
 
 say "Step 9: Super + K, then Esc"
 setsid -f omarchy-menu-keybindings >/dev/null 2>&1 </dev/null
@@ -186,4 +196,43 @@ sleep 1.5
 omarchy-menu toggle # what Esc does to the list: the menu's layer closes
 wait_step theme
 
-say "All drills completed their steps."
+say "Steps 10 and 11: skipped, to be done again from the finish screen"
+"${CLI[@]}" skip >/dev/null
+wait_step display
+"${CLI[@]}" skip >/dev/null
+wait_step apps
+
+say "Step 12: an everyday app opens by its own shortcut"
+# The first app that is a window (not a shell panel) and needs no install.
+app=$("$ROOT/bin/onboarding-apps" | jq -c '[.[] | select((.installs | not) and (.command | test("omarchy-shell") | not))][0]')
+if [[ $app == null || -z $app ]]; then
+  say "no launchable app on this machine; Continue instead"
+else
+  app_label=$(jq -r .label <<<"$app")
+  setsid -f bash -c "$(jq -r .command <<<"$app")" >/dev/null 2>&1 </dev/null
+  for _ in $(seq 1 50); do
+    info '.appsTried | index("'"$app_label"'")' | grep -qv null && break
+    sleep 0.2
+  done
+  info '.appsTried | index("'"$app_label"'")' | grep -qv null || { echo "fail: $app_label opened but didn't tick" >&2; exit 1; }
+  say "$app_label ticked"
+fi
+"${CLI[@]}" next >/dev/null # Continue
+wait_step finish
+[[ $(info '.openSteps | join(",")') == "theme,display" ]] || { echo "fail: Still to do should list theme and display, got $(info '.openSteps')" >&2; exit 1; }
+
+say "Do them now (D): through the two skipped steps, then the finish screen"
+"${CLI[@]}" redo >/dev/null
+wait_step theme
+"${CLI[@]}" skip >/dev/null
+wait_step display
+"${CLI[@]}" skip >/dev/null
+wait_step finish
+"${CLI[@]}" next >/dev/null # Finish: the overlay closes, so read the state file
+for _ in $(seq 1 25); do
+  [[ $(jq -r .status "$STATE" 2>/dev/null) == completed ]] && break
+  sleep 0.2
+done
+[[ $(jq -r .status "$STATE") == completed ]] || { echo "fail: expected the flow to be completed, got $(jq -r .status "$STATE")" >&2; exit 1; }
+
+say "The whole tutorial completed."
