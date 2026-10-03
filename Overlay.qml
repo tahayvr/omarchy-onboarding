@@ -10,12 +10,14 @@ import "lib/Drills.js" as Drills
 import "lib/Ui.js" as Ui
 
 // The onboarding overlay. It owns the flow while open: loads the state file,
-// runs the current step's drill against Hyprland's events, saves every
-// change, and shows the step. The logic lives in lib/; the views in ui/.
+// shows the welcome checklist, runs the tutorial's drills against Hyprland's
+// events, and saves every change. The logic lives in lib/; the views in ui/.
 //
-// Two windows, never both: a centered card that takes the keyboard (welcome,
-// the Super key, the pause dialog, and the later steps), and a corner card
-// for the drills that leaves the keyboard to Hyprland.
+// Two windows, never both: a centered card that takes the keyboard (the
+// welcome checklist, the Super key, the theme picker, finish, and dialogs),
+// and a corner card for the drills that leaves the keyboard to Hyprland. When
+// the checklist hands over to a panel, a terminal or the keybindings list, it
+// steps aside to the corner until that's done.
 //
 // Payload (summon): {"state": path, "step": id, "onlySkipped": bool, "record": path,
 //                    "dryRun": bool, "facts": {...}}
@@ -24,10 +26,13 @@ import "lib/Ui.js" as Ui
 //   onlySkipped  when re-running, pass over steps already done
 //   record       also save every observation, for replay tests
 //   dryRun       log system changes (theme, updates, installs) instead of running them
-//   facts        pin facts after probing, for testing (e.g. {"online": false})
+//   facts        pin facts, for testing: {"online": false} keeps the checklist
+//                offline whatever the network says, {"update": "available"}
+//                pins the update check
 //
-// Calls (omarchy-shell shell call <id> <fn> <arg>): next, skip, pause,
-// dismiss, track ("mac" or "mac:code"), doIt, info.
+// Calls (omarchy-shell shell call <id> <fn> <arg>): startTutorial,
+// closeWelcome, connect, update, showKeybindings, next, skip, pause, dismiss,
+// doIt, info.
 Item {
     id: root
 
@@ -44,7 +49,7 @@ Item {
     property string statePath: defaultStatePath
     // The engine state. `state` itself belongs to Item.
     property var flow: null
-    property var facts: ({ online: null, owner_setup_deferred: null })
+    property var facts: ({ online: null, missing: [] })
     property string defaultBrowser: ""
     property string error: ""
     property var pendingPayload: null
@@ -62,8 +67,21 @@ Item {
     property var confirm: null
     property bool dryRun: false
     property var factsOverride: ({})
+    property var marked: ({})
 
-    // Action steps (M4).
+    // The welcome checklist.
+    property string ssid: ""
+    property string updateStatus: ""
+    property bool updating: false
+    // What the checklist stepped aside for: "", "wifi", "update" or "keys".
+    property string away: ""
+    readonly property var checklist: Ui.welcomeChecklist({
+        online: facts.online === true,
+        ssid: ssid,
+        update: updating ? "updating" : updateStatus
+    })
+
+    // The tutorial's action steps.
     property var themes: []
     property bool themeApplying: false
     property string themeApplied: ""
@@ -71,21 +89,8 @@ Item {
     property var baselineScales: null
     property string sunsetBaseline: ""
     property bool sunsetSeen: false
-    // Follows the facts, which can arrive after the step was entered.
-    readonly property var hardware: Ui.hardwareItems(facts)
-    property var hardwareState: ({})
     property var apps: []
     property var appsTried: ({})
-    property string updateStatus: ""
-    property bool updating: false
-
-    // Developer track (M5).
-    property var agents: []
-    property string agentWaiting: ""
-    property var devInfo: ({})
-    property string publicKey: ""
-    // A tip for a step the track turned into a one-liner.
-    property string tip: ""
     property string preparedStep: ""
 
     // Idle tracking for the 20 s and 40 s hints.
@@ -106,25 +111,19 @@ Item {
     property var logLines: []
 
     readonly property var step: flow && steps ? Engine.currentStep(steps, flow) : null
-    readonly property var copy: step ? Engine.copyFor(step, flow.track) : null
-    readonly property bool centered: pausing || confirm !== null || error !== "" || (step !== null && Ui.isCentered(step.id))
-    // The corner card's main button for the action steps.
-    readonly property string primaryText: {
-        if (!step) return "";
-        switch (step.id) {
-        case "display": return "Looks right";
-        case "hardware": case "apps": return "Continue";
-        case "updates": return updating ? "" : "Later";
-        default: return "";
-        }
-    }
-    readonly property bool primaryEnabled: !step || step.id !== "hardware" || hardware.every(function (item) {
-        return hardwareState[item.id] === "done" || hardwareState[item.id] === "skipped";
-    })
+    readonly property bool centered: away === "" && (pausing || confirm !== null || error !== ""
+                                                     || (step !== null && Ui.isCentered(step.id)))
+    // The corner card's main button for the tutorial's action steps.
+    readonly property string primaryText: !step ? "" : step.id === "display" ? "Looks right"
+                                        : step.id === "apps" ? "Continue" : ""
+    readonly property bool primaryEnabled: true
     readonly property string progressText: {
         if (!step || !steps) return "";
+        var tutorial = Engine.tutorialSteps(steps);
+        var i = tutorial.map(function (s) { return s.id; }).indexOf(step.id);
+        if (i < 0) return "";
         var phase = steps.phases.filter(function (p) { return p.number === step.phase; })[0];
-        return "Step " + step.number + " of " + (steps.steps.length - 1) + (phase ? " · " + phase.title : "");
+        return "Tutorial " + (i + 1) + " of " + tutorial.length + (phase ? " · " + phase.title : "");
     }
 
     onStepChanged: stepEntered()
@@ -138,7 +137,7 @@ Item {
 
         error = "";
         pausing = false;
-        tip = "";
+        away = "";
         preparedStep = "";
         drillWindows = {};
         statePath = payload.state ? String(payload.state) : defaultStatePath;
@@ -146,6 +145,8 @@ Item {
         dryRun = !!payload.dryRun;
         factsOverride = payload.facts && typeof payload.facts === "object" ? payload.facts : {};
         confirm = null;
+        updateStatus = "";
+        updating = false;
         recordLines = [];
         logLines = [];
         startedAt = Date.now();
@@ -192,6 +193,7 @@ Item {
     function close() {
         opened = false;
         pausing = false;
+        away = "";
         drill = null;
         ticked = {};
         queue = [];
@@ -232,23 +234,16 @@ Item {
         });
     }
 
-    // ------------------------------------------------------------ calls and view actions
+    // ------------------------------------------------------------ flow
 
     function next() { return change(function () { return Engine.complete(steps, flow, facts, now()); }, "done"); }
     function skip() { return change(function () { return Engine.skip(steps, flow, facts, now()); }, "skip"); }
     function pause() { return change(function () { return Engine.pause(flow, now()); }, "pause"); }
     function dismiss() { return change(function () { return Engine.dismiss(flow, now()); }, "dismiss"); }
 
-    function track(arg) {
-        var parts = String(arg || "").split(":");
-        return change(function () { return Engine.chooseTrack(flow, parts[0], parts[1] === "code", now()); }, "track " + arg);
-    }
-
-    // The welcome screen's Start.
-    function chooseTrack(trackId, writesCode) {
-        var result = track(trackId + (writesCode ? ":code" : ""));
-        return result === "ok" ? next() : result;
-    }
+    // The welcome checklist's two ways out.
+    function startTutorial() { return change(function () { return Engine.complete(steps, flow, facts, now()); }, "start tutorial"); }
+    function closeWelcome() { return change(function () { return Engine.finishNow(flow, now()); }, "close welcome"); }
 
     function askPause() {
         pausing = true;
@@ -270,20 +265,19 @@ Item {
             ticked: Object.keys(ticked).filter(function (k) { return k !== "__step"; }),
             windows: drillWindows,
             centered: centered,
+            away: away,
             pausing: pausing,
             hint: hint,
             confirm: confirm ? confirm.question : null,
             dryRun: dryRun,
-            themeApplied: themeApplied,
-            monitors: monitors,
-            hardware: hardware.map(function (i) { return i.id + ":" + (hardwareState[i.id] || ""); }),
-            apps: apps.map(function (a) { return a.label; }),
-            appsTried: Object.keys(appsTried),
+            checklist: checklist.map(function (r) { return r.id + ":" + (r.done ? "done" : r.action || "-"); }),
+            ssid: ssid,
             updateStatus: updateStatus,
             updating: updating,
-            agentWaiting: agentWaiting,
-            devInfo: devInfo,
-            publicKey: publicKey !== "",
+            themeApplied: themeApplied,
+            monitors: monitors,
+            apps: apps.map(function (a) { return a.label; }),
+            appsTried: Object.keys(appsTried),
             facts: facts,
             error: error
         });
@@ -291,7 +285,6 @@ Item {
 
     function change(fn, label) {
         if (!flow) return "not open";
-        var before = flow.current;
         var beforeSteps = Object.assign({}, flow.steps);
         try {
             flow = fn();
@@ -300,9 +293,9 @@ Item {
             return e.message;
         }
         pausing = false;
+        away = "";
         log(label + " -> status=" + flow.status + " current=" + (step ? step.id : "none"));
         logSkips(beforeSteps);
-        tip = tipsSince(before);
         save();
         markDone();
         syncDrill();
@@ -310,38 +303,80 @@ Item {
         return "ok";
     }
 
-    // omarchy-done markers, only for the real state file so test runs never
-    // mark the real account. `onboarding` once finished or dismissed, and
-    // `agent-setup-invitation` once the agent step is answered, so Omarchy's
-    // one-time "pick your default agent" notice doesn't repeat it.
+    // The `onboarding` omarchy-done marker once finished or dismissed, only for
+    // the real state file so test runs never mark the real account.
     function markDone() {
-        if (statePath !== defaultStatePath) return;
-        if (flow.status === "completed" || flow.status === "dismissed") doneMark("onboarding");
-        if (flow.steps["ai-agent"]) doneMark("agent-setup-invitation");
+        if (statePath !== defaultStatePath || marked.onboarding) return;
+        if (flow.status !== "completed" && flow.status !== "dismissed") return;
+        marked = { onboarding: true };
+        Quickshell.execDetached(["omarchy-done", "mark", "onboarding"]);
+        log("omarchy-done mark onboarding");
     }
 
-    property var marked: ({})
+    // ------------------------------------------------------------ welcome checklist
 
-    function doneMark(name) {
-        if (marked[name]) return;
-        var m = Object.assign({}, marked);
-        m[name] = true;
-        marked = m;
-        Quickshell.execDetached(["omarchy-done", "mark", name]);
-        log("omarchy-done mark " + name);
+    // Wi-Fi: the network panel does the work; the checklist steps aside and
+    // comes back once the machine is online.
+    function connect() {
+        openPanel("omarchy.network");
+        away = "wifi";
+        return "ok";
     }
 
-    // Tips of the steps the track turned into one-liners since `fromId`.
-    function tipsSince(fromId) {
-        var from = Engine.indexOf(steps, fromId), to = step ? Engine.indexOf(steps, step.id) : -1;
-        if (from < 0 || to <= from) return "";
-        return steps.steps.slice(from + 1, to).filter(function (s) {
-            var r = flow.steps[s.id];
-            return s.tip && r && r.outcome === "auto-skipped" && /tip/.test(r.reason || "");
-        }).map(function (s) { return s.tip; }).join(" ");
+    // The one safe way to update, in a terminal. The checklist steps aside
+    // until that terminal closes.
+    function update() {
+        if (facts.online !== true || updating) return "not now";
+        askConfirm("Update Omarchy now? It takes a snapshot first, then updates the system in a terminal. It may ask for your password.",
+                   "Update", function () {
+            updating = true;
+            away = "update";
+            runSystem(["omarchy-launch-floating-terminal-with-presentation", "omarchy-update"], function (code) {
+                updating = false;
+                log("update terminal closed with " + code);
+                if (away === "update") away = "";
+                checkForUpdate();
+            });
+        });
+        return "ok";
     }
 
-    // "Do it for me": runs what the step's keys would, on the drill's own windows.
+    function checkForUpdate() {
+        // Tests pin the result, e.g. {"update": "available"}.
+        if (factsOverride.update) {
+            updateStatus = factsOverride.update;
+            return;
+        }
+        if (facts.online !== true || updateCheck.running) return;
+        updateStatus = "checking";
+        updateCheck.running = true;
+    }
+
+    function showKeybindings() {
+        Quickshell.execDetached(["omarchy-menu-keybindings"]);
+        away = "keys";
+        log("show keybindings");
+        return "ok";
+    }
+
+    // The corner card's "Back to the checklist".
+    function comeBack() {
+        away = "";
+        resetIdle();
+        return "ok";
+    }
+
+    // A checklist row's button.
+    function checklistAction(id) {
+        if (id === "wifi") return connect();
+        if (id === "update") return updateStatus === "unknown" ? checkForUpdate() : update();
+        if (id === "keys") return showKeybindings();
+        return "no such row";
+    }
+
+    // ------------------------------------------------------------ do it for me
+
+    // Runs what the step's keys would, on the drill's own windows.
     function doIt() {
         if (!step) return "not open";
         var plan = Ui.doItPlan(step.id, {
@@ -356,7 +391,7 @@ Item {
         if (plan.special === "skip") return skip();
         if (plan.special === "fill") {
             Quickshell.execDetached(["wl-copy", Ui.CLIPBOARD_SAMPLE]);
-            if (coach.item) coach.item.pasteField.text = Ui.CLIPBOARD_SAMPLE;
+            if (coach.item && coach.item.pasteField) coach.item.pasteField.text = Ui.CLIPBOARD_SAMPLE;
             return "ok";
         }
         doItQueue = plan.run.slice();
@@ -376,7 +411,7 @@ Item {
         doItWait.start();
     }
 
-    // ------------------------------------------------------------ action steps (M4)
+    // ------------------------------------------------------------ system changes
 
     function askConfirm(question, confirmText, run) {
         confirm = { question: question, confirmText: confirmText, run: run };
@@ -410,7 +445,9 @@ Item {
         log("open panel " + id);
     }
 
-    // Step 10. Enter or Apply on a theme is the explicit confirmation.
+    // ------------------------------------------------------------ tutorial action steps
+
+    // Theme. Enter or Apply on a theme is the explicit confirmation.
     function applyTheme(theme) {
         // Scripts pass a slug through `shell call`.
         if (typeof theme === "string") theme = themes.filter(function (t) { return t.slug === theme; })[0];
@@ -426,60 +463,22 @@ Item {
                 log("theme set " + theme.slug + " failed with " + code);
             }
         });
+        return "ok";
     }
 
     // "Keeping the current one counts" (spec).
     function keepTheme() {
         themeApplied = "current";
-        next();
+        return next();
     }
 
-    // Step 12.
-    function hardwareAct(item) {
-        if (typeof item === "string") item = hardware.filter(function (h) { return h.id === item; })[0];
-        if (!item) return "no such item";
-        if (item.action === "sound") {
-            Quickshell.execDetached(["bash", "-c",
-                "pw-play /usr/share/sounds/freedesktop/stereo/audio-channel-front-left.oga; " +
-                "pw-play /usr/share/sounds/freedesktop/stereo/audio-channel-front-right.oga"]);
-            setHardware(item.id, "asking");
-        } else if (item.action.indexOf("panel:") === 0) {
-            openPanel(item.action.slice(6));
-            setHardware(item.id, "opened");
-        } else if (item.action.indexOf("run:") === 0) {
-            askConfirm(item.confirm, item.id === "firmware" ? "Check" : "Set up", function () {
-                setHardware(item.id, "running");
-                runSystem(item.action.slice(4).split(" "), function () { setHardware(item.id, "opened"); });
-            });
-        }
-    }
-
-    function hardwareResolve(id, result) {
-        setHardware(id, result);
-    }
-
-    // One-argument forms for `shell call`.
-    function hardwareDone(id) { setHardware(id, "done"); return "ok"; }
-    function hardwareSkip(id) { setHardware(id, "skipped"); return "ok"; }
-
-    function setHardware(id, value) {
-        var next = Object.assign({}, hardwareState);
-        next[id] = value;
-        hardwareState = next;
-        resetIdle();
-        log("hardware " + id + " " + value);
-    }
-
-    // Step 13. An app that installs on first use asks first.
+    // Apps. An app that installs on first use asks first.
     function tryApp(app) {
         if (typeof app === "string") app = apps.filter(function (a) { return a.label === app; })[0];
         if (!app) return "no such app";
         var launch = function () {
-            var go = function () {
-                Quickshell.execDetached(["hyprctl", "dispatch", "hl.dsp.exec_cmd(" + JSON.stringify(app.command) + ")"]);
-            };
             if (app.installs && dryRun) log("dry-run: would install and open " + app.label);
-            else go();
+            else Quickshell.execDetached(["hyprctl", "dispatch", "hl.dsp.exec_cmd(" + JSON.stringify(app.command) + ")"]);
             var tried = Object.assign({}, appsTried);
             tried[app.label] = true;
             appsTried = tried;
@@ -490,107 +489,14 @@ Item {
             askConfirm(app.label + " isn't installed yet. Trying it opens a terminal that installs it first.", "Install and open", launch);
         else
             launch();
-    }
-
-    // Step 16.
-    function askUpdate() {
-        askConfirm("Run omarchy update now? It takes a snapshot first, then updates the system. It may ask for your password, and you can keep working while it runs.",
-                   "Update now", function () {
-            updating = true;
-            runSystem(["omarchy-launch-floating-terminal-with-presentation", "omarchy-update"], function (code) {
-                updating = false;
-                log("update terminal closed with " + code);
-                if (step && step.id === "updates") next();
-            });
-        });
-    }
-
-    // ------------------------------------------------------------ developer track (M5)
-
-    // Step 14. Omarchy installs the agent if needed, then opens it; the step
-    // completes once `omarchy default agent` reads back the new choice.
-    function chooseAgent(name) {
-        var agent = agents.filter(function (a) { return a.name === name; })[0];
-        if (!agent || agentWaiting) return "no such agent";
-        if (agent.current) return keepAgent();
-        askConfirm("Make " + agent.label + " your default agent? Omarchy installs it if needed, then opens it so you can sign in.",
-                   "Use " + agent.label, function () {
-            if (dryRun) {
-                log("dry-run: would run omarchy default agent " + agent.name);
-                tick("agent");
-                next();
-                return;
-            }
-            log("run omarchy default agent " + agent.name);
-            Quickshell.execDetached(["omarchy", "default", "agent", agent.name]);
-            agentWaiting = agent.label;
-            agentWanted = agent.name;
-        });
-        return "ok";
-    }
-
-    property string agentWanted: ""
-
-    // Keeping the agent already set counts as done.
-    function keepAgent() {
-        log("keep default agent");
-        return next();
-    }
-
-    // Step 15. Saving unchanged values just confirms them.
-    function saveGit(name, email, unchanged) {
-        if (unchanged === true || unchanged === "true") {
-            tick("git");
-            return "ok";
-        }
-        if (!String(name).trim() || !Ui.validEmail(email)) return "invalid name or email";
-        var argvs = Ui.gitConfigArgvs(name, email);
-        runSystem(argvs[0], function (code) {
-            if (code !== 0) return log("git config failed with " + code);
-            runSystem(argvs[1], function (code2) {
-                if (code2 !== 0) return log("git config failed with " + code2);
-                tick("git");
-                if (!dryRun) devinfoProbe.running = true;
-            });
-        });
-        return "ok";
-    }
-
-    function createSshKey(email) {
-        askConfirm("Create an SSH key at ~/.ssh/id_ed25519? It has no passphrase, so it's protected by your disk encryption and login.",
-                   "Create key", function () {
-            var home = Quickshell.env("HOME");
-            runSystem(Ui.sshSetupArgv(home, email || devInfo.email || ""), function (code) {
-                if (code !== 0) return log("ssh-keygen failed with " + code);
-                tick("ssh");
-                if (!dryRun) devinfoProbe.running = true;
-            });
-        });
-        return "ok";
-    }
-
-    function copyPublicKey() {
-        if (!publicKey) return "no key";
-        Quickshell.execDetached(["wl-copy", publicKey.trim()]);
-        tick("ssh");
-        log("copied the public key");
-        return "ok";
-    }
-
-    function openEditor() {
-        Quickshell.execDetached(["omarchy-launch-editor"]);
-        tick("editor");
         return "ok";
     }
 
     function primaryAction() {
-        if (!step) return;
-        if (step.id === "hardware" && !primaryEnabled) return;
-        next();
+        if (step) next();
     }
 
-    // Ticks a sub-task of a step without a drill tracker. Steps whose
-    // sub-tasks are all automatic (internet) complete themselves.
+    // Ticks a sub-task of a step without a drill tracker.
     function tick(id) {
         if (ticked[id]) return;
         var t = Object.assign({}, ticked);
@@ -598,13 +504,15 @@ Item {
         ticked = t;
         resetIdle();
         log("step " + (step ? step.id : "?") + "/" + id + " ticked");
-        if (step && step.id === "internet" && id === "online") next();
+        if (step && step.id === "clipboard" && t.copy && t.paste) {
+            log("drill clipboard complete");
+            next();
+        }
     }
 
     // The clipboard step's field calls this on every change.
     function pasted(text) {
-        if (!step || step.id !== "clipboard") return;
-        if (String(text).indexOf(Ui.CLIPBOARD_SAMPLE) >= 0) tickClipboard("paste");
+        if (step && step.id === "clipboard" && String(text).indexOf(Ui.CLIPBOARD_SAMPLE) >= 0) tick("paste");
     }
 
     // ------------------------------------------------------------ steps and drills
@@ -613,28 +521,18 @@ Item {
         resetIdle();
         if (!step || step.id === preparedStep) return;
         preparedStep = step.id;
-        if (step.id === "theme") {
+        if (step.id === "welcome") {
+            checkForUpdate();
+        } else if (step.id === "theme") {
             themeApplied = "";
             themesProbe.running = true;
         } else if (step.id === "display") {
             baselineScales = null;
             sunsetBaseline = "";
             sunsetSeen = false;
-        } else if (step.id === "hardware") {
-            hardwareState = {};
         } else if (step.id === "apps") {
             appsProbe.running = true;
-        } else if (step.id === "ai-agent") {
-            agentWaiting = "";
-            agentsProbe.running = true;
-        } else if (step.id === "dev-basics") {
-            publicKey = "";
-            devinfoProbe.running = true;
-        } else if (step.id === "updates") {
-            updateStatus = "checking";
-            updateCheck.running = true;
-        }
-        if (step.id === "clipboard" && !flow.steps.clipboard) {
+        } else if (step.id === "clipboard" && !flow.steps.clipboard) {
             // Spec: the app opens a terminal with a sample line to copy.
             Quickshell.execDetached(["omarchy-launch-terminal", "bash", "-c",
                 "printf '\\n  %s\\n\\n' '" + Ui.CLIPBOARD_SAMPLE + "'; exec bash"]);
@@ -649,13 +547,6 @@ Item {
 
     function syncDrill() {
         var id = step ? step.id : "";
-        if (id === "clipboard") {
-            if (!drill || drill.step !== "clipboard") {
-                drill = { step: "clipboard" };
-                ticked = {};
-            }
-            return;
-        }
         if (Drills.DRILL_STEPS.indexOf(id) < 0) {
             if (drill || !step || ticked.__step !== id) {
                 drill = null;
@@ -668,19 +559,6 @@ Item {
         ticked = {};
         lastClients = null;
         log("drill " + id + " started");
-    }
-
-    function tickClipboard(id) {
-        if (ticked[id]) return;
-        var t = Object.assign({}, ticked);
-        t[id] = true;
-        ticked = t;
-        resetIdle();
-        log("drill clipboard/" + id + " ticked");
-        if (t.copy && t.paste) {
-            log("drill clipboard complete");
-            next();
-        }
     }
 
     function enqueue(obs) {
@@ -711,7 +589,7 @@ Item {
             recordLines = recordLines.concat([line]);
             recordFile.setText(recordLines.join("\n") + "\n");
         }
-        if (!drill || typeof drill.observe !== "function") return;
+        if (!drill) return;
         var changes = drill.observe(obs);
         if (drill.windows) drillWindows = drill.windows();
         if (changes.length) {
@@ -818,18 +696,11 @@ Item {
         stdout: StdioCollector {
             onStreamFinished: {
                 var lines = String(text || "").split("\n");
-                root.facts = {
-                    online: Drills.parseConnectivity(lines[0]),
-                    owner_setup_deferred: lines[1] === "yes",
-                    bluetooth: lines[3] === "yes",
-                    fingerprint: lines[4] === "yes",
-                    missing: []
-                };
-                root.defaultBrowser = String(lines[2] || "").trim();
+                root.facts = { online: Drills.parseConnectivity(lines[0]), missing: [] };
+                root.defaultBrowser = String(lines[1] || "").trim();
+                root.ssid = String(lines[2] || "").trim();
                 // Then check that every command a step needs exists.
-                var requirements = Engine.allRequirements(root.steps).concat(
-                    Ui.hardwareItems({}).map(function (item) { return item.requires; }));
-                checkProbe.command = [root.pluginDir + "/bin/onboarding-check"].concat(requirements);
+                checkProbe.command = [root.pluginDir + "/bin/onboarding-check"].concat(Engine.allRequirements(root.steps));
                 checkProbe.running = true;
             }
         }
@@ -840,8 +711,7 @@ Item {
         stdout: StdioCollector {
             onStreamFinished: {
                 var missing = String(text || "").split("\n").filter(function (l) { return l !== ""; });
-                var f = Object.assign({}, root.facts, { missing: missing }, root.factsOverride);
-                root.facts = f;
+                root.facts = Object.assign({}, root.facts, { missing: missing }, root.factsOverride);
                 if (missing.length) root.log("missing commands: " + missing.join(", "));
                 if (root.pendingPayload) {
                     var payload = root.pendingPayload;
@@ -860,6 +730,45 @@ Item {
                 if (done) done(exitCode);
                 destroy();
             }
+        }
+    }
+
+    // The checklist's Wi-Fi row, live: every 2 s on the welcome screen.
+    Timer {
+        interval: 2000
+        repeat: true
+        running: root.opened && root.step !== null && root.step.id === "welcome"
+                 && root.factsOverride.online === undefined
+        onTriggered: if (!connectionProbe.running) connectionProbe.running = true
+    }
+
+    Process {
+        id: connectionProbe
+        command: [root.pluginDir + "/bin/onboarding-facts"]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                var lines = String(text || "").split("\n");
+                var online = Drills.parseConnectivity(lines[0]);
+                var wasOnline = root.facts.online === true;
+                root.ssid = String(lines[2] || "").trim();
+                if (online === root.facts.online) return;
+                root.facts = Object.assign({}, root.facts, { online: online });
+                root.log("connection: " + (online ? "online" + (root.ssid ? " (" + root.ssid + ")" : "") : "offline"));
+                if (online && !wasOnline) {
+                    if (root.away === "wifi") root.away = "";
+                    root.checkForUpdate();
+                }
+            }
+        }
+    }
+
+    // `omarchy update available` exits 0 when there is one. Network-bound.
+    Process {
+        id: updateCheck
+        command: ["omarchy", "update", "available"]
+        onExited: function (exitCode) {
+            root.updateStatus = exitCode === 0 ? "available" : exitCode === 1 ? "current" : "unknown";
+            root.log("update check: " + root.updateStatus);
         }
     }
 
@@ -883,91 +792,7 @@ Item {
         }
     }
 
-    Process {
-        id: agentsProbe
-        command: [root.pluginDir + "/bin/onboarding-agents"]
-        stdout: StdioCollector {
-            onStreamFinished: {
-                try { root.agents = JSON.parse(text); } catch (e) { root.agents = []; }
-            }
-        }
-    }
-
-    // While an agent installs and opens, wait for the default to read back.
-    Timer {
-        interval: 1500
-        repeat: true
-        running: root.opened && root.agentWaiting !== ""
-        onTriggered: if (!agentCheck.running) agentCheck.running = true
-    }
-
-    Process {
-        id: agentCheck
-        command: ["omarchy", "default", "agent"]
-        stdout: StdioCollector {
-            onStreamFinished: {
-                if (String(text).trim() !== root.agentWanted || !root.agentWaiting) return;
-                root.log("default agent is now " + root.agentWanted);
-                root.agentWaiting = "";
-                root.tick("agent");
-                root.next();
-            }
-        }
-    }
-
-    Process {
-        id: devinfoProbe
-        command: [root.pluginDir + "/bin/onboarding-devinfo"]
-        stdout: StdioCollector {
-            onStreamFinished: {
-                try { root.devInfo = JSON.parse(text); } catch (e) { root.devInfo = {}; }
-                var keys = root.devInfo.keys || [];
-                if (keys.length) {
-                    keyReader.command = [root.pluginDir + "/bin/onboarding-read", keys[0]];
-                    keyReader.running = true;
-                }
-            }
-        }
-    }
-
-    Process {
-        id: keyReader
-        stdout: StdioCollector {
-            onStreamFinished: root.publicKey = String(text || "").trim()
-        }
-    }
-
-    // `omarchy update available` exits 0 when there is one. Network-bound.
-    Process {
-        id: updateCheck
-        command: ["omarchy", "update", "available"]
-        onExited: function (exitCode) {
-            root.updateStatus = exitCode === 0 ? "available" : exitCode === 1 ? "current" : "unknown";
-            root.log("update check: " + root.updateStatus);
-        }
-    }
-
-    // Step 2: done as soon as the machine is online.
-    Timer {
-        interval: 2000
-        repeat: true
-        running: root.opened && root.step !== null && root.step.id === "internet"
-        onTriggered: if (!connectivityProbe.running) connectivityProbe.running = true
-    }
-
-    Process {
-        id: connectivityProbe
-        command: ["nmcli", "networking", "connectivity"]
-        stdout: StdioCollector {
-            onStreamFinished: {
-                if (Drills.parseConnectivity(text) !== true) return;
-                root.facts = Object.assign({}, root.facts, { online: true });
-                root.tick("online");
-            }
-        }
-    }
-
-    // Step 11: the scale and night light, as Hyprland reports them.
+    // Display: the scale and night light, as Hyprland reports them.
     Timer {
         interval: 1000
         repeat: true
@@ -1043,7 +868,7 @@ Item {
         }
     }
 
-    // Step 8: the copy is seen when the sample line reaches the clipboard.
+    // Clipboard: the copy is seen when the sample line reaches the clipboard.
     Timer {
         interval: 800
         repeat: true
@@ -1055,7 +880,7 @@ Item {
         id: clipboardProbe
         command: ["wl-paste", "--no-newline"]
         stdout: StdioCollector {
-            onStreamFinished: if (String(text).indexOf(Ui.CLIPBOARD_SAMPLE) >= 0) root.tickClipboard("copy")
+            onStreamFinished: if (String(text).indexOf(Ui.CLIPBOARD_SAMPLE) >= 0) root.tick("copy")
         }
     }
 
@@ -1074,11 +899,11 @@ Item {
 
     Connections {
         target: Hyprland
-        enabled: root.opened && ((root.drill !== null && typeof root.drill.observe === "function")
-                                 || root.recordPath !== "" || (root.step !== null && root.step.id === "internet"))
+        enabled: root.opened && (root.drill !== null || root.recordPath !== "" || root.away === "keys")
         function onRawEvent(event) {
-            if (root.step && root.step.id === "internet") {
-                if (String(event.name) === "openlayer" && String(event.data) === "omarchy-keyboard-panel") root.tick("panel");
+            // The checklist comes back when the keybindings list closes.
+            if (root.away === "keys") {
+                if (String(event.name) === "closelayer" && String(event.data) === Drills.MENU_LAYER) root.comeBack();
                 return;
             }
             root.enqueue({ kind: "hypr", line: String(event.name) + ">>" + String(event.data) });
@@ -1127,17 +952,16 @@ Item {
                                : root.step.id === "welcome" ? welcomeView
                                : root.step.id === "super-key" ? superKeyView
                                : root.step.id === "theme" ? themeView
-                               : root.step.id === "ai-agent" ? agentView
-                               : root.step.id === "dev-basics" ? devView
                                : genericView
             }
         }
     }
 
-    // Corner: the drills. Leaves the keyboard to Hyprland, except the
-    // clipboard step, whose field the user clicks to paste into.
+    // Corner: the drills, and the checklist while it has stepped aside. Leaves
+    // the keyboard to Hyprland, except the clipboard step, whose field the
+    // user clicks to paste into.
     PanelWindow {
-        visible: root.opened && root.step !== null && !root.centered
+        visible: root.opened && root.flow !== null && !root.centered && (root.step !== null || root.away !== "")
         color: "transparent"
         anchors { bottom: true; right: true }
         margins { bottom: Style.gapsOut * 4; right: Style.gapsOut * 4 }
@@ -1146,30 +970,34 @@ Item {
         exclusionMode: ExclusionMode.Ignore
         WlrLayershell.layer: WlrLayer.Overlay
         WlrLayershell.namespace: "omarchy-onboarding-coach"
-        WlrLayershell.keyboardFocus: root.step && root.step.id === "clipboard" ? WlrKeyboardFocus.OnDemand
-                                                                             : WlrKeyboardFocus.None
+        WlrLayershell.keyboardFocus: root.away === "" && root.step && root.step.id === "clipboard"
+                                     ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
 
         Loader {
             id: coach
             anchors.fill: parent
-            sourceComponent: CoachCard {
-                host: root
-                step: root.copy
-                ticked: root.ticked
-                hint: root.hint
-                tip: root.tip
-            }
+            sourceComponent: root.away !== "" ? awayCard : coachCard
         }
     }
 
     Component {
+        id: coachCard
+        CoachCard { host: root; step: root.step; ticked: root.ticked; hint: root.hint }
+    }
+
+    Component {
+        id: awayCard
+        AwayCard { host: root; reason: root.away }
+    }
+
+    Component {
         id: welcomeView
-        WelcomeView { host: root; logoText: logoFile.text() }
+        WelcomeView { host: root; logoText: logoFile.text(); rows: root.checklist }
     }
 
     Component {
         id: superKeyView
-        SuperKeyView { host: root; step: root.copy; hint: root.hint }
+        SuperKeyView { host: root; step: root.step; hint: root.hint }
     }
 
     Component {
@@ -1179,17 +1007,7 @@ Item {
 
     Component {
         id: themeView
-        ThemeView { host: root; step: root.copy; themes: root.themes; applying: root.themeApplying; applied: root.themeApplied }
-    }
-
-    Component {
-        id: agentView
-        AgentView { host: root; step: root.copy; agents: root.agents; waitingFor: root.agentWaiting }
-    }
-
-    Component {
-        id: devView
-        DevView { host: root; step: root.copy; info: root.devInfo; ticked: root.ticked; publicKey: root.publicKey }
+        ThemeView { host: root; step: root.step; themes: root.themes; applying: root.themeApplying; applied: root.themeApplied }
     }
 
     Component {
@@ -1201,7 +1019,7 @@ Item {
         id: genericView
         StepView {
             host: root
-            step: root.copy
+            step: root.step
             openSteps: root.flow ? Engine.openSteps(root.steps, root.flow).map(function (s) {
                 var r = root.flow.steps[s.id];
                 return { title: s.title, reason: r ? r.reason : "" };

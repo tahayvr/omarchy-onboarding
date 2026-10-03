@@ -2,31 +2,19 @@
   "phases": [
     {
       "number": 0,
-      "title": "Start"
+      "title": "Welcome"
     },
     {
       "number": 1,
-      "title": "Get set up"
+      "title": "Learn the keys"
     },
     {
       "number": 2,
-      "title": "Learn to move"
-    },
-    {
-      "number": 3,
       "title": "Make it yours"
     },
     {
-      "number": 4,
-      "title": "Hardware and apps"
-    },
-    {
-      "number": 5,
-      "title": "For people who code"
-    },
-    {
-      "number": 6,
-      "title": "Stay safe and finish"
+      "number": 3,
+      "title": "Finish"
     }
   ],
   "steps": [
@@ -34,76 +22,25 @@
       "id": "welcome",
       "number": 0,
       "phase": 0,
-      "title": "Welcome",
-      "core": true,
-      "goal": "Set expectations and choose how deep to go.",
-      "screen": "About 10 minutes. Every step is skippable.",
-      "done_when": "A track is picked."
-    },
-    {
-      "id": "personal-setup",
-      "number": 1,
-      "phase": 1,
-      "title": "Personal setup",
-      "goal": "Finish the setup the installer deferred.",
-      "screen": "This password also unlocks the encrypted disk at every boot.",
-      "done_when": "The deferred setup reports success.",
-      "show_if": [
-        "owner-setup-deferred"
-      ]
-    },
-    {
-      "id": "internet",
-      "number": 2,
-      "phase": 1,
-      "title": "Connect to the internet",
-      "core": true,
-      "goal": "Get online, because updates, agents and web apps need it.",
-      "screen": "Updates, AI agents and web apps need the internet. Open the network panel and pick your Wi-Fi.",
-      "done_when": "Online.",
-      "skip_if": [
-        "online"
-      ],
-      "requires": [
-        "nmcli"
-      ],
-      "subtasks": [
-        {
-          "id": "panel",
-          "label": "Open the network panel",
-          "keys": "Super + Ctrl + W"
-        },
-        {
-          "id": "online",
-          "label": "Join a network"
-        }
-      ]
+      "title": "Welcome to Omarchy",
+      "screen": "Let's make sure you're online and up to date. Then, if you like, a hands-on tour of the keys.",
+      "done_when": "The user starts the tutorial or closes the welcome screen."
     },
     {
       "id": "super-key",
-      "number": 3,
+      "number": 1,
       "phase": 1,
       "title": "Meet the Super key",
-      "core": true,
       "goal": "One concept before any drills.",
-      "screen": "Super is the key with the Windows logo, between Ctrl and Alt. Almost every Omarchy shortcut starts with it. Press it once.",
+      "screen": "Super is the key with the Windows logo, or ⌘ on a Mac keyboard, between Ctrl and Alt. Almost every Omarchy shortcut starts with it. Press it once.",
       "done_when": "The app sees the key press while focused.",
-      "keys": "Super",
-      "variants": {
-        "mac": {
-          "screen": "Super sits where ⌘ is on a Mac. Almost every Omarchy shortcut starts with it, the way ⌘ does on macOS. Press it once."
-        },
-        "windows": {
-          "screen": "Super is the Windows key. In Omarchy it starts almost every shortcut. Press it once."
-        }
-      }
+      "keys": "Super"
     },
     {
       "id": "menu",
-      "number": 4,
-      "phase": 2,
+      "number": 2,
+      "phase": 1,
       "title": "Open the Omarchy menu",
-      "core": true,
       "screen": "Almost everything lives in here. When you're lost, start here.",
       "done_when": "The menu opens and closes.",
       "subtasks": [
@@ -121,10 +58,10 @@
     },
     {
       "id": "tiling",
-      "number": 5,
-      "phase": 2,
+      "number": 3,
+      "phase": 1,
       "title": "Launch and tile two apps",
-      "core": true,
+      "screen": "Omarchy places windows side by side for you. Open two and watch them tile behind this card.",
       "done_when": "A terminal and a browser are open on the same workspace and focus has moved once.",
       "subtasks": [
         {
@@ -147,19 +84,15 @@
           "label": "Move focus to the other window",
           "keys": "Super + Arrows"
         }
-      ],
-      "screen": "Omarchy places windows side by side for you. Open two and watch them tile behind this card."
+      ]
     },
     {
       "id": "window-controls",
-      "number": 6,
-      "phase": 2,
+      "number": 4,
+      "phase": 1,
       "title": "Close, float and full screen",
-      "tip": "Super + T floats a window, Super + F goes full screen, Super + W closes.",
+      "screen": "Any window can float above the others, fill the screen, or close.",
       "done_when": "Each event is seen once.",
-      "hide_tracks": [
-        "knows-linux"
-      ],
       "subtasks": [
         {
           "id": "float",
@@ -176,15 +109,14 @@
           "label": "Close the browser",
           "keys": "Super + W"
         }
-      ],
-      "screen": "Any window can float above the others, fill the screen, or close."
+      ]
     },
     {
       "id": "workspaces",
-      "number": 7,
-      "phase": 2,
+      "number": 5,
+      "phase": 1,
       "title": "Workspaces",
-      "core": true,
+      "screen": "Each number is a workspace: a separate desktop. Super + a number jumps there.",
       "done_when": "A workspace switch and a move-to-workspace are seen.",
       "subtasks": [
         {
@@ -197,20 +129,15 @@
           "label": "Send the terminal to workspace 2",
           "keys": "Super + Shift + 2"
         }
-      ],
-      "screen": "Each number is a workspace: a separate desktop. Super + a number jumps there."
+      ]
     },
     {
       "id": "clipboard",
-      "number": 8,
-      "phase": 2,
+      "number": 6,
+      "phase": 1,
       "title": "Copy and paste the Omarchy way",
-      "tip": "Super + C, V and X copy, paste and cut everywhere, including the terminal.",
-      "done_when": "The field contains the expected text.",
-      "hide_tracks": [
-        "knows-linux"
-      ],
       "screen": "Super + C, V and X copy, paste and cut everywhere, even in the terminal. Select the line in the terminal that opened, copy it, then paste it below.",
+      "done_when": "The field contains the expected text.",
       "subtasks": [
         {
           "id": "copy",
@@ -226,10 +153,9 @@
     },
     {
       "id": "shortcuts",
-      "number": 9,
-      "phase": 2,
+      "number": 7,
+      "phase": 1,
       "title": "Find any shortcut",
-      "core": true,
       "screen": "You don't need to memorize anything. Super + K is always there. Close it with Esc.",
       "done_when": "The bindings overlay was opened.",
       "subtasks": [
@@ -242,10 +168,9 @@
     },
     {
       "id": "theme",
-      "number": 10,
-      "phase": 3,
+      "number": 8,
+      "phase": 2,
       "title": "Pick a theme",
-      "core": true,
       "screen": "Arrow keys move, Enter applies. Everything restyles at once, this card included.",
       "done_when": "A theme is applied (keeping the current one counts).",
       "requires": [
@@ -254,8 +179,8 @@
     },
     {
       "id": "display",
-      "number": 11,
-      "phase": 3,
+      "number": 9,
+      "phase": 2,
       "title": "Display and comfort",
       "screen": "Check that text is a comfortable size, and try the night light.",
       "done_when": "The user confirms it looks right.",
@@ -273,17 +198,9 @@
       ]
     },
     {
-      "id": "hardware",
-      "number": 12,
-      "phase": 4,
-      "title": "Quick hardware check",
-      "done_when": "Each shown item is done or skipped.",
-      "screen": "A quick check that sound and your devices work. Skip anything you don't need."
-    },
-    {
       "id": "apps",
-      "number": 13,
-      "phase": 4,
+      "number": 10,
+      "phase": 2,
       "title": "Your everyday apps",
       "screen": "Your everyday apps each have their own shortcut. Try one.",
       "done_when": "The user presses Continue.",
@@ -292,73 +209,11 @@
       ]
     },
     {
-      "id": "ai-agent",
-      "number": 14,
-      "phase": 5,
-      "title": "Choose your AI agent",
-      "screen": "Pick the coding agent Super + Shift + Ctrl + A opens. Omarchy installs it if needed and opens it so you can sign in.",
-      "done_when": "A default agent is set, or skipped.",
-      "show_if": [
-        "writes-code"
-      ],
-      "needs": [
-        "online"
-      ],
-      "requires": [
-        "omarchy default agent"
-      ]
-    },
-    {
-      "id": "dev-basics",
-      "number": 15,
-      "phase": 5,
-      "title": "Developer basics",
-      "done_when": "The user presses Continue.",
-      "show_if": [
-        "writes-code"
-      ],
-      "requires": [
-        "git"
-      ],
-      "screen": "Three things almost every developer sets up first.",
-      "subtasks": [
-        {
-          "id": "git",
-          "label": "Your name and email for git commits"
-        },
-        {
-          "id": "ssh",
-          "label": "An SSH key for GitHub and servers"
-        },
-        {
-          "id": "editor",
-          "label": "Open your editor",
-          "keys": "Super + Shift + N"
-        }
-      ]
-    },
-    {
-      "id": "updates",
-      "number": 16,
-      "phase": 6,
-      "title": "Updates and snapshots",
-      "core": true,
-      "screen": "When a circle-arrow icon appears next to the clock, click it. Always update with omarchy update, not pacman -Syu, so you get a snapshot first. If an update ever goes wrong, pick an earlier snapshot from the boot menu.",
-      "done_when": "The update finishes or the user chooses Later.",
-      "needs": [
-        "online"
-      ],
-      "requires": [
-        "omarchy update"
-      ]
-    },
-    {
       "id": "finish",
-      "number": 17,
-      "phase": 6,
+      "number": 11,
+      "phase": 3,
       "title": "You're ready",
-      "core": true,
-      "screen": "Re-run any lesson later with omarchy onboarding --step <name>.",
+      "screen": "That's the tour. Super + K shows every shortcut, and Super + Space opens the menu. Run omarchy onboarding to see this again, or omarchy onboarding --step <name> for one lesson.",
       "done_when": "The user presses Finish."
     }
   ]

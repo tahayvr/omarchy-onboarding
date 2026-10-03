@@ -13,7 +13,6 @@ Rectangle {
     property var step: null
     property var ticked: ({})
     property int hint: 0
-    property string tip: ""
     property alias pasteField: field
 
     readonly property bool isWorkspaces: step && step.id === "workspaces"
@@ -123,22 +122,9 @@ Rectangle {
             width: parent.width
             active: sourceComponent !== null
             sourceComponent: !card.step ? null
-                : card.step.id === "internet" ? internetPanel
                 : card.step.id === "display" ? displayPanel
-                : card.step.id === "hardware" ? hardwarePanel
                 : card.step.id === "apps" ? appsPanel
-                : card.step.id === "updates" ? updatesPanel
                 : null
-        }
-
-        Text {
-            width: parent.width
-            visible: card.tip !== ""
-            text: "Tip: " + card.tip
-            wrapMode: Text.Wrap
-            color: Qt.rgba(Color.foreground.r, Color.foreground.g, Color.foreground.b, 0.62)
-            font.family: Style.font.family
-            font.pixelSize: Style.font.bodySmall
         }
 
         Footer {
@@ -151,9 +137,6 @@ Rectangle {
         }
     }
 
-    Component { id: internetPanel; InternetPanel { host: card.host } }
     Component { id: displayPanel; DisplayPanel { host: card.host } }
-    Component { id: hardwarePanel; HardwarePanel { host: card.host } }
     Component { id: appsPanel; AppsPanel { host: card.host } }
-    Component { id: updatesPanel; UpdatesPanel { host: card.host } }
 }

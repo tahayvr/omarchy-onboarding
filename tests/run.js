@@ -44,22 +44,25 @@ function copy(x) { return JSON.parse(JSON.stringify(x)); }
 // ================================================================ manifest
 
 const NOW = 1000;
-const ONLINE = { online: true, owner_setup_deferred: false };
-const OFFLINE = { online: false, owner_setup_deferred: false };
+const ONLINE = { online: true };
+const OFFLINE = { online: false };
 
 const MINIMAL = {
     phases: [{ number: 0, title: "Start" }],
     steps: [
-        { id: "welcome", number: 0, phase: 0, title: "Welcome", done_when: "a track is picked" },
+        { id: "welcome", number: 0, phase: 0, title: "Welcome", done_when: "tutorial or close" },
         { id: "finish", number: 1, phase: 0, title: "Done", done_when: "Finish pressed" }
     ]
 };
 
-test("the real manifest is valid and matches the spec", () => {
+const TUTORIAL = ["super-key", "menu", "tiling", "window-controls", "workspaces", "clipboard", "shortcuts",
+                  "theme", "display", "apps"];
+
+test("the real manifest is valid: welcome, the tutorial, finish", () => {
     E.validateManifest(MANIFEST);
-    eq(MANIFEST.steps.length, 18, "steps");
-    eq(MANIFEST.phases.length, 7, "phases");
-    eq(MANIFEST.steps.filter(s => s.core).length, 10, "core steps");
+    eq(MANIFEST.steps.map(s => s.id), ["welcome"].concat(TUTORIAL, ["finish"]));
+    eq(MANIFEST.phases.map(p => p.title), ["Welcome", "Learn the keys", "Make it yours", "Finish"]);
+    eq(E.tutorialSteps(MANIFEST).map(s => s.id), TUTORIAL);
 });
 
 test("a minimal manifest is valid", () => { E.validateManifest(copy(MINIMAL)); });
@@ -67,15 +70,15 @@ test("a minimal manifest is valid", () => { E.validateManifest(copy(MINIMAL)); }
 test("unknown keys are rejected", () => {
     const m = copy(MINIMAL); m.steps[1].skip_iff = [];
     throws(() => E.validateManifest(m), "unknown key 'skip_iff'");
+    const t = copy(MINIMAL); t.steps[1].hide_tracks = ["mac"];
+    throws(() => E.validateManifest(t), "unknown key 'hide_tracks'");
 });
 
-test("unknown facts and tracks are rejected", () => {
-    let m = copy(MINIMAL); m.steps.splice(1, 0, { id: "x", number: 1, phase: 0, title: "X", done_when: "y", skip_if: ["onlin"] });
+test("unknown facts are rejected", () => {
+    const m = copy(MINIMAL);
+    m.steps.splice(1, 0, { id: "x", number: 1, phase: 0, title: "X", done_when: "y", skip_if: ["onlin"] });
     m.steps[2].number = 2;
     throws(() => E.validateManifest(m), "unknown fact 'onlin'");
-    m = copy(MINIMAL); m.steps.splice(1, 0, { id: "x", number: 1, phase: 0, title: "X", done_when: "y", tip: "t", hide_tracks: ["linux"] });
-    m.steps[2].number = 2;
-    throws(() => E.validateManifest(m), "unknown track 'linux'");
 });
 
 test("welcome must come first and finish last", () => {
@@ -88,16 +91,16 @@ test("step numbers must be sequential", () => {
     throws(() => E.validateManifest(m), "expected 1");
 });
 
-test("finish cannot have skip rules", () => {
+test("welcome and finish cannot have skip rules", () => {
     const m = copy(MINIMAL); m.steps[1].skip_if = ["online"];
     throws(() => E.validateManifest(m), "cannot have skip rules");
 });
 
-test("hiding a step on a track needs a tip", () => {
+test("requires must be a list of commands", () => {
     const m = copy(MINIMAL);
-    m.steps.splice(1, 0, { id: "x", number: 1, phase: 0, title: "X", done_when: "y", hide_tracks: ["mac"] });
+    m.steps.splice(1, 0, { id: "x", number: 1, phase: 0, title: "X", done_when: "y", requires: "nmcli" });
     m.steps[2].number = 2;
-    throws(() => E.validateManifest(m), "has no tip");
+    throws(() => E.validateManifest(m), "requires must be a list");
 });
 
 // ================================================================ state
@@ -117,21 +120,19 @@ test("corrupt or newer state is refused", () => {
     throws(() => E.parseState(JSON.stringify({ version: 99 }), 1), "has version 99");
 });
 
-test("older state gains missing keys", () => {
-    const s = E.parseState(JSON.stringify({ version: 1, status: "paused", steps: {} }), 7);
+test("older state gains missing keys and keeps old ones harmlessly", () => {
+    const s = E.parseState(JSON.stringify({ version: 1, status: "paused", track: "mac", steps: {} }), 7);
     eq(s.mode, "full");
     eq(s.pause_notified, false);
 });
 
 // ================================================================ lifecycle
 
-
 // A small driver over the pure functions, like the overlay uses them.
 function run(facts) {
     const r = { m: MANIFEST, s: E.newState(NOW), facts: facts || ONLINE };
     r.current = () => { const st = E.currentStep(r.m, r.s); return st ? st.id : null; };
     r.start = () => { r.s = E.start(r.m, r.s, r.facts, NOW); return r; };
-    r.track = (t, code) => { r.s = E.chooseTrack(r.s, t, code, NOW); return r; };
     r.done = () => { r.s = E.complete(r.m, r.s, r.facts, NOW); return r; };
     r.skip = () => { r.s = E.skip(r.m, r.s, r.facts, NOW); return r; };
     r.walk = () => {
@@ -142,11 +143,10 @@ function run(facts) {
     return r;
 }
 
-function started(facts, track, code) {
-    return run(facts).start().track(track || "new-to-linux", !!code).done();
+// Started, with the tutorial chosen on the welcome screen.
+function started(facts) {
+    return run(facts).start().done();
 }
-
-// Not started
 
 test("not started autostarts at login", () => {
     const r = run();
@@ -154,31 +154,33 @@ test("not started autostarts at login", () => {
     eq(r.current(), null);
 });
 
-test("starting opens the welcome step", () => {
+test("starting opens the welcome checklist", () => {
     const r = run().start();
     eq(r.s.status, "in-progress");
     eq(r.current(), "welcome");
 });
 
-test("welcome needs a track", () => {
+test("Start the tutorial walks every tutorial step, then finish", () => {
     const r = run().start();
-    throws(() => r.done(), "pick a track");
-    throws(() => r.skip(), "pick a track");
-    r.track("mac", true).done();
-    eq(r.s.track, "mac");
-    eq(r.s.writes_code, true);
+    eq(r.walk(), ["welcome"].concat(TUTORIAL, ["finish"]));
+    eq(r.s.status, "completed");
 });
 
-test("the track can only be picked on welcome", () => {
-    const r = started(ONLINE, "mac");
-    throws(() => r.track("windows"), "only be picked on the welcome step");
+test("Close on the welcome checklist finishes without the tutorial", () => {
+    const r = run().start();
+    r.s = E.finishNow(r.s, NOW);
+    eq(r.s.status, "completed");
+    eq(r.s.current, null);
+    eq(r.s.steps.welcome.outcome, "done");
+    eq(Object.keys(r.s.steps), ["welcome"], "tutorial steps untouched");
+    eq(E.login(r.s, NOW).action, "nothing");
 });
 
-test("unknown tracks are rejected", () => {
-    throws(() => run().start().track("linux"), "unknown track 'linux'");
+test("only the welcome checklist can be closed that way", () => {
+    const r = started(ONLINE);
+    throws(() => E.finishNow(r.s, NOW), "only the welcome screen");
+    throws(() => E.finishNow(E.newState(NOW), NOW), "while onboarding is not-started");
 });
-
-// In progress
 
 test("in progress resumes at the current step after a reboot", () => {
     const r = started(ONLINE).done(); // super-key
@@ -186,14 +188,6 @@ test("in progress resumes at the current step after a reboot", () => {
     const saved = E.parseState(E.serialize(r.s), NOW);
     eq(E.login(saved, NOW), { action: "resume", step: "menu", state: saved });
     eq(E.currentStep(MANIFEST, E.start(MANIFEST, saved, ONLINE, NOW)).id, "menu");
-});
-
-test("resume re-checks the current step", () => {
-    const r = started(OFFLINE);
-    eq(r.current(), "internet");
-    const back = E.start(MANIFEST, r.s, ONLINE, NOW);
-    eq(E.currentStep(MANIFEST, back).id, "super-key");
-    eq(back.steps.internet.outcome, "auto-skipped");
 });
 
 test("functions never mutate their input", () => {
@@ -205,14 +199,12 @@ test("functions never mutate their input", () => {
     eq(r.s, before);
 });
 
-// Paused
-
 test("paused reminds once, then stays quiet", () => {
     const r = started(ONLINE);
     r.s = E.pause(r.s, NOW);
     eq(r.s.status, "paused");
     eq(r.current(), null);
-    let l = E.login(r.s, NOW);
+    const l = E.login(r.s, NOW);
     eq(l.action, "remind");
     eq(E.login(l.state, NOW).action, "nothing");
 });
@@ -233,30 +225,24 @@ test("steps cannot change while paused", () => {
     throws(() => E.pause(r.s, NOW), "while onboarding is paused");
 });
 
-// Completed
-
 test("finishing completes and never autostarts again", () => {
-    const r = started(ONLINE, "new-to-linux", true);
-    const shown = r.walk();
-    eq(shown[shown.length - 1], "finish");
+    const r = started(ONLINE);
+    r.walk();
     eq(r.s.status, "completed");
-    eq(r.s.current, null);
     eq(E.login(r.s, NOW).action, "nothing");
     throws(() => r.start(), "while onboarding is completed");
 });
 
 test("every step is skippable", () => {
-    const r = started(OFFLINE, "new-to-linux", true);
+    const r = run(OFFLINE).start();
     while (r.s.status === "in-progress") r.skip();
     eq(r.s.status, "completed");
 });
 
-// Dismissed
-
 test("dismiss is reachable from every step", () => {
-    const reference = started(OFFLINE, "new-to-linux", true).walk();
+    const reference = run().start().walk();
     reference.forEach((expected, stopAt) => {
-        const r = started(OFFLINE, "new-to-linux", true);
+        const r = run().start();
         for (let i = 0; i < stopAt; i++) r.done();
         eq(r.current(), expected);
         r.s = E.dismiss(r.s, NOW);
@@ -267,64 +253,24 @@ test("dismiss is reachable from every step", () => {
 
 test("dismiss works before starting and while paused, not after completing", () => {
     eq(E.dismiss(E.newState(NOW), NOW).status, "dismissed");
-    const r = started(ONLINE, "mac");
+    const r = started(ONLINE);
     eq(E.dismiss(E.pause(r.s, NOW), NOW).status, "dismissed");
     r.walk();
     throws(() => E.dismiss(r.s, NOW), "while onboarding is completed");
 });
 
-// Track and skip rules
-
-test("online machines skip the internet step", () => {
-    const r = started(ONLINE);
-    eq(r.current(), "super-key");
-    eq(r.s.steps.internet.outcome, "auto-skipped");
-    eq(r.s.steps.internet.reason, "already online");
-});
-
-test("unknown connectivity shows the internet step", () => {
-    eq(started({ online: null, owner_setup_deferred: false }).current(), "internet");
-});
-
-test("personal setup only after an install for another owner", () => {
-    eq(started(ONLINE).s.steps["personal-setup"].outcome, "auto-skipped");
-    eq(started({ online: true, owner_setup_deferred: true }).current(), "personal-setup");
-    // Unknown means "not deferred": the step is rare and needs proof.
-    eq(started({ online: true, owner_setup_deferred: null }).s.steps["personal-setup"].outcome, "auto-skipped");
-});
-
-test("the knows-linux track gets tips instead of basic drills", () => {
-    const r = started(ONLINE, "knows-linux");
+test("a missing command auto-skips its step and names it", () => {
+    const r = started({ online: true, missing: ["omarchy theme set"] });
     const shown = r.walk();
-    ok(!shown.includes("window-controls") && !shown.includes("clipboard"), shown.join(","));
-    eq(r.s.steps.clipboard, { outcome: "auto-skipped", at: NOW, reason: "shown as a tip on the knows-linux track" });
+    ok(!shown.includes("theme"), shown.join(","));
+    eq(r.s.steps.theme, { outcome: "auto-skipped", at: NOW, reason: "command 'omarchy theme set' is missing" });
 });
 
-test("developer steps only for people who code", () => {
-    let shown = started(ONLINE, "mac", false).walk();
-    ok(!shown.includes("ai-agent") && !shown.includes("dev-basics"));
-    shown = started(ONLINE, "mac", true).walk();
-    ok(shown.includes("ai-agent") && shown.includes("dev-basics"));
+test("every requirement is collected once", () => {
+    const all = E.allRequirements(MANIFEST);
+    ok(all.includes("omarchy theme set"));
+    eq(all.length, new Set(all).size);
 });
-
-test("core path for a Linux user who does not code", () => {
-    eq(started(ONLINE, "knows-linux").walk(),
-       ["super-key", "menu", "tiling", "workspaces", "shortcuts", "theme", "display", "hardware", "apps", "updates", "finish"]);
-});
-
-// Edge case: offline and the user skips step 2
-
-test("offline defers the steps that need internet", () => {
-    const r = started(OFFLINE, "new-to-linux", true);
-    eq(r.current(), "internet");
-    r.skip();
-    const shown = r.walk();
-    ok(!shown.includes("ai-agent") && !shown.includes("updates"), shown.join(","));
-    eq(r.s.steps.updates, { outcome: "deferred", at: NOW, reason: "needs online" });
-    eq(E.openSteps(MANIFEST, r.s).map(s => s.id), ["ai-agent", "updates"]);
-});
-
-// Edge case: a command is missing or renamed
 
 test("auto-skip records the reason and moves on", () => {
     const r = started(ONLINE);
@@ -341,17 +287,22 @@ test("failures are listed on the finish screen", () => {
     eq(E.openSteps(MANIFEST, r.s).map(s => s.id), [step]);
 });
 
-// Edge case: existing user re-running
-
-test("re-run starts at the track picker and keeps results", () => {
-    const r = started(ONLINE, "mac");
+test("re-run starts at the welcome checklist and keeps results", () => {
+    const r = started(ONLINE);
     r.walk();
     const before = copy(r.s.steps);
     r.s = E.rerun(r.s, false, NOW);
     eq(r.s.status, "in-progress");
     eq(r.current(), "welcome");
-    eq(r.s.track, "mac");
     eq(r.s.steps, before);
+});
+
+test("re-run after Close offers the tutorial again", () => {
+    const r = run().start();
+    r.s = E.rerun(E.finishNow(r.s, NOW), false, NOW);
+    eq(r.current(), "welcome");
+    r.done();
+    eq(r.current(), "super-key");
 });
 
 test("re-run of only skipped steps passes over done ones", () => {
@@ -376,10 +327,8 @@ test("re-run needs a finished or dismissed run", () => {
     eq(r.current(), "welcome");
 });
 
-// Replaying one lesson
-
 test("replay shows one step without moving the flow", () => {
-    const r = started(ONLINE, "mac");
+    const r = started(ONLINE);
     r.walk();
     r.s = E.replay(MANIFEST, r.s, "theme", NOW);
     eq(r.current(), "theme");
@@ -390,7 +339,7 @@ test("replay shows one step without moving the flow", () => {
 });
 
 test("replay during a run returns to the current step", () => {
-    const r = started(ONLINE, "mac");
+    const r = started(ONLINE);
     const step = r.current();
     r.s = E.replay(MANIFEST, r.s, "clipboard", NOW);
     eq(r.current(), "clipboard");
@@ -398,8 +347,7 @@ test("replay during a run returns to the current step", () => {
     eq(r.current(), step);
 });
 
-test("replay ignores skip rules and rejects unknown steps", () => {
-    eq(E.currentStep(MANIFEST, E.replay(MANIFEST, E.newState(NOW), "internet", NOW)).id, "internet");
+test("replay rejects unknown steps", () => {
     throws(() => E.replay(MANIFEST, E.newState(NOW), "nope", NOW), "unknown step 'nope'");
 });
 
@@ -532,23 +480,6 @@ test("every drill matches the manifest's sub-tasks", () => {
 
 // ================================================================ ui
 
-test("track copy comes from the step's variant", () => {
-    const step = MANIFEST.steps.find(s => s.id === "super-key");
-    ok(E.copyFor(step, "mac").screen.includes("⌘"));
-    ok(E.copyFor(step, "windows").screen.includes("Windows key"));
-    eq(E.copyFor(step, "knows-linux").screen, step.screen);
-    eq(E.copyFor(step, null).screen, step.screen);
-});
-
-test("variants for unknown tracks or keys are rejected", () => {
-    const m = copy(MINIMAL);
-    m.steps.splice(1, 0, { id: "x", number: 1, phase: 0, title: "X", done_when: "y", variants: { linux: { screen: "s" } } });
-    m.steps[2].number = 2;
-    throws(() => E.validateManifest(m), "unknown track 'linux'");
-    m.steps[1].variants = { mac: { colour: "red" } };
-    throws(() => E.validateManifest(m), "unknown key 'colour'");
-});
-
 test("key caps", () => {
     eq(U.keyCaps("Super + Shift + Return"), ["Super", "Shift", "Return"]);
     eq(U.keyCaps("Super + Arrows"), ["Super", "←", "↑", "↓", "→"]);
@@ -572,35 +503,38 @@ test("idle hints at 20 s and 40 s", () => {
 });
 
 test("centered steps take the keyboard; drills and panel steps stay in the corner", () => {
-    ok(U.isCentered("welcome") && U.isCentered("super-key") && U.isCentered("theme") && U.isCentered("finish"));
-    D.DRILL_STEPS.concat(["clipboard", "internet", "display", "hardware", "apps", "updates"]).forEach(id => ok(!U.isCentered(id), id));
+    ["welcome", "super-key", "theme", "finish"].forEach(id => ok(U.isCentered(id), id));
+    D.DRILL_STEPS.concat(["clipboard", "display", "apps"]).forEach(id => ok(!U.isCentered(id), id));
 });
 
-test("a missing command auto-skips its step and names it", () => {
-    const facts = { online: false, owner_setup_deferred: false, missing: ["omarchy theme set"] };
-    const r = started(facts, "knows-linux");
-    const shown = r.walk();
-    ok(!shown.includes("theme"), shown.join(","));
-    eq(r.s.steps.theme, { outcome: "auto-skipped", at: NOW, reason: "command 'omarchy theme set' is missing" });
+function rows(status) { return U.welcomeChecklist(status); }
+function row(status, id) { return rows(status).find(r => r.id === id); }
+
+test("welcome checklist: Wi-Fi, update, keybindings, in that order", () => {
+    eq(rows({ online: true, ssid: "Home", update: "current" }).map(r => r.id), ["wifi", "update", "keys"]);
 });
 
-test("every requirement is collected once", () => {
-    const all = E.allRequirements(MANIFEST);
-    ok(all.includes("omarchy theme set") && all.includes("omarchy update") && all.includes("nmcli"));
-    eq(all.length, new Set(all).size);
+test("welcome checklist: Wi-Fi", () => {
+    eq(row({ online: true, ssid: "Home" }, "wifi"), { id: "wifi", done: true, title: "Connected to Home", detail: "", action: "" });
+    eq(row({ online: true }, "wifi").title, "Connected to the internet", "wired has no SSID");
+    const off = row({ online: false }, "wifi");
+    ok(!off.done && off.action === "Connect" && off.keys === "Super + Ctrl + W");
+    ok(off.detail.split(". ").length === 1, "one sentence: " + off.detail);
 });
 
-test("requires must be a list of commands", () => {
-    const m = copy(MINIMAL);
-    m.steps.splice(1, 0, { id: "x", number: 1, phase: 0, title: "X", done_when: "y", requires: "nmcli" });
-    m.steps[2].number = 2;
-    throws(() => E.validateManifest(m), "requires must be a list");
+test("welcome checklist: the update waits for the internet", () => {
+    eq(row({ online: false, update: "available" }, "update").action, "", "no Update button offline");
+    ok(row({ online: false }, "update").detail.includes("Connect"));
+    eq(row({ online: true }, "update").title, "Checking for updates…");
+    eq(row({ online: true, update: "available" }, "update").action, "Update");
+    ok(row({ online: true, update: "current" }, "update").done);
+    eq(row({ online: true, update: "unknown" }, "update").action, "Try again");
+    eq(row({ online: true, update: "updating" }, "update").action, "");
 });
 
-test("hardware items follow detection and available commands", () => {
-    eq(U.hardwareItems({ bluetooth: true, fingerprint: false }).map(i => i.id), ["audio", "bluetooth", "firmware"]);
-    eq(U.hardwareItems({ bluetooth: false, fingerprint: true, missing: ["pw-play"] }).map(i => i.id), ["fingerprint", "firmware"]);
-    ok(U.hardwareItems({}).filter(i => i.action.startsWith("run:")).every(i => i.confirm), "system changes ask first");
+test("welcome checklist: keybindings", () => {
+    const k = row({}, "keys");
+    eq([k.action, k.keys, k.info], ["Show all", "Super + K", true]);
 });
 
 function argvs(plan) { return plan.run.map(s => s.argv.join(" ")); }
@@ -638,8 +572,7 @@ test("do it for me: window controls and workspaces", () => {
        "hyprctl dispatch hl.dsp.window.move({ workspace = '8' })");
 });
 
-test("do it for me: the network panel and display", () => {
-    eq(argvs(U.doItPlan("internet", {})), ["omarchy-shell shell toggle omarchy.network"]);
+test("do it for me: display", () => {
     eq(argvs(U.doItPlan("display", { ticked: {} })), ["omarchy-hyprland-monitor-scaling up", "omarchy-hyprland-monitor-scaling down"]);
     eq(argvs(U.doItPlan("display", { ticked: { scale: true } })), ["omarchy-toggle-nightlight", "omarchy-toggle-nightlight"]);
 });
@@ -648,43 +581,13 @@ test("do it for me: specials and steps without one", () => {
     eq(U.doItPlan("super-key", {}), { special: "complete" });
     eq(U.doItPlan("clipboard", {}), { special: "fill" });
     eq(U.doItPlan("theme", {}), null);
+    eq(U.doItPlan("welcome", {}), null);
 });
 
 test("the tiling drill reports its own windows", () => {
     const d = D.create("tiling");
     feed(d, OPEN_PAIR);
     eq(d.windows(), { terminal: "t1", browser: "b1", active: "b1" });
-});
-
-// ================================================================ developer track (M5)
-
-test("agent notes only where known", () => {
-    ok(U.agentNote("claude").includes("Anthropic"));
-    eq(U.agentNote("muse"), "");
-});
-
-test("email validation", () => {
-    ok(U.validEmail("a@b.co") && U.validEmail("  first.last@example.org "));
-    ok(!U.validEmail("") && !U.validEmail("no-at.example.com") && !U.validEmail("a@b") && !U.validEmail("a b@c.de"));
-});
-
-test("git and ssh-keygen commands", () => {
-    eq(U.gitConfigArgvs(" Ada Lovelace ", "ada@example.org "), [
-        ["git", "config", "--global", "user.name", "Ada Lovelace"],
-        ["git", "config", "--global", "user.email", "ada@example.org"]]);
-    eq(U.sshKeygenArgv("/home/ada", "ada@example.org"),
-       ["ssh-keygen", "-t", "ed25519", "-C", "ada@example.org", "-f", "/home/ada/.ssh/id_ed25519", "-N", ""]);
-});
-
-test("editor tip mentions LazyVim only for Neovim", () => {
-    ok(U.editorTip("nvim").includes("LazyVim"));
-    ok(U.editorTip("").includes("LazyVim"), "Omarchy's fallback editor is nvim");
-    ok(!U.editorTip("zeditor").includes("LazyVim") && U.editorTip("zeditor").includes("zeditor"));
-});
-
-test("developer steps declare what they run", () => {
-    eq(MANIFEST.steps.find(s => s.id === "ai-agent").requires, ["omarchy default agent"]);
-    eq(MANIFEST.steps.find(s => s.id === "dev-basics").subtasks.map(t => t.id), ["git", "ssh", "editor"]);
 });
 
 // ================================================================ login hook (M6)
@@ -710,7 +613,7 @@ test("the bash login hook decides like Engine.login", () => {
     const running = started(ONLINE).done().s;                       // in progress at menu
     const paused = E.pause(running, NOW);
     const reminded = E.login(paused, NOW).state;
-    const done = (() => { const r = started(ONLINE, "knows-linux"); r.walk(); return r.s; })();
+    const done = (() => { const r = started(ONLINE); r.walk(); return r.s; })();
     const dismissed = E.dismiss(running, NOW);
     [fresh, running, paused, reminded, done, dismissed].forEach(s => {
         const l = E.login(s, NOW);

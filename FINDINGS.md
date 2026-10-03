@@ -185,3 +185,22 @@ All six were tested live on 2026-10-02:
 - **Tested against temp locations.** The exact git commands ran with `GIT_CONFIG_GLOBAL` pointed at a temp file, and the key wrapper with a temp home without `.ssh`: modes 700/600, and a second run refuses to overwrite. In the overlay, the git form was driven by keyboard in dry run: "Keep these" ticked without commands; an edited name logged both commands. Your `~/.config/git/config` checksum and `~/.ssh` were unchanged.
 - **The editor Super + Shift + N really opens.** `omarchy-launch-editor` falls back to `nvim` when the configured editor isn't an installed command. Here `omarchy default editor` says `zeditor`, but Zed is installed as `~/.local/bin/zed`, so Super + Shift + N opens Neovim. `bin/onboarding-devinfo` applies the same fallback, so the LazyVim tip appears exactly when Neovim opens. Upstream note: `omarchy-default-editor zed` stores `zeditor`, which fails for Zed installed as `zed`.
 - **Not exercised live:** showing and copying an existing SSH public key, since this machine has no `id_*.pub` and I won't create one in your `~/.ssh`. The read path is the same `bin/onboarding-read` used for the state file.
+
+## Flow redesign (Oct 2): a welcome checklist, then an optional tutorial
+
+Replaces the spec's tracks and the 18-step flow, by decision. This section supersedes "Flow decisions (M1)" where they conflict.
+
+- **No tracks.** The welcome screen no longer asks how well you know Linux or whether you write code.
+- **Welcome checklist,** shown first:
+  - **Wi-Fi.** "Connected to <network>" with a tick (the network comes from `nmcli -t -f active,ssid device wifi`; wired says "Connected to the internet"). Otherwise "Not connected", one sentence, and **Connect**, which opens the shell's network panel.
+  - **Omarchy update.** Checked with `omarchy update available` once online. Shows "Up to date" with a tick, an **Update** button (asks first, then runs `omarchy-update` in the presentation terminal), "Couldn't check" with **Try again**, or "Connect to the internet to check" while offline.
+  - **Keybindings.** Super + K, with **Show all**, which opens Omarchy's keybindings list.
+- **Stepping aside.** Connect, Update and Show all hand over to a panel, a terminal or the keybindings list, which need the keyboard. So the centered card steps aside to a small corner card. It returns by itself when the machine comes online, the update terminal closes, or the list closes (`closelayer>>omarchy-menu`), or with "Back to the checklist".
+- **The way out.** **Start the tutorial** walks the steps below. **Close** finishes onboarding (`Engine.finishNow`), and the tutorial stays available through a re-run.
+- **The tutorial,** ten steps:
+  - Learn the keys: Super key, menu, tiling, window controls, workspaces, clipboard, Super + K.
+  - Make it yours: theme, display, everyday apps.
+  - Then the finish screen.
+- **Removed,** still in git history: the tracks and their per-track copy, the separate internet, personal-setup, hardware, updates, AI-agent and developer-basics steps, and their views and probes.
+- **Markers.** With the agent step gone, onboarding no longer marks `agent-setup-invitation`; only `onboarding` is marked, on the real state only.
+- **Tested live in dry-run.** Online (both rows ticked); offline pinned (Connect steps aside to the real network panel, and Back returns); update pinned "available" (asks, then only logs `omarchy-update`); Show all (the list opens, and the checklist returns when it closes); Close (completed, and the next login does nothing); Start the tutorial (Super-key step); and the full drill walkthrough.

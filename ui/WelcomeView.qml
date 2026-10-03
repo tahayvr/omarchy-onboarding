@@ -1,23 +1,23 @@
 import QtQuick
 import qs.Commons
-import "../lib/Ui.js" as Ui
 
-// Step 0: the logo, what's coming, and which track to take.
+// The welcome screen: the logo, a short checklist (Wi-Fi, the Omarchy update,
+// where every shortcut lives), and the way into the tutorial.
 FocusScope {
     id: view
 
     property var host
     property string logoText: ""
+    // From Ui.welcomeChecklist: [{id, done, info, title, detail, action, keys}].
+    property var rows: []
 
-    property string choice: ""
-    property string os: ""
-    property bool writesCode: false
-    readonly property string track: choice === "switcher" ? os : choice
+    readonly property color secondary: Qt.rgba(Color.foreground.r, Color.foreground.g, Color.foreground.b, 0.62)
 
-    implicitWidth: Style.space(560)
+    implicitWidth: Style.space(600)
     implicitHeight: column.implicitHeight
 
-    Component.onCompleted: Qt.callLater(function () { view.firstChoice.forceActiveFocus(); })
+    Component.onCompleted: Qt.callLater(function () { startButton.forceActiveFocus(); })
+    Keys.onEscapePressed: view.host.askPause()
 
     Column {
         id: column
@@ -44,10 +44,9 @@ FocusScope {
             }
         }
 
-        Item { width: 1; height: Style.space(4) }
-
         Text {
             width: parent.width
+            topPadding: Style.space(4)
             text: "Welcome to Omarchy"
             horizontalAlignment: Text.AlignHCenter
             color: Color.foreground
@@ -55,133 +54,108 @@ FocusScope {
             font.pixelSize: Style.font.display
             font.weight: Font.DemiBold
         }
-        Text {
+
+        // --- the checklist
+        Column {
             width: parent.width
-            text: "About 10 minutes, learning by doing. Every step is skippable, and Esc pauses at any time."
-            horizontalAlignment: Text.AlignHCenter
-            wrapMode: Text.Wrap
-            color: Qt.rgba(Color.foreground.r, Color.foreground.g, Color.foreground.b, 0.62)
-            font.family: Style.font.family
-            font.pixelSize: Style.font.body
-        }
+            spacing: Style.space(8)
+            Repeater {
+                model: view.rows
+                delegate: Rectangle {
+                    id: row
+                    required property var modelData
+                    width: parent.width
+                    height: Math.max(texts.implicitHeight, actions.implicitHeight) + Style.space(20)
+                    radius: Style.cornerRadius
+                    color: Style.normalFill
+                    border.width: 1
+                    border.color: Style.normalBorderColor
 
-        Item { width: 1; height: Style.space(6) }
+                    Text {
+                        id: mark
+                        anchors { left: parent.left; leftMargin: Style.space(14); verticalCenter: parent.verticalCenter }
+                        width: Style.space(22)
+                        text: row.modelData.done ? "✓" : row.modelData.info ? "›" : "○"
+                        color: row.modelData.done ? Color.accent : view.secondary
+                        font.family: Style.font.family
+                        font.pixelSize: Style.font.title
+                    }
 
-        Text {
-            text: "How well do you know Linux?"
-            color: Color.foreground
-            font.family: Style.font.family
-            font.pixelSize: Style.font.title
-        }
+                    Column {
+                        id: texts
+                        anchors { left: mark.right; right: actions.left; rightMargin: Style.space(12); verticalCenter: parent.verticalCenter }
+                        spacing: Style.space(2)
+                        Text {
+                            width: parent.width
+                            text: row.modelData.title
+                            wrapMode: Text.Wrap
+                            color: Color.foreground
+                            font.family: Style.font.family
+                            font.pixelSize: Style.font.title
+                        }
+                        Text {
+                            width: parent.width
+                            visible: text !== ""
+                            text: row.modelData.detail || ""
+                            wrapMode: Text.Wrap
+                            color: view.secondary
+                            font.family: Style.font.family
+                            font.pixelSize: Style.font.bodySmall
+                        }
+                    }
 
-        Repeater {
-            model: Ui.TRACK_CHOICES
-            delegate: Choice {
-                required property var modelData
-                required property int index
-                id: choiceItem
-                width: column.width
-                title: (view.choice === modelData.id ? "●  " : "○  ") + modelData.label
-                detail: modelData.detail
-                selected: view.choice === modelData.id
-                onPicked: {
-                    view.choice = modelData.id;
-                    if (modelData.id === "switcher" && !view.os) view.os = "";
+                    Row {
+                        id: actions
+                        anchors { right: parent.right; rightMargin: Style.space(12); verticalCenter: parent.verticalCenter }
+                        spacing: Style.space(10)
+                        KeyCaps {
+                            anchors.verticalCenter: parent.verticalCenter
+                            visible: !!row.modelData.keys && !row.modelData.done
+                            keys: row.modelData.keys || ""
+                        }
+                        Button {
+                            visible: row.modelData.action !== ""
+                            text: row.modelData.action
+                            primary: row.modelData.id !== "keys"
+                            onClicked: view.host.checklistAction(row.modelData.id)
+                        }
+                    }
                 }
-                Component.onCompleted: if (index === 0) view.firstChoiceItem = choiceItem
             }
         }
 
-        Row {
-            visible: view.choice === "switcher"
-            spacing: Style.space(8)
+        // --- the tutorial
+        Rectangle {
+            width: parent.width
+            height: 1
+            color: Style.normalBorderColor
+        }
+
+        Column {
+            width: parent.width
+            spacing: Style.space(4)
             Text {
-                anchors.verticalCenter: parent.verticalCenter
-                text: "Coming from"
-                color: Qt.rgba(Color.foreground.r, Color.foreground.g, Color.foreground.b, 0.62)
+                text: "Learn Omarchy"
+                color: Color.foreground
+                font.family: Style.font.family
+                font.pixelSize: Style.font.title
+                font.weight: Font.DemiBold
+            }
+            Text {
+                width: parent.width
+                text: "A ten-minute, hands-on tour: you press the real keys and watch your own windows move. Skip any part."
+                wrapMode: Text.Wrap
+                color: view.secondary
                 font.family: Style.font.family
                 font.pixelSize: Style.font.body
             }
-            Button { text: "Mac"; primary: view.os === "mac"; onClicked: view.os = "mac" }
-            Button { text: "Windows"; primary: view.os === "windows"; onClicked: view.os = "windows" }
         }
-
-        Choice {
-            width: column.width
-            title: (view.writesCode ? "■" : "□") + "  I write code"
-            detail: "Adds a short section on AI agents and developer setup."
-            selected: view.writesCode
-            onPicked: view.writesCode = !view.writesCode
-        }
-
-        Item { width: 1; height: Style.space(4) }
 
         Row {
             anchors.right: parent.right
             spacing: Style.space(8)
-            Button {
-                text: "Later"
-                onClicked: view.host.askPause()
-            }
-            Button {
-                text: view.track ? "Start" : (view.choice === "switcher" ? "Pick Mac or Windows" : "Pick one to start")
-                primary: view.track !== ""
-                opacity: view.track ? 1 : 0.6
-                onClicked: if (view.track) view.host.chooseTrack(view.track, view.writesCode)
-            }
-        }
-    }
-
-    property Item firstChoiceItem: null
-    readonly property Item firstChoice: firstChoiceItem || view
-
-    Keys.onEscapePressed: view.host.askPause()
-
-    // A selectable row: a title, a line of detail, and a highlight when picked.
-    component Choice: Rectangle {
-        id: row
-        property string title: ""
-        property string detail: ""
-        property bool selected: false
-        signal picked()
-
-        activeFocusOnTab: true
-        implicitHeight: texts.implicitHeight + Style.space(18)
-        radius: Style.cornerRadius
-        color: selected ? Style.selectedAccentFill : mouse.containsMouse || activeFocus ? Style.hoverFill : Style.normalFill
-        border.width: activeFocus || selected ? 2 : 1
-        border.color: selected || activeFocus ? Color.accent : Style.normalBorderColor
-
-        Keys.onReturnPressed: row.picked()
-        Keys.onEnterPressed: row.picked()
-        Keys.onSpacePressed: row.picked()
-
-        Column {
-            id: texts
-            anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; margins: Style.space(14) }
-            spacing: Style.space(2)
-            Text {
-                text: row.title
-                color: Color.foreground
-                font.family: Style.font.family
-                font.pixelSize: Style.font.title
-            }
-            Text {
-                width: parent.width
-                text: row.detail
-                color: Qt.rgba(Color.foreground.r, Color.foreground.g, Color.foreground.b, 0.62)
-                wrapMode: Text.Wrap
-                font.family: Style.font.family
-                font.pixelSize: Style.font.bodySmall
-            }
-        }
-
-        MouseArea {
-            id: mouse
-            anchors.fill: parent
-            hoverEnabled: true
-            cursorShape: Qt.PointingHandCursor
-            onClicked: { row.forceActiveFocus(); row.picked(); }
+            Button { text: "Close"; onClicked: view.host.closeWelcome() }
+            Button { id: startButton; text: "Start the tutorial"; primary: true; onClicked: view.host.startTutorial() }
         }
     }
 }

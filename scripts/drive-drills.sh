@@ -116,9 +116,7 @@ record=()
 [[ -n $OUT ]] && record=(--record "$OUT")
 "${CLI[@]}" "${record[@]}" run
 wait_step welcome
-"${CLI[@]}" track new-to-linux >/dev/null
-"${CLI[@]}" next >/dev/null # welcome
-# Steps 1 and 2 skip themselves on a machine that is online and not deferred.
+"${CLI[@]}" tutorial >/dev/null # "Start the tutorial" on the welcome checklist
 wait_step super-key
 "${CLI[@]}" next >/dev/null # super-key needs the overlay's key catcher (M3)
 wait_step menu

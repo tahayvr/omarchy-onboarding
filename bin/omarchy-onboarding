@@ -24,7 +24,8 @@
 #   uninstall        remove it
 #
 # Development calls, answered by the open overlay:
-#   next, skip, pause, dismiss, do-it, info, track <track> [--code]
+#   tutorial, close-welcome, connect, update, keys, back,
+#   next, skip, pause, dismiss, do-it, info
 
 set -euo pipefail
 
@@ -98,7 +99,6 @@ cmd_status() {
   jq -r --argjson s "$state" '
     ($s.replay // (if $s.status == "in-progress" then $s.current else null end)) as $cur |
     "Status:  \($s.status)",
-    "Track:   \($s.track // "not picked")\(if $s.writes_code then ", writes code" else "" end)",
     "Current: \(if $cur then (.steps[] | select(.id == $cur) | "\(.number) \(.id) (\(.title))") else "none" end)",
     "",
     (.steps[] | . as $step | ($s.steps[$step.id] // null) as $r |
@@ -257,13 +257,11 @@ case $command in
   install) cmd_install ;;
   uninstall) cmd_uninstall ;;
   steps) jq -r '.steps[] | "\(.id | . + (" " * (16 - length))) \(.title)"' "$DIR/steps.json" ;;
-  next | skip | pause | dismiss | info) cmd_call "$command" "" ;;
+  next | skip | pause | dismiss | info | connect | update) cmd_call "$command" "" ;;
   do-it) cmd_call doIt "" ;;
-  track)
-    [[ -n ${1:-} ]] || die "track needs a track name"
-    arg=$1
-    [[ ${2:-} == --code ]] && arg+=":code"
-    cmd_call track "$arg"
-    ;;
+  tutorial) cmd_call startTutorial "" ;;
+  close-welcome) cmd_call closeWelcome "" ;;
+  keys) cmd_call showKeybindings "" ;;
+  back) cmd_call comeBack "" ;;
   *) die "unknown command '$command' (try --help)" ;;
 esac
