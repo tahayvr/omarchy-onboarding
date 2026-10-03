@@ -101,6 +101,11 @@ code, because Omarchy ships only bash and QML. Built against Omarchy 4.0.4
   applied through `hyprctl eval`. Each level is drawn sorted by `order`
   descending, so a negative order draws last, on top. Named rules replace each
   other, so re-applying the rule is safe.
+- **Keys for the corner card have to be Hyprland binds**, since it never has
+  the keyboard. Ctrl + / (skip) is added with `hl.bind` through
+  `bin/onboarding-skip-bind` while a tutorial step is up, removed after, and
+  re-added on `configreloaded`. It's left alone when the user has bound that
+  combo, and then the Skip button shows no key.
 - **Card placement** is `Ui.coachPlacement` and depends on the step, its ticked
   sub-tasks and the bar position from `onboarding-facts`.
 - A bare Super press reaches the centered card as `Qt.Key_Super_L`, because

@@ -1,0 +1,39 @@
+#!/bin/bash
+# Adds or removes the Hyprland bind that skips the current tutorial step:
+#   onboarding-skip-bind on|off
+#
+# The corner card never takes the keyboard, so Super shortcuts reach
+# Hyprland; a key on the card itself would never arrive. The bind lives only
+# while a tutorial step is up, and a config reload drops it, so the overlay
+# sets it again on `configreloaded`. `on` exits 1, binding nothing, when the
+# user already has something on the combo.
+exec </dev/null
+
+KEYS="CTRL + SLASH"
+DESCRIPTION="Skip this onboarding step"
+
+# What's on the combo now: nothing, ours, or something else.
+bound_to() {
+  hyprctl binds -j 2>/dev/null |
+    jq -r --arg d "$DESCRIPTION" \
+      '[.[] | select(.modmask == 4 and (.key | ascii_upcase) == "SLASH" and .submap == "")]
+       | if length == 0 then "nothing" elif any(.description == $d) then "ours" else "other" end'
+}
+
+case ${1:-} in
+  on)
+    case $(bound_to) in
+      ours) exit 0 ;;
+      other) exit 1 ;;
+    esac
+    hyprctl eval "hl.bind(\"$KEYS\", hl.dsp.exec_cmd(\"omarchy-shell shell call tahayvr.onboarding skip ''\"), { description = \"$DESCRIPTION\" })" >/dev/null
+    ;;
+  off)
+    [[ $(bound_to) == ours ]] && hyprctl eval "hl.unbind(\"$KEYS\")" >/dev/null
+    exit 0
+    ;;
+  *)
+    echo "usage: onboarding-skip-bind on|off" >&2
+    exit 2
+    ;;
+esac

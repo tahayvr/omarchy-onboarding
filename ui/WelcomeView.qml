@@ -20,7 +20,15 @@ FocusScope {
 
     Component.onCompleted: Qt.callLater(function () { yesButton.forceActiveFocus(); })
     // On the welcome page Esc is the same as "No, exit": no confirmation.
+    // Y is "Yes". The buttons only take Return, Enter and Space, so both
+    // reach here whichever button has focus.
     Keys.onEscapePressed: view.host.closeWelcome()
+    Keys.onPressed: function (event) {
+        if (event.key === Qt.Key_Y && !(event.modifiers & (Qt.ControlModifier | Qt.AltModifier | Qt.MetaModifier))) {
+            event.accepted = true;
+            view.host.startTutorial();
+        }
+    }
 
     Column {
         id: column
@@ -185,8 +193,8 @@ FocusScope {
                 font.family: Style.font.family
                 font.pixelSize: Style.font.title
             }
-            Button { id: yesButton; text: "Yes"; primary: true; onClicked: view.host.startTutorial() }
-            Button { id: noButton; text: "No, exit"; onClicked: view.host.closeWelcome() }
+            Button { id: yesButton; text: "Yes"; key: "Y"; primary: true; onClicked: view.host.startTutorial() }
+            Button { id: noButton; text: "No, exit"; key: "Esc"; onClicked: view.host.closeWelcome() }
         }
     }
 }

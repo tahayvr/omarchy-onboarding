@@ -114,6 +114,23 @@ Item {
     readonly property var step: flow && steps ? Engine.currentStep(steps, flow) : null
     readonly property bool centered: away === "" && (pausing || confirm !== null || error !== ""
                                                      || (step !== null && Ui.isCentered(step.id)))
+    // Ctrl + / skips while a tutorial step is up. It's a Hyprland
+    // bind (bin/onboarding-skip-bind), because the corner card never takes the
+    // keyboard. skipKey is "" when the user has the combo bound to something else.
+    readonly property bool skipBindWanted: opened && flow !== null && step !== null
+                                           && step.id !== "welcome" && step.id !== "finish"
+                                           && away === "" && !pausing && confirm === null && error === ""
+    property string skipKey: ""
+    onSkipBindWantedChanged: setSkipBind()
+    // A shell restart mid-tutorial leaves the bind behind.
+    Component.onCompleted: setSkipBind()
+
+    function setSkipBind() {
+        skipBinder.running = false;
+        skipBinder.command = [pluginDir + "/bin/onboarding-skip-bind", skipBindWanted ? "on" : "off"];
+        skipBinder.running = true;
+    }
+
     // The corner card's main button for the tutorial's action steps.
     readonly property string primaryText: !step ? "" : step.id === "theme" ? "Keep my theme"
                                         : step.id === "display" ? "Looks right"
@@ -674,6 +691,14 @@ Item {
     }
 
     Process {
+        id: skipBinder
+        onExited: function (code) {
+            root.skipKey = root.skipBindWanted && code === 0 ? "Ctrl + /" : "";
+            if (root.skipBindWanted && code !== 0) root.log("skip key not bound: Ctrl + / is taken");
+        }
+    }
+
+    Process {
         id: factsProbe
         command: [root.pluginDir + "/bin/onboarding-facts"]
         stdout: StdioCollector {
@@ -918,6 +943,18 @@ Item {
                 return;
             }
             root.enqueue({ kind: "hypr", line: String(event.name) + ">>" + String(event.data) });
+        }
+    }
+
+    // A config reload (a theme change does one) clears runtime layer rules
+    // and binds, so both are set again.
+    Connections {
+        target: Hyprland
+        enabled: root.opened
+        function onRawEvent(event) {
+            if (String(event.name) !== "configreloaded") return;
+            root.keepCornerCardOnTop();
+            if (root.skipBindWanted) root.setSkipBind();
         }
     }
 

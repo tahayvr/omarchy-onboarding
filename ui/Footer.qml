@@ -32,7 +32,7 @@ Item {
         id: buttons
         anchors.right: parent.right
         spacing: Style.space(8)
-        Button { text: "Skip"; onClicked: footer.host.skip() }
+        Button { text: "Skip"; key: footer.host.skipKey; onClicked: footer.host.skip() }
         Button {
             visible: footer.canDoIt && footer.hint > 1
             text: "Do it for me"
