@@ -515,7 +515,8 @@ test("welcome checklist: Wi-Fi, update, keybindings, in that order", () => {
 });
 
 test("welcome checklist: Wi-Fi", () => {
-    eq(row({ online: true, ssid: "Home" }, "wifi"), { id: "wifi", done: true, title: "Connected to Home", detail: "", action: "" });
+    eq(row({ online: true, ssid: "Home" }, "wifi"),
+       { id: "wifi", done: true, icon: "\u{F05A9}", iconFont: "", title: "Connected to Home", detail: "", action: "" });
     eq(row({ online: true }, "wifi").title, "Connected to the internet", "wired has no SSID");
     const off = row({ online: false }, "wifi");
     ok(!off.done && off.action === "Connect" && off.keys === "Super + Ctrl + W");
@@ -530,6 +531,13 @@ test("welcome checklist: the update waits for the internet", () => {
     ok(row({ online: true, update: "current" }, "update").done);
     eq(row({ online: true, update: "unknown" }, "update").action, "Try again");
     eq(row({ online: true, update: "updating" }, "update").action, "");
+});
+
+test("welcome checklist: each row has its icon; the update row uses Omarchy's logo", () => {
+    const r = rows({ online: true, update: "current" });
+    ok(r.every(x => x.icon), "every row has an icon");
+    eq([row({ online: true }, "update").icon, row({ online: true }, "update").iconFont], ["\ue900", "omarchy"]);
+    eq(row({ online: false }, "wifi").icon, "\u{F05AA}", "Wi-Fi off when offline");
 });
 
 test("welcome checklist: keybindings", () => {

@@ -16,13 +16,22 @@ FocusScope {
     implicitWidth: Style.space(600)
     implicitHeight: column.implicitHeight
 
-    Component.onCompleted: Qt.callLater(function () { startButton.forceActiveFocus(); })
+    Component.onCompleted: Qt.callLater(function () { yesButton.forceActiveFocus(); })
     Keys.onEscapePressed: view.host.askPause()
 
     Column {
         id: column
         width: parent.width
         spacing: Style.space(14)
+
+        Text {
+            width: parent.width
+            text: "Welcome to"
+            horizontalAlignment: Text.AlignHCenter
+            color: Color.foreground
+            font.family: Style.font.family
+            font.pixelSize: Style.font.heading
+        }
 
         // Omarchy's own text logo, revealed line by line in the theme's accent.
         Column {
@@ -46,14 +55,14 @@ FocusScope {
 
         Text {
             width: parent.width
-            topPadding: Style.space(4)
-            text: "Welcome to Omarchy"
+            text: "Beautiful, fun & agentic Linux by DHH"
             horizontalAlignment: Text.AlignHCenter
-            color: Color.foreground
+            color: view.secondary
             font.family: Style.font.family
-            font.pixelSize: Style.font.display
-            font.weight: Font.DemiBold
+            font.pixelSize: Style.font.body
         }
+
+        Item { width: 1; height: Style.space(4) }
 
         // --- the checklist
         Column {
@@ -71,19 +80,21 @@ FocusScope {
                     border.width: 1
                     border.color: Style.normalBorderColor
 
+                    // The row's icon: in the accent once done.
                     Text {
                         id: mark
                         anchors { left: parent.left; leftMargin: Style.space(14); verticalCenter: parent.verticalCenter }
-                        width: Style.space(22)
-                        text: row.modelData.done ? "✓" : row.modelData.info ? "›" : "○"
-                        color: row.modelData.done ? Color.accent : view.secondary
-                        font.family: Style.font.family
-                        font.pixelSize: Style.font.title
+                        width: Style.space(32)
+                        horizontalAlignment: Text.AlignHCenter
+                        text: row.modelData.icon || ""
+                        color: row.modelData.done ? Color.accent : Color.foreground
+                        font.family: row.modelData.iconFont || Style.font.family
+                        font.pixelSize: Style.font.display
                     }
 
                     Column {
                         id: texts
-                        anchors { left: mark.right; right: actions.left; rightMargin: Style.space(12); verticalCenter: parent.verticalCenter }
+                        anchors { left: mark.right; leftMargin: Style.space(10); right: actions.left; rightMargin: Style.space(12); verticalCenter: parent.verticalCenter }
                         spacing: Style.space(2)
                         Text {
                             width: parent.width
@@ -119,6 +130,14 @@ FocusScope {
                             primary: row.modelData.id !== "keys"
                             onClicked: view.host.checklistAction(row.modelData.id)
                         }
+                        Text {
+                            anchors.verticalCenter: parent.verticalCenter
+                            visible: row.modelData.done
+                            text: "✓"
+                            color: Color.accent
+                            font.family: Style.font.family
+                            font.pixelSize: Style.font.heading
+                        }
                     }
                 }
             }
@@ -131,31 +150,20 @@ FocusScope {
             color: Style.normalBorderColor
         }
 
-        Column {
+        Row {
             width: parent.width
-            spacing: Style.space(4)
+            spacing: Style.space(8)
             Text {
-                text: "Learn Omarchy"
+                width: parent.width - noButton.width - yesButton.width - Style.space(16)
+                anchors.verticalCenter: parent.verticalCenter
+                text: "Want a tutorial on how Omarchy works?"
+                wrapMode: Text.Wrap
                 color: Color.foreground
                 font.family: Style.font.family
                 font.pixelSize: Style.font.title
-                font.weight: Font.DemiBold
             }
-            Text {
-                width: parent.width
-                text: "A ten-minute, hands-on tour: you press the real keys and watch your own windows move. Skip any part."
-                wrapMode: Text.Wrap
-                color: view.secondary
-                font.family: Style.font.family
-                font.pixelSize: Style.font.body
-            }
-        }
-
-        Row {
-            anchors.right: parent.right
-            spacing: Style.space(8)
-            Button { text: "Close"; onClicked: view.host.closeWelcome() }
-            Button { id: startButton; text: "Start the tutorial"; primary: true; onClicked: view.host.startTutorial() }
+            Button { id: noButton; text: "No, exit"; onClicked: view.host.closeWelcome() }
+            Button { id: yesButton; text: "Yes"; primary: true; onClicked: view.host.startTutorial() }
         }
     }
 }
