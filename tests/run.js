@@ -845,7 +845,7 @@ test("the tiling drill reports its own windows", () => {
     eq(d.windows(), { terminal: "t1", browser: "b1", active: "b1" });
 });
 
-// ================================================================ login hook (M6)
+// ================================================================ login hook
 
 const { execFileSync } = require("child_process");
 const os = require("os");

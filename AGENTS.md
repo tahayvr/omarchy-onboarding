@@ -35,11 +35,10 @@ code, because Omarchy ships only bash and QML. Built against Omarchy 4.0.4
   from which commit. Don't edit it here: fix Meet Omi and sync. New Omi mode
   or reaction ideas go in Meet Omi's `docs/ideas.md`. Which mode Omi shows is
   decided in `lib/Ui.js` (`welcomeOmi`).
-- `integration/omarchy-first-run.patch` is the upstream change against
-  `quattro`. It adds `omarchy-onboarding login` to `autostart.lua`, and skips
-  `welcome.sh` and `wifi.sh` when onboarding is installed. It keeps the agent
-  hook, since onboarding doesn't cover agents. Check it with
-  `git -C upstream/omarchy apply --check`.
+- Onboarding starts at login through the line `omarchy-onboarding install`
+  adds to the user's `autostart.lua` (`omarchy-onboarding login` decides
+  whether to start, resume, remind or do nothing). There is no upstream
+  patch: first login is tested by hand on a new machine.
 
 ## Safety
 
@@ -57,8 +56,8 @@ code, because Omarchy ships only bash and QML. Built against Omarchy 4.0.4
   - Changing the theme also changes the GTK icon theme. Restore it with
     `omarchy-theme-set-gnome`.
 - **System actions need an explicit confirmation in the UI** (`askConfirm`).
-- **First-login tests** run in a separate user (`scripts/test-user.sh`) or a VM,
-  never on the main account.
+- **First-login tests** run by hand on a new machine, never on the main
+  account.
 - **The user may have onboarding open.** Check before running
   `scripts/reload-shell.sh`, which restarts their shell, and before driving
   keys.

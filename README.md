@@ -2,7 +2,7 @@
 
 First-boot onboarding for [Omarchy](https://omarchy.org), built as an Omarchy shell plugin (`tahayvr.onboarding`). A welcome checklist gets you online and up to date and shows where every shortcut lives; an optional tutorial then teaches the keys by having you press them, while an overlay watches Hyprland and ticks each step off as you do it.
 
-Work in progress. The welcome checklist (Wi-Fi, Omarchy update, keybindings) and the tutorial (Super key, menu, tiling, window controls, workspaces, clipboard, Super + K, theme, display, apps) work end to end. The login hook is built; its first-login test on a fresh user is still to do. See `AGENTS.md` for the contracts with Omarchy and Hyprland and the traps found along the way.
+Work in progress. The welcome checklist (Wi-Fi, Omarchy update, keybindings) and the tutorial (Super key, menu, tiling, window controls, workspaces, clipboard, Super + K, theme, display, apps) work end to end. `omarchy-onboarding install` adds the login line that starts it on first login; that path is tested by hand on a new machine. See `AGENTS.md` for the contracts with Omarchy and Hyprland and the traps found along the way.
 
 ## Install for development
 
@@ -33,3 +33,12 @@ scripts/drive-drills.sh        # live: the whole tutorial through the real plugi
 ```
 
 `drive-drills.sh` uses empty workspaces 7 and 8. It only acts on windows it opened, and it refuses to run while the screen is locked. It walks every drill, Back, the apps step ticking on a real app window, and Do them now from the finish screen, through to completion, in about 35 seconds. Pass a path to save the walkthrough as a new fixture; `tests/fixtures/walkthrough-flow.jsonl` is one, and the tests replay its flow changes through the engine.
+
+## Upstream
+
+Onboarding is built to ship with Omarchy. Until it does, `omarchy-onboarding install` adds its login line to your own `autostart.lua`, so Omarchy's first-run welcome and Wi-Fi/update notices still appear alongside it on first login.
+
+Shipping it upstream means two changes to Omarchy:
+
+- `default/hypr/autostart.lua` runs `omarchy-onboarding login` at every login, when it's installed. It decides whether to start, resume, remind once, or do nothing.
+- `bin/omarchy-provision-first-run` skips the welcome and Wi-Fi/update notices (`welcome.sh` and `wifi.sh`) when onboarding is installed, since its welcome page gets the user online and offers the update. Everything else in first-run stays, including the agent-setup hook, which onboarding doesn't cover.
