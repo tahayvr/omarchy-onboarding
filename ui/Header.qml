@@ -1,5 +1,6 @@
 import QtQuick
 import qs.Commons
+import "../lib/Ui.js" as Ui
 
 // Omi, the step's title and a pause button. The card's text below is Omi
 // talking. Progress is the line along the card's top border (ProgressLine).
@@ -24,6 +25,17 @@ Item {
     Column {
         id: titles
         anchors { left: omi.right; leftMargin: Style.space(10); right: pauseKey.visible ? pauseKey.left : pauseButton.left; rightMargin: Style.space(8); verticalCenter: parent.verticalCenter }
+        spacing: Style.space(1)
+        // Where this step sits: "Learn the keys · 3 of 7".
+        Text {
+            width: parent.width
+            visible: text !== ""
+            text: header.host && header.step ? Ui.positionLabel(header.host.steps, header.step.id) : ""
+            elide: Text.ElideRight
+            color: Qt.rgba(Color.foreground.r, Color.foreground.g, Color.foreground.b, 0.62)
+            font.family: Style.font.family
+            font.pixelSize: Style.font.bodySmall
+        }
         // The title, or Omi's confirmation once the step is done: in the
         // accent, faded in, as Omi's own words.
         Text {
@@ -41,11 +53,13 @@ Item {
         }
     }
 
-    // The ✕'s key, while the tutorial's keys are bound (Ctrl + Esc).
+    // The ✕'s key: plain Esc on a centered card, which has the keyboard;
+    // the tutorial's bind (Ctrl + Esc) on the corner card.
     KeyChip {
         id: pauseKey
         anchors { right: pauseButton.left; rightMargin: Style.space(8); verticalCenter: pauseButton.verticalCenter }
-        key: header.host && header.host.tutorialKeys ? (header.host.tutorialKeys.pause || "") : ""
+        key: header.step && Ui.isCentered(header.step.id) ? "Esc"
+           : header.host && header.host.tutorialKeys ? (header.host.tutorialKeys.pause || "") : ""
     }
 
     Text {

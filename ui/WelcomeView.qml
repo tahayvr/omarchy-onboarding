@@ -203,7 +203,8 @@ FocusScope {
                             visible: row.modelData.action !== ""
                             text: row.modelData.action
                             key: row.modelData.id === "update" ? "U" : ""
-                            primary: row.modelData.id !== "keys"
+                            // Getting online is the one thing to do first.
+                            primary: row.modelData.id === "wifi"
                             onClicked: view.host.checklistAction(row.modelData.id)
                         }
                         Text {
@@ -261,6 +262,14 @@ FocusScope {
                     color: view.secondary
                     font.family: Style.font.family
                     font.pixelSize: Style.font.body
+                }
+                Text {
+                    width: parent.width
+                    text: Ui.tutorialBlurb(view.host ? view.host.lessonCount : 0)
+                    wrapMode: Text.Wrap
+                    color: view.secondary
+                    font.family: Style.font.family
+                    font.pixelSize: Style.font.bodySmall
                 }
             }
 

@@ -128,7 +128,7 @@ Item {
     // keyboard; each calls key(), which acts only while its button is shown.
     // tutorialKeys has the label of each one bound: none for a combo the user
     // has bound to something else.
-    readonly property var tutorialKeyLabels: ({ skip: "Ctrl + /", primary: "Ctrl + Enter", doit: "Ctrl + .", pause: "Ctrl + Esc" })
+    readonly property var tutorialKeyLabels: ({ skip: "Ctrl + /", primary: "Ctrl + Enter", doit: "Ctrl + .", pause: "Ctrl + Esc", back: "Ctrl + ," })
     readonly property bool tutorialKeysWanted: opened && flow !== null && step !== null
                                                && step.id !== "welcome" && step.id !== "finish"
                                                && away === "" && !pausing && confirm === null && error === ""
@@ -163,6 +163,7 @@ Item {
         case "primary": return primaryText !== "" ? (primaryAction(), "ok") : "no button";
         case "doit": return canDoIt ? doIt() : "not offered yet";
         case "pause": askPause(); return "ok";
+        case "back": return canBack ? back() : "nothing to go back to";
         default: return "unknown key " + action;
         }
     }
@@ -182,7 +183,7 @@ Item {
     readonly property string cornerPlace: away !== "" ? "bottom-right"
         : Ui.coachPlacement(step ? step.id : "", ticked, barPosition)
     readonly property var omiLook: away !== "" || pausing || confirm !== null || error !== "" || !step
-        ? [0, 0] : Ui.cardOmiLook(step.id, cornerPlace, ticked)
+        ? [0, 0] : Ui.cardOmiLook(step.id, cornerPlace, ticked, hint)
     // Whichever Omi is on screen plays this on top of omiMode for a moment.
     signal omiReacted(string mode)
     function omiReact(mode) { omiReacted(mode); }
@@ -201,6 +202,13 @@ Item {
         var i = tutorial.indexOf(step.id);
         return i < 0 ? -1 : (i + 1) / tutorial.length;
     }
+
+    // Back goes to the step before this one; the finish screen offers the
+    // steps still to do (Engine.openSteps).
+    readonly property bool canBack: flow !== null && steps !== null && Engine.previousStep(steps, flow) !== null
+    readonly property var openSteps: flow && steps ? Engine.openSteps(steps, flow) : []
+    // The tutorial's length, for the welcome page.
+    readonly property int lessonCount: steps ? Engine.tutorialSteps(steps).length : 0
 
     onStepChanged: stepEntered()
 
@@ -293,13 +301,15 @@ Item {
 
     // Leaves the desktop as the user had it: closes the clipboard terminal and
     // the windows the tutorial had them open, by address, and goes back to the
-    // workspace the tutorial began on. Only ever windows onboarding knows.
+    // workspace the tutorial began on. Only ever windows onboarding knows, and
+    // never a terminal with something running in it (bin/onboarding-close-windows,
+    // which logs what it did; it runs detached since the plugin is unloading).
     function cleanUp() {
         closeSample();
-        tutorialWindows.forEach(function (addr) {
-            Quickshell.execDetached(["hyprctl", "dispatch", "hl.dsp.window.close({ window = 'address:0x" + addr + "' })"]);
-        });
-        if (tutorialWindows.length) log("closed the tutorial's windows: " + tutorialWindows.join(", "));
+        if (tutorialWindows.length) {
+            log("closing the tutorial's windows: " + tutorialWindows.join(", "));
+            Quickshell.execDetached([pluginDir + "/bin/onboarding-close-windows", "--log", logFile.path].concat(tutorialWindows));
+        }
         if (tutorialHome && Hyprland.focusedWorkspace && Hyprland.focusedWorkspace.id !== tutorialHome)
             Quickshell.execDetached(["hyprctl", "dispatch", "hl.dsp.focus({ workspace = '" + tutorialHome + "' })"]);
         tutorialWindows = [];
@@ -371,6 +381,8 @@ Item {
 
     function next() { return change(function () { return Engine.complete(steps, flow, facts, now()); }, "done"); }
     function skip() { return change(function () { return Engine.skip(steps, flow, facts, now()); }, "skip"); }
+    function back() { return change(function () { return Engine.back(steps, flow, now()); }, "back"); }
+    function redoOpen() { return change(function () { return Engine.redoOpen(steps, flow, facts, now()); }, "redo"); }
     function pause() { return change(function () { return Engine.pause(flow, now()); }, "pause"); }
     function dismiss() { return change(function () { return Engine.dismiss(flow, now()); }, "dismiss"); }
 
@@ -617,7 +629,19 @@ Item {
 
     // ------------------------------------------------------------ tutorial action steps
 
-    // Apps. An app that installs on first use asks first.
+    // Apps. The card ticks an app when its window or panel opens, however it
+    // was launched; the shortcut beside it is the way.
+    function appTried(label) {
+        if (appsTried[label]) return;
+        var tried = Object.assign({}, appsTried);
+        tried[label] = true;
+        appsTried = tried;
+        resetIdle();
+        omiReact("success");
+        log("app opened: " + label);
+    }
+
+    // Apps, from a script (`tryApp <label>`). An app that installs on first use asks first.
     function tryApp(app) {
         if (typeof app === "string") app = apps.filter(function (a) { return a.label === app; })[0];
         if (!app) return "no such app";
@@ -1129,12 +1153,19 @@ Item {
     Connections {
         target: Hyprland
         enabled: root.opened && (root.drill !== null || root.recordPath !== ""
-                                 || (root.step !== null && (root.step.id === "theme" || root.step.id === "welcome")))
+                                 || (root.step !== null && (root.step.id === "theme" || root.step.id === "welcome"
+                                                            || root.step.id === "apps")))
         function onRawEvent(event) {
             var name = String(event.name), data = String(event.data);
             // The theme step ticks when Omarchy's picker opens.
             if (root.step && root.step.id === "theme" && !root.drill) {
                 if (name === "openlayer" && data === "omarchy-image-selector") root.tick("open");
+                return;
+            }
+            // The apps step ticks an app whose window or panel opens.
+            if (root.step && root.step.id === "apps" && !root.drill) {
+                var label = Ui.appOpened(root.apps, Drills.parseEvent(name + ">>" + data));
+                if (label) root.appTried(label);
                 return;
             }
             if (root.step && root.step.id === "welcome") {

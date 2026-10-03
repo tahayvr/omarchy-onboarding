@@ -145,7 +145,7 @@
       "id": "clipboard",
       "number": 6,
       "phase": 1,
-      "title": "Copy and paste the Omarchy way",
+      "title": "Copy and paste",
       "screen": "Copy and paste work the same way everywhere, even in the terminal. Copy the line below, then paste it into the terminal I opened.",
       "done_when": "The line is copied from the card and pasted into the terminal.",
       "subtasks": [
@@ -227,7 +227,7 @@
         },
         {
           "id": "nightlight",
-          "label": "Turn on the night light, then off again",
+          "label": "Night light on, then off",
           "keys": "Super + Ctrl + N"
         }
       ],
@@ -267,7 +267,7 @@
         "label": "Open the manual",
         "url": "https://omarchy.org/manual/"
       },
-      "outro": "Run omarchy onboarding to see me again, or omarchy onboarding --step <name> for one lesson."
+      "outro": "Run `omarchy onboarding` to see me again, or `omarchy onboarding --step <name>` for one lesson."
     }
   ]
 }

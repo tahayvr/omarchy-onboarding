@@ -1,5 +1,6 @@
 import QtQuick
 import qs.Commons
+import "../lib/Ui.js" as Ui
 
 // A centered step without its own screen yet (the action steps arrive in M4),
 // and the finish screen.
@@ -18,11 +19,20 @@ FocusScope {
     Component.onCompleted: Qt.callLater(function () { primary.forceActiveFocus(); })
     // On the finish screen Esc is the same as Finish.
     Keys.onEscapePressed: view.finishing ? view.host.next() : view.host.askPause()
-    // M opens the step's link (the manual), as shown on its button.
+    // M opens the step's link (the manual) and D does the steps still to
+    // do, as shown on their buttons.
     Keys.onPressed: function (event) {
         if (event.modifiers & (Qt.ControlModifier | Qt.AltModifier | Qt.MetaModifier)) return;
         if (event.key === Qt.Key_M && view.step && view.step.link) { event.accepted = true; view.host.openLink(); }
+        else if (event.key === Qt.Key_D && view.finishing && view.openSteps.length > 0) { event.accepted = true; view.host.redoOpen(); }
     }
+
+    // Commands in the card's text sit on a faint chip, so they read as
+    // something to type (Ui.richCode).
+    readonly property color codeFill: Qt.rgba(
+        Color.popups.background.r * 0.86 + Color.foreground.r * 0.14,
+        Color.popups.background.g * 0.86 + Color.foreground.g * 0.14,
+        Color.popups.background.b * 0.86 + Color.foreground.b * 0.14, 1)
 
     Column {
         id: column
@@ -92,25 +102,41 @@ FocusScope {
             }
         }
 
-        Column {
+        // The steps still to do (skipped, deferred or failed), and a way
+        // through them: only they are shown, then the finish screen again.
+        Item {
             visible: view.finishing && view.openSteps.length > 0
             width: parent.width
-            spacing: Style.space(4)
-            Text {
-                text: "Still to do"
-                color: Qt.rgba(Color.foreground.r, Color.foreground.g, Color.foreground.b, 0.62)
-                font.family: Style.font.family
-                font.pixelSize: Style.font.body
-            }
-            Repeater {
-                model: view.finishing ? view.openSteps : []
-                delegate: Text {
-                    required property var modelData
-                    text: "○  " + modelData.title + (modelData.reason ? " (" + modelData.reason + ")" : "")
-                    color: Color.foreground
+            implicitHeight: Math.max(openList.implicitHeight, redoButton.implicitHeight)
+            Column {
+                id: openList
+                anchors { left: parent.left; right: redoButton.left; rightMargin: Style.space(12); top: parent.top }
+                spacing: Style.space(4)
+                Text {
+                    text: "Still to do"
+                    color: Qt.rgba(Color.foreground.r, Color.foreground.g, Color.foreground.b, 0.62)
                     font.family: Style.font.family
                     font.pixelSize: Style.font.body
                 }
+                Repeater {
+                    model: view.finishing ? view.openSteps : []
+                    delegate: Text {
+                        required property var modelData
+                        width: openList.width
+                        text: "○  " + modelData.title + (modelData.reason ? " (" + modelData.reason + ")" : "")
+                        wrapMode: Text.Wrap
+                        color: Color.foreground
+                        font.family: Style.font.family
+                        font.pixelSize: Style.font.body
+                    }
+                }
+            }
+            Button {
+                id: redoButton
+                anchors { right: parent.right; top: parent.top }
+                text: view.openSteps.length === 1 ? "Do it now" : "Do them now"
+                key: "D"
+                onClicked: view.host.redoOpen()
             }
         }
 
@@ -118,7 +144,8 @@ FocusScope {
         Text {
             width: parent.width
             visible: text !== ""
-            text: view.step && view.step.outro ? view.step.outro : ""
+            textFormat: Text.RichText
+            text: view.step && view.step.outro ? Ui.richCode(view.step.outro, view.codeFill.toString()) : ""
             wrapMode: Text.Wrap
             color: Qt.rgba(Color.foreground.r, Color.foreground.g, Color.foreground.b, 0.62)
             font.family: Style.font.family

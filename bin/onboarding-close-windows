@@ -1,0 +1,50 @@
+#!/bin/bash
+# Closes the windows the tutorial had the user open, by address, when
+# onboarding closes: onboarding-close-windows [--log <file>] <addr>...
+#
+# A terminal with something running in it (anything under its shell that
+# isn't another shell or a wrapper) is left open: the user may have started
+# real work in it. Browsers close as asked; a window is only ever one
+# onboarding knows. Run detached from the overlay, which is unloading, so
+# the result goes to the onboarding log when --log is given.
+exec </dev/null
+
+log=""
+if [[ ${1:-} == --log ]]; then
+  log=$2
+  shift 2
+fi
+
+say() {
+  [[ -n $log ]] && printf '%s cleanup: %s\n' "$(date +%s)" "$1" >>"$log"
+  echo "$1"
+}
+
+clients=$(hyprctl -j clients 2>/dev/null) || exit 0
+
+# Whether anything but shells and wrappers runs under a process.
+busy() {
+  local child
+  for child in $(pgrep -P "$1"); do
+    case $(ps -o comm= -p "$child" 2>/dev/null) in
+      bash | zsh | fish | sh | nu | herdr | foot | footclient) busy "$child" && return 0 ;;
+      "") ;;
+      *) return 0 ;;
+    esac
+  done
+  return 1
+}
+
+for addr in "$@"; do
+  addr=${addr#0x}
+  line=$(jq -r --arg a "0x$addr" '.[] | select(.address == $a) | "\(.pid) \(.class) \(.tags | join(","))"' <<<"$clients")
+  [[ -n $line ]] || continue
+  read -r pid class tags <<<"$line"
+  if [[ ,$tags, == *,terminal* || $class == foot* ]] && busy "$pid"; then
+    say "left the terminal $addr open: something is running in it"
+    continue
+  fi
+  hyprctl dispatch "hl.dsp.window.close({ window = 'address:0x$addr' })" >/dev/null 2>&1
+  say "closed $addr ($class)"
+done
+exit 0

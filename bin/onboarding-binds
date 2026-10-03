@@ -18,6 +18,7 @@ BINDS=(
   "primary CTRL + RETURN 4 RETURN"
   "doit CTRL + PERIOD 4 PERIOD"
   "pause CTRL + ESCAPE 4 ESCAPE"
+  "back CTRL + COMMA 4 COMMA"
 )
 PREFIX="Onboarding: "
 # The single skip bind from before this script, cleaned up the same way.

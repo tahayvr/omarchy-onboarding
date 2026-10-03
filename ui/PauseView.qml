@@ -38,7 +38,7 @@ FocusScope {
         }
         Text {
             width: parent.width
-            text: "Pick Remind me later and I'll nudge you once at your next login. Either way, omarchy onboarding brings me back."
+            text: "Pick Remind me later and I'll nudge you once at your next login."
             wrapMode: Text.Wrap
             color: Qt.rgba(Color.foreground.r, Color.foreground.g, Color.foreground.b, 0.62)
             font.family: Style.font.family

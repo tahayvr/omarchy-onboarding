@@ -11,7 +11,7 @@ Rectangle {
     anchors { top: parent.top; left: parent.left }
     visible: progress >= 0
     width: parent.width * Math.max(0, Math.min(1, progress))
-    height: Math.max(2, Style.space(3))
+    height: Math.max(3, Style.space(5))
     color: Color.accent
     z: 10
 

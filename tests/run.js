@@ -287,6 +287,68 @@ test("failures are listed on the finish screen", () => {
     eq(E.openSteps(MANIFEST, r.s).map(s => s.id), [step]);
 });
 
+test("skipped steps are still to do", () => {
+    const r = started(ONLINE);
+    const step = r.current();
+    r.skip();
+    eq(E.openSteps(MANIFEST, r.s).map(s => s.id), [step]);
+});
+
+test("Back returns to the step before, forgetting its result", () => {
+    const r = started(ONLINE);
+    eq(E.previousStep(MANIFEST, r.s), "welcome", "the first lesson goes back to the welcome page");
+    r.done(); // super-key
+    r.skip(); // menu
+    eq(r.current(), "tiling");
+    eq(E.previousStep(MANIFEST, r.s), "menu");
+    r.s = E.back(MANIFEST, r.s, NOW);
+    eq(r.current(), "menu");
+    eq(r.s.steps.menu, undefined, "forgotten");
+    eq(r.s.steps["super-key"].outcome, "done", "the rest is kept");
+    r.s = E.back(MANIFEST, r.s, NOW);
+    eq(r.current(), "super-key");
+    r.s = E.back(MANIFEST, r.s, NOW);
+    eq(r.current(), "welcome");
+    throws(() => E.back(MANIFEST, r.s, NOW), "nothing to go back to");
+    r.done();
+    eq(r.current(), "super-key", "Teach me again");
+});
+
+test("Back passes over steps the user never saw", () => {
+    const r = started(ONLINE);
+    r.done(); // super-key
+    r.s = E.failStep(MANIFEST, r.s, ONLINE, NOW, "no menu");
+    const facts = { online: true, missing: ["omarchy-theme-switcher"] };
+    while (r.current() !== "display") r.s = E.complete(MANIFEST, r.s, facts, NOW);
+    eq(r.s.steps.theme.outcome, "auto-skipped");
+    eq(E.previousStep(MANIFEST, r.s), "shortcuts", "theme was never shown");
+    r.s = E.replay(MANIFEST, r.s, "menu", NOW);
+    eq(E.previousStep(MANIFEST, r.s), null, "no Back in a replay");
+});
+
+test("the finish screen does the steps still to do", () => {
+    const r = started(ONLINE);
+    r.done(); // super-key
+    r.skip(); // menu
+    r.done(); // tiling
+    r.skip(); // window-controls
+    while (r.current() !== "finish") r.done();
+    throws(() => E.redoOpen(MANIFEST, started(ONLINE).s, ONLINE, NOW), "finish screen");
+    eq(E.openSteps(MANIFEST, r.s).map(s => s.id), ["menu", "window-controls"]);
+    r.s = E.redoOpen(MANIFEST, r.s, ONLINE, NOW);
+    eq(r.current(), "menu");
+    eq(r.s.mode, "only-skipped");
+    r.done();
+    eq(r.current(), "window-controls", "tiling was done");
+    r.done();
+    eq(r.current(), "finish");
+    eq(E.openSteps(MANIFEST, r.s), []);
+    throws(() => E.redoOpen(MANIFEST, r.s, ONLINE, NOW), "nothing left");
+    r.done();
+    eq(r.s.status, "completed");
+    eq(r.s.mode, "full");
+});
+
 test("re-run starts at the welcome checklist and keeps results", () => {
     const r = started(ONLINE);
     r.walk();
@@ -554,9 +616,70 @@ test("Omi looks at what each card is about", () => {
     eq(U.cardOmiLook("super-key", "center"), [0, 1], "the key caps below");
     eq(U.cardOmiLook("theme", "bottom-center"), [0, -1], "the picker above");
     eq(U.cardOmiLook("clipboard", "bottom-right", {}), [0, 1], "the line to copy");
-    eq(U.cardOmiLook("clipboard", "bottom-right", { copy: true }), [-0.6, -0.6], "then the terminal");
-    ["menu", "window-controls", "shortcuts"].forEach(id => eq(U.cardOmiLook(id, "bottom-right"), [-0.6, -0.6], id));
+    eq(U.cardOmiLook("clipboard", "bottom-right", { copy: true }), [-1, -1], "then the terminal");
+    ["menu", "window-controls", "shortcuts"].forEach(id => eq(U.cardOmiLook(id, "bottom-right"), [-1, -1], id));
     ["tiling", "display", "apps", "finish"].forEach(id => eq(U.cardOmiLook(id, "bottom-right"), [0, 0], id));
+    // Stalled: at the key caps, which sit below and to the right of Omi.
+    eq(U.cardOmiLook("menu", "bottom-right", {}, 1), [1, 1], "20 s idle: the caps");
+    eq(U.cardOmiLook("super-key", "center", {}, 1), [0, 1], "the Super key card's caps are below");
+    eq(U.cardOmiLook("menu", "bottom-right", {}, 2), [-1, -1], "40 s: confused has no eyes, back to the menu");
+});
+
+test("the card's eyebrow says where a step sits", () => {
+    eq(U.positionLabel(MANIFEST, "super-key"), "Learn the keys · 1 of 7");
+    eq(U.positionLabel(MANIFEST, "shortcuts"), "Learn the keys · 7 of 7");
+    eq(U.positionLabel(MANIFEST, "display"), "Make it yours · 2 of 3");
+    eq(U.positionLabel(MANIFEST, "welcome"), "");
+    eq(U.positionLabel(MANIFEST, "finish"), "");
+    eq(U.positionLabel(MANIFEST, "nope"), "");
+    eq(U.tutorialBlurb(10), "10 short lessons, about 5 minutes.");
+    eq(U.tutorialBlurb(1), "1 short lessons, about 1 minute.");
+});
+
+test("displays read as people see them", () => {
+    const laptop = { name: "eDP-1", width: 3840, height: 2160, scale: 1.6 };
+    const external = { name: "DP-1", width: 2560, height: 1440, scale: 1 };
+    eq(U.monitorLine(laptop, 1), "Built-in display, 160% scale");
+    eq(U.monitorLine(external, 1), "Display, 100% scale");
+    eq(U.monitorLine(laptop, 2), "Built-in display · 3840×2160 · 160%");
+    eq(U.monitorLine(external, 2), "DP-1 · 2560×1440 · 100%");
+});
+
+test("commands in card text become chips", () => {
+    eq(U.richCode("Run `omarchy onboarding` again", "#223344"),
+       'Run <span style="background-color:#223344;">&nbsp;omarchy onboarding&nbsp;</span> again');
+    eq(U.richCode("`--step <name>` & more", "#000"),
+       '<span style="background-color:#000;">&nbsp;--step &lt;name&gt;&nbsp;</span> &amp; more', "escaped first");
+    eq(U.richCode("", "#000"), "");
+});
+
+test("the apps step sees an app open, however it was launched", () => {
+    const apps = [
+        { label: "File manager", keys: "Super + Shift + F", command: "uwsm-app -- flea --gui" },
+        { label: "Music", keys: "Super + Shift + M", command: "omarchy-launch-spotify" },
+        { label: "Passwords", keys: "Super + Shift + /", command: "omarchy-launch-1password" },
+        { label: "Email", keys: "Super + Shift + E", command: "omarchy-launch-webapp 'https://app.hey.com'" },
+        { label: "Calendar", keys: "Super + Ctrl + Alt + D", command: "omarchy-shell shell toggle omarchy.clock" },
+        { label: "Signal", keys: "Super + Shift + G", command: "omarchy-launch-signal" },
+        { label: "WhatsApp", keys: "Super + Shift + Alt + G", command: "omarchy-launch-or-focus-webapp 'WhatsApp' 'https://web.whatsapp.com/'" }
+    ];
+    const open = line => U.appOpened(apps, D.parseEvent(line));
+    eq(open("openwindow>>1,1,flea,Home"), "File manager");
+    eq(open("openwindow>>2,1,Spotify,Spotify Premium"), "Music");
+    eq(open("openwindow>>3,1,1Password,1Password"), "Passwords");
+    eq(open("openwindow>>4,1,chrome-app.hey.com__-Default,HEY"), "Email");
+    eq(open("openwindow>>5,1,signal,Signal"), "Signal");
+    eq(open("openwindow>>6,1,chrome-web.whatsapp.com__-Default,WhatsApp"), "WhatsApp");
+    eq(open("openlayer>>omarchy-keyboard-panel"), "Calendar", "every panel is the same layer; it's the one panel app");
+    eq(open("openlayer>>omarchy-clock"), null);
+    eq(U.appOpened(apps.concat([{ label: "Notes", command: "omarchy-shell shell toggle omarchy.notes" }]),
+                   D.parseEvent("openlayer>>omarchy-keyboard-panel")), null, "two panel apps: can't tell");
+    eq(open("openwindow>>7,1,foot,taha: ~"), null, "a terminal is nobody's app");
+    eq(open("openlayer>>omarchy-menu"), null);
+    eq(open("closewindow>>1"), null);
+    eq(U.appOpened([], D.parseEvent("openwindow>>1,1,flea,Home")), null);
+    eq(U.appTokens({ label: "Email", command: "omarchy-launch-webapp 'https://www.example.org/x'" }), ["example.org", "email"]);
+    eq(U.appTokens(apps[4]), ["omarchy-keyboard-panel", "calendar"]);
 });
 
 test("welcome Omi follows the checklist", () => {

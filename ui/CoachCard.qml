@@ -125,7 +125,6 @@ Rectangle {
         // The action steps' own controls.
         Loader {
             width: parent.width
-            active: sourceComponent !== null
             sourceComponent: !card.step ? null
                 : card.step.id === "display" ? displayPanel
                 : card.step.id === "apps" ? appsPanel

@@ -2,6 +2,8 @@ import QtQuick
 import qs.Commons
 
 // Step 13: the everyday apps as bound on this machine, each with its keys.
+// An app ticks when its window or panel opens (the overlay watches for it),
+// so the shortcut beside it is the way to try it.
 Column {
     id: panel
     property var host
@@ -28,23 +30,28 @@ Column {
             required property int index
             readonly property bool tried: !!panel.host.appsTried[modelData.label]
             width: panel.width
-            implicitHeight: Math.max(caps.implicitHeight, tryButton.implicitHeight)
+            implicitHeight: Math.max(caps.implicitHeight, mark.implicitHeight)
 
+            Text {
+                id: mark
+                anchors { left: parent.left; verticalCenter: parent.verticalCenter }
+                width: Style.space(20)
+                text: row.tried ? "✓" : "○"
+                color: row.tried ? Color.accent : Qt.rgba(Color.foreground.r, Color.foreground.g, Color.foreground.b, 0.62)
+                font.family: Style.font.family
+                font.pixelSize: Style.font.title
+            }
             Line {
-                anchors { left: parent.left; right: caps.left; rightMargin: Style.space(8); verticalCenter: parent.verticalCenter }
+                anchors { left: mark.right; right: caps.left; rightMargin: Style.space(8); verticalCenter: parent.verticalCenter }
                 width: undefined
-                text: (row.tried ? "✓  " : "") + row.modelData.label
+                text: row.modelData.label
+                color: row.tried ? Qt.rgba(Color.foreground.r, Color.foreground.g, Color.foreground.b, 0.62) : Color.foreground
             }
             KeyCaps {
                 id: caps
-                anchors { right: tryButton.left; rightMargin: Style.space(8); verticalCenter: parent.verticalCenter }
-                keys: row.modelData.keys
-            }
-            Button {
-                id: tryButton
                 anchors { right: parent.right; verticalCenter: parent.verticalCenter }
-                text: "Try it"
-                onClicked: panel.host.tryApp(row.modelData)
+                keys: row.modelData.keys
+                opacity: row.tried ? 0.45 : 1
             }
         }
     }

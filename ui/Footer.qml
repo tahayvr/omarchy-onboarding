@@ -1,7 +1,7 @@
 import QtQuick
 import qs.Commons
 
-// Skip, and after 40 s without progress, "Do it for me".
+// Back, Skip, and after 40 s without progress, "Do it for me".
 Item {
     id: footer
 
@@ -32,6 +32,7 @@ Item {
         id: buttons
         anchors.right: parent.right
         spacing: Style.space(8)
+        Button { visible: footer.host.canBack; text: "Back"; key: footer.host.tutorialKeys.back || ""; onClicked: footer.host.back() }
         Button { text: "Skip"; key: footer.host.tutorialKeys.skip || ""; onClicked: footer.host.skip() }
         Button {
             visible: footer.canDoIt && footer.hint > 1

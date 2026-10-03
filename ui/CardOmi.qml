@@ -22,6 +22,6 @@ Omi {
 
     Connections {
         target: omi.host
-        function onOmiReacted(reaction) { omi.react(reaction, 1.2); }
+        function onOmiReacted(reaction) { omi.react(reaction); }
     }
 }

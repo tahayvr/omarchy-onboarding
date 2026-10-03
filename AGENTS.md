@@ -116,7 +116,8 @@ code, because Omarchy ships only bash and QML. Built against Omarchy 4.0.4
   card never has it, so its buttons' keys are Hyprland binds, added with
   `hl.bind` by `bin/onboarding-binds` while a tutorial step is up, removed
   after, and re-added on `configreloaded`: Ctrl + / (skip), Ctrl + Enter
-  (the main button), Ctrl + . (do it for me), Ctrl + Esc (pause). Each calls
+  (the main button), Ctrl + . (do it for me), Ctrl + Esc (pause), Ctrl + ,
+  (back). Ctrl + Backspace was avoided: terminals use it. Each calls
   the overlay's `key()`, which acts only while that button is shown. A combo
   the user has bound is left alone, and its button shows no key. Keys the
   welcome checklist shows (Super + Ctrl + W, Super + K) open the panel or list
@@ -155,8 +156,14 @@ code, because Omarchy ships only bash and QML. Built against Omarchy 4.0.4
   terminals, and Super + C / V copy and paste in a terminal only when it's
   tagged. The tiling drill's terminal and browser close, by address, when
   onboarding closes (finish, quit, pause, or a replay ending), and focus
-  returns to the workspace the tutorial began on. Never close a window
-  onboarding didn't open or ask for.
+  returns to the workspace the tutorial began on. `bin/onboarding-close-windows`
+  does it, detached (the plugin is unloading), and leaves a terminal open
+  when anything but a shell runs under it: the user may have started work
+  there. Never close a window onboarding didn't open or ask for.
+- **The apps step ticks on `openwindow` / `openlayer`**, matched to each
+  app's launch command by `Ui.appOpened` (a web app's host, a panel's name,
+  or the program name). An app already open and only focused by its
+  shortcut doesn't tick: there is no event with a class for that.
 - **Close test windows by address**, never by PID. Chromium windows share one
   process with the user's own browser.
 - **Window classes.** The terminal is `foot` (the full regex is in

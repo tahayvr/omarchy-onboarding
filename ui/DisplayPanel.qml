@@ -1,5 +1,6 @@
 import QtQuick
 import qs.Commons
+import "../lib/Ui.js" as Ui
 
 // Step 11: what Hyprland reports for each screen, live as the scale changes.
 Column {
@@ -11,7 +12,7 @@ Column {
         model: panel.host.monitors
         delegate: Line {
             required property var modelData
-            text: modelData.name + " · " + modelData.width + "×" + modelData.height + " · " + Math.round(modelData.scale * 100) + "%"
+            text: Ui.monitorLine(modelData, panel.host.monitors.length)
         }
     }
     Line {
