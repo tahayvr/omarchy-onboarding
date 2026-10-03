@@ -540,6 +540,17 @@ test("Omi on the cards: the step's mode, unless something more pressing", () => 
     eq(U.cardOmi({}), "idle");
 });
 
+test("Omi looks at what each card is about", () => {
+    eq(U.cardOmiLook("workspaces", "top-left"), [0, -1], "up, under a top bar");
+    eq(U.cardOmiLook("workspaces", "bottom-left"), [0, 1], "down, above a bottom bar");
+    eq(U.cardOmiLook("super-key", "center"), [0, 1], "the key caps below");
+    eq(U.cardOmiLook("theme", "bottom-center"), [0, -1], "the picker above");
+    eq(U.cardOmiLook("clipboard", "bottom-right", {}), [0, 1], "the line to copy");
+    eq(U.cardOmiLook("clipboard", "bottom-right", { copy: true }), [-0.6, -0.6], "then the terminal");
+    ["menu", "window-controls", "shortcuts"].forEach(id => eq(U.cardOmiLook(id, "bottom-right"), [-0.6, -0.6], id));
+    ["tiling", "display", "apps", "finish"].forEach(id => eq(U.cardOmiLook(id, "bottom-right"), [0, 0], id));
+});
+
 test("welcome Omi follows the checklist", () => {
     eq(U.welcomeOmi({ online: false }), "idle", "offline is plain idle");
     eq(U.welcomeOmi({ online: false, update: "current" }), "idle");

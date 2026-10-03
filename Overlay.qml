@@ -177,6 +177,12 @@ Item {
         error: error,
         away: away
     })
+    // Where the corner card sits (Ui.coachPlacement), and where Omi looks from
+    // it: toward what the step is about (Ui.cardOmiLook).
+    readonly property string cornerPlace: away !== "" ? "bottom-right"
+        : Ui.coachPlacement(step ? step.id : "", ticked, barPosition)
+    readonly property var omiLook: away !== "" || pausing || confirm !== null || error !== "" || !step
+        ? [0, 0] : Ui.cardOmiLook(step.id, cornerPlace, ticked)
     // Whichever Omi is on screen plays this on top of omiMode for a moment.
     signal omiReacted(string mode)
     function omiReact(mode) { omiReacted(mode); }
@@ -1209,8 +1215,7 @@ Item {
         visible: root.opened && root.flow !== null && !root.centered && (root.step !== null || root.away !== "")
         color: "transparent"
         // Unanchored on an axis means centred on it.
-        readonly property string place: root.away !== "" ? "bottom-right"
-            : Ui.coachPlacement(root.step ? root.step.id : "", root.ticked, root.barPosition)
+        readonly property string place: root.cornerPlace
         anchors {
             top: cornerWindow.place.indexOf("top") === 0
             bottom: cornerWindow.place.indexOf("bottom") === 0

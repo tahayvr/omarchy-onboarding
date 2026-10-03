@@ -15,6 +15,7 @@ Omi {
     color: Color.accent
     bodyMotion: false
     mode: host ? host.omiMode : "idle"
+    look: host && host.omiLook ? host.omiLook : [0, 0]
 
     Connections {
         target: omi.host
