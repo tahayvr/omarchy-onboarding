@@ -251,7 +251,12 @@
           "label": "The Omarchy menu",
           "keys": "Super + Space"
         }
-      ]
+      ],
+      "link": {
+        "text": "Want to go deeper? The Omarchy manual covers everything, and it's in the menu under Learn too.",
+        "label": "Open the manual",
+        "url": "https://omarchy.org/manual/"
+      }
     }
   ]
 }

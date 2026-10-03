@@ -16,14 +16,15 @@ FocusScope {
     implicitHeight: column.implicitHeight
 
     Component.onCompleted: Qt.callLater(function () { primary.forceActiveFocus(); })
-    Keys.onEscapePressed: view.host.askPause()
+    // On the finish screen Esc is the same as Finish.
+    Keys.onEscapePressed: view.finishing ? view.host.next() : view.host.askPause()
 
     Column {
         id: column
         width: parent.width
         spacing: Style.space(14)
 
-        Header { host: view.host; step: view.step }
+        Header { host: view.host; step: view.step; omiSize: view.finishing ? Style.space(96) : Style.space(48) }
 
         Text {
             width: parent.width
@@ -60,6 +61,28 @@ FocusScope {
                         keys: modelData.keys
                     }
                 }
+            }
+        }
+
+        // A page to read next (the manual), as Omi's line and a button.
+        Item {
+            visible: !!(view.step && view.step.link)
+            width: parent.width
+            implicitHeight: Math.max(linkText.implicitHeight, linkButton.implicitHeight)
+            Text {
+                id: linkText
+                anchors { left: parent.left; right: linkButton.left; rightMargin: Style.space(12); verticalCenter: parent.verticalCenter }
+                text: view.step && view.step.link ? view.step.link.text : ""
+                wrapMode: Text.Wrap
+                color: Color.foreground
+                font.family: Style.font.family
+                font.pixelSize: Style.font.body
+            }
+            Button {
+                id: linkButton
+                anchors { right: parent.right; verticalCenter: parent.verticalCenter }
+                text: view.step && view.step.link ? view.step.link.label : ""
+                onClicked: view.host.openLink()
             }
         }
 

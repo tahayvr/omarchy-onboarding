@@ -289,6 +289,19 @@ Item {
     function pause() { return change(function () { return Engine.pause(flow, now()); }, "pause"); }
     function dismiss() { return change(function () { return Engine.dismiss(flow, now()); }, "dismiss"); }
 
+    // The current step's link (the manual, on the finish screen): opened as a
+    // web app, the way Omarchy's menu opens it. The finish card covers the
+    // screen, so it also finishes, or the page would open behind it. Opened
+    // first: finishing closes the overlay, and nothing runs after that.
+    function openLink() {
+        var link = step && step.link;
+        if (!link || !link.url) return "no link";
+        log("open " + link.url);
+        Quickshell.execDetached(["omarchy-launch-webapp", String(link.url)]);
+        if (step.id === "finish") next();
+        return "ok";
+    }
+
     // The welcome checklist's two ways out.
     function startTutorial() { return change(function () { return Engine.complete(steps, flow, facts, now()); }, "start tutorial"); }
     function closeWelcome() { return change(function () { return Engine.finishNow(flow, now()); }, "close welcome"); }
