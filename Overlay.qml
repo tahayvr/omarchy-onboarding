@@ -96,8 +96,8 @@ Item {
     property var monitors: []
     // The last scales read, to tell scaling up from scaling down.
     property var lastScales: null
-    property string sunsetBaseline: ""
-    property bool sunsetSeen: false
+    // The night light sub-task's progress (Ui.nightLightStep).
+    property var nightLight: null
     property var apps: []
     property var appsTried: ({})
     property string preparedStep: ""
@@ -632,8 +632,7 @@ Item {
             themeProbe.running = true;
         } else if (step.id === "display") {
             lastScales = null;
-            sunsetBaseline = "";
-            sunsetSeen = false;
+            nightLight = null;
         } else if (step.id === "apps") {
             appsProbe.running = true;
         } else if (step.id === "clipboard") {
@@ -658,7 +657,7 @@ Item {
             return;
         }
         if (drill && drill.step === id) return;
-        drill = Drills.create(id, { defaultBrowser: defaultBrowser });
+        drill = Drills.create(id, { defaultBrowser: defaultBrowser, browser: drillWindows.browser || null });
         drillHome = Hyprland.focusedWorkspace ? Hyprland.focusedWorkspace.id : 1;
         ticked = {};
         lastClients = null;
@@ -977,13 +976,9 @@ Item {
         command: ["hyprctl", "hyprsunset", "temperature"]
         stdout: StdioCollector {
             onStreamFinished: {
-                var reading = String(text || "").trim().indexOf("Couldn't") === 0 ? "off" : String(text || "").trim();
-                if (!root.sunsetSeen) {
-                    root.sunsetSeen = true;
-                    root.sunsetBaseline = reading;
-                } else if (reading !== root.sunsetBaseline) {
-                    root.tick("nightlight");
-                }
+                var t = Ui.nightLightStep(root.nightLight, Ui.nightLightOn(text));
+                root.nightLight = t;
+                if (t.done) root.tick("nightlight");
             }
         }
     }
@@ -1002,7 +997,7 @@ Item {
     Timer {
         interval: 400
         repeat: true
-        running: root.opened && ((root.drill && root.drill.step === "tiling") || root.recordPath !== "")
+        running: root.opened && ((root.drill && (root.drill.step === "tiling" || root.drill.step === "window-controls")) || root.recordPath !== "")
         onTriggered: if (!clientsProbe.running) clientsProbe.running = true
     }
 

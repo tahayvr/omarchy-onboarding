@@ -378,9 +378,9 @@ test("empty active window and ignored lines", () => {
 
 test("probe output parsers", () => {
     eq([D.parseConnectivity("full\n"), D.parseConnectivity("portal"), D.parseConnectivity("weird")], [true, false, null]);
-    eq(D.parseClients('[{"address":"0xabc","workspace":{"id":1,"name":"1"},"at":[10,20],"size":[300,400],"mapped":true},' +
+    eq(D.parseClients('[{"address":"0xabc","class":"foot","workspace":{"id":1,"name":"1"},"at":[10,20],"size":[300,400],"mapped":true},' +
                       '{"address":"0xdef","workspace":{"name":"2"},"at":[0,0],"size":[1,1],"mapped":false}]'),
-       [{ addr: "abc", workspace: "1", x: 10, y: 20, width: 300, height: 400 }]);
+       [{ addr: "abc", cls: "foot", workspace: "1", x: 10, y: 20, width: 300, height: 400 }]);
     eq(D.parseClients("not json"), null);
 });
 
@@ -457,12 +457,24 @@ test("tiling: both windows must share a workspace", () => {
 });
 
 test("window controls need the round trip", () => {
-    const d = D.create("window-controls");
+    const d = D.create("window-controls", { browser: "b" });
     eq(feed(d, [hypr("changefloatingmode>>a,1"), hypr("fullscreen>>1")]), []);
     eq(feed(d, [hypr("changefloatingmode>>a,0"), hypr("fullscreen>>0"), hypr("closewindow>>b")]),
        ticks(["float", "fullscreen", "close"]));
     ok(d.complete());
     eq(feed(D.create("window-controls"), [hypr("changefloatingmode>>a,0"), hypr("fullscreen>>0")]), []);
+});
+
+test("window controls: only closing the browser counts", () => {
+    eq(feed(D.create("window-controls", { browser: "b" }), [hypr("closewindow>>t")]), [], "the terminal");
+    eq(feed(D.create("window-controls", { browser: "b" }), [hypr("closewindow>>b")]), ticks(["close"]), "the tiling drill's browser");
+    // Tiling skipped: no address, so any browser window, by class.
+    const d = D.create("window-controls", { defaultBrowser: "chromium" });
+    eq(feed(d, [{ kind: "clients", windows: [{ addr: "t", cls: "foot" }, { addr: "c", cls: "chromium" }] }]), []);
+    eq(feed(d, [hypr("closewindow>>t")]), [], "a terminal, by class");
+    eq(feed(d, [hypr("closewindow>>c")]), ticks(["close"]), "a browser, by class");
+    eq(feed(D.create("window-controls"), [hypr("openwindow>>n,1,firefox,Firefox"), hypr("closewindow>>n")]),
+       ticks(["close"]), "a browser opened meanwhile");
 });
 
 test("workspaces: switch, back and move", () => {
@@ -638,6 +650,22 @@ test("do it for me: display", () => {
     eq(argvs(U.doItPlan("display", { ticked: {} })), ["omarchy-hyprland-monitor-scaling up", "omarchy-hyprland-monitor-scaling down"]);
     eq(argvs(U.doItPlan("display", { ticked: { up: true } })), ["omarchy-hyprland-monitor-scaling down"]);
     eq(argvs(U.doItPlan("display", { ticked: { up: true, down: true } })), ["omarchy-toggle-nightlight", "omarchy-toggle-nightlight"]);
+});
+
+test("night light: on, then off again", () => {
+    ok(!U.nightLightOn("6500"), "Omarchy's off");
+    ok(U.nightLightOn("4000"), "Omarchy's on");
+    ok(!U.nightLightOn("Couldn't connect to hyprsunset"), "not running is off");
+    const run = (readings) => {
+        let t = null, done = false;
+        readings.forEach(r => { t = U.nightLightStep(t, U.nightLightOn(r)); done = done || t.done; });
+        return done;
+    };
+    ok(!run(["6500", "4000"]), "turning it on isn't enough");
+    ok(run(["6500", "4000", "6500"]), "on, then off again");
+    ok(run(["Couldn't connect", "4000", "6500"]), "from not running");
+    ok(run(["4000", "6500", "4000"]), "already on: off, then back on");
+    ok(!run(["6500", "6500", "6500"]), "nothing happened");
 });
 
 test("scaling up and down", () => {
