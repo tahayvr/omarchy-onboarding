@@ -574,8 +574,8 @@ test("every drill sub-task names its keys", () => {
     });
 });
 
-test("idle hints at 20 s and 40 s", () => {
-    eq([0, 19999, 20000, 39999, 40000, 90000].map(U.hintLevel), [0, 0, 1, 1, 2, 2]);
+test("idle hints at 40 s and a minute", () => {
+    eq([0, 39999, 40000, 59999, 60000, 90000].map(U.hintLevel), [0, 0, 1, 1, 2, 2]);
 });
 
 test("centered steps take the keyboard; drills and panel steps stay in the corner", () => {
@@ -590,8 +590,8 @@ test("Omi on the cards: the step's mode, unless something more pressing", () => 
     eq(U.cardOmi({ stepId: "theme" }), "excited");
     eq(U.cardOmi({ stepId: "finish" }), "party");
     ["menu", "window-controls", "workspaces", "shortcuts", "display", "apps"].forEach(id => eq(U.cardOmi({ stepId: id }), "idle", id));
-    eq(U.cardOmi({ stepId: "tiling", hint: 1 }), "tiling", "no fuss at 20 s");
-    eq(U.cardOmi({ stepId: "tiling", hint: 2 }), "confused", "stuck at 40 s");
+    eq(U.cardOmi({ stepId: "tiling", hint: 1 }), "tiling", "no fuss at 40 s");
+    eq(U.cardOmi({ stepId: "tiling", hint: 2 }), "confused", "stuck at a minute");
     eq(U.cardOmi({ stepId: "tiling", hint: 2, doingIt: true }), "working", "doing it for you");
     eq(U.cardOmi({ stepId: "tiling", pausing: true, doingIt: true }), "sleeping");
     eq(U.cardOmi({ stepId: "tiling", pausing: true, confirm: true }), "sudo");
@@ -620,9 +620,18 @@ test("Omi looks at what each card is about", () => {
     ["menu", "window-controls", "shortcuts"].forEach(id => eq(U.cardOmiLook(id, "bottom-right"), [-1, -1], id));
     ["tiling", "display", "apps", "finish"].forEach(id => eq(U.cardOmiLook(id, "bottom-right"), [0, 0], id));
     // Stalled: at the key caps, which sit below and to the right of Omi.
-    eq(U.cardOmiLook("menu", "bottom-right", {}, 1), [1, 1], "20 s idle: the caps");
+    eq(U.cardOmiLook("menu", "bottom-right", {}, 1), [1, 1], "40 s idle: the caps");
     eq(U.cardOmiLook("super-key", "center", {}, 1), [0, 1], "the Super key card's caps are below");
-    eq(U.cardOmiLook("menu", "bottom-right", {}, 2), [-1, -1], "40 s: confused has no eyes, back to the menu");
+    eq(U.cardOmiLook("menu", "bottom-right", {}, 2), [-1, -1], "a minute: confused has no eyes, back to the menu");
+});
+
+test("Omi nudges in place of the title when the user stalls", () => {
+    eq(U.omiHint("menu", 0, true), "");
+    eq(U.omiHint("menu", 1, true), "Take your time. The keys are right here.");
+    eq(U.omiHint("menu", 2, true), "Stuck? I can do it.");
+    eq(U.omiHint("menu", 2, false), "Take your time. The keys are right here.", "no Do it for me: the nudge stays");
+    eq(U.omiHint("super-key", 1, true), "Look on the bottom row, left of the space bar, next to Alt.");
+    eq(U.omiHint("super-key", 2, true), "Stuck? I can do it.");
 });
 
 test("the card's eyebrow says where a step sits", () => {

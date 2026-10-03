@@ -1,7 +1,7 @@
 import QtQuick
 import qs.Commons
 
-// One key, drawn as a key cap. `big` is the 20 s idle hint.
+// One key, drawn as a key cap. `big` is the 40 s idle hint.
 Rectangle {
     id: cap
 

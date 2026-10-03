@@ -36,16 +36,20 @@ Item {
             font.family: Style.font.family
             font.pixelSize: Style.font.bodySmall
         }
-        // The title, or Omi's confirmation once the step is done: in the
-        // accent, faded in, as Omi's own words.
+        // The title, or Omi talking in its place: its confirmation once the
+        // step is done, or its nudge while the user is stalled (40 s: take
+        // your time; a minute: I can do it). In the accent, faded in.
         Text {
             id: titleText
-            readonly property bool cheering: !!header.host && header.host.cheering !== ""
+            readonly property string says: !header.host ? ""
+                : header.host.cheering !== "" ? header.host.cheering
+                : header.host.omiHint || ""
+            readonly property bool cheering: says !== ""
             width: parent.width
-            text: cheering ? header.host.cheering : header.step ? header.step.title : ""
+            text: cheering ? says : header.step ? header.step.title : ""
             wrapMode: Text.Wrap
             color: cheering ? Color.accent : Color.foreground
-            onCheeringChanged: if (cheering) cheerIn.restart()
+            onSaysChanged: if (says !== "") cheerIn.restart()
             NumberAnimation { id: cheerIn; target: titleText; property: "opacity"; from: 0; to: 1; duration: 220; easing.type: Easing.OutCubic }
             font.family: Style.font.family
             font.pixelSize: Style.font.heading

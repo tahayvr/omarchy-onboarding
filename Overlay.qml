@@ -103,7 +103,7 @@ Item {
     property var appsTried: ({})
     property string preparedStep: ""
 
-    // Idle tracking for the 20 s and 40 s hints.
+    // Idle tracking for the 40 s and one-minute hints.
     property double lastProgress: 0
     property double clock: 0
     readonly property int hint: opened && step ? Ui.hintLevel(clock - lastProgress) : 0
@@ -153,7 +153,7 @@ Item {
     }
     Component.onDestruction: Quickshell.execDetached([pluginDir + "/bin/onboarding-binds", "off"])
 
-    // "Do it for me" is offered after 40 s without progress, where a step has one.
+    // "Do it for me" is offered after a minute without progress, where a step has one.
     readonly property bool canDoIt: !!step && hint > 1 && (step.id === "super-key"
         || Ui.doItPlan(step.id, { ticked: ticked, windows: drillWindows }) !== null)
 
@@ -169,6 +169,9 @@ Item {
         default: return "unknown key " + action;
         }
     }
+
+    // What Omi says in place of the title while the user is stalled (Ui.omiHint).
+    readonly property string omiHint: step ? Ui.omiHint(step.id, hint, canDoIt) : ""
 
     // Omi on every card but the welcome page (which follows its checklist).
     readonly property string omiMode: Ui.cardOmi({
