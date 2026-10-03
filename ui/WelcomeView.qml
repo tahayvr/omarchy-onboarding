@@ -232,7 +232,7 @@ FocusScope {
             Omi {
                 id: omi
                 anchors.verticalCenter: parent.verticalCenter
-                width: Style.space(76)
+                width: Ui.evenOmiSize(Style.space(76), dpr)
                 height: width
                 color: Color.accent
                 // At this size a bob is a few pixels, and snapped to whole

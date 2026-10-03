@@ -9,7 +9,7 @@ Item {
     property var host
     property var step: null
     // Omi's size; the finish screen makes it bigger.
-    property int omiSize: Style.space(48)
+    property real omiSize: Style.space(48)
 
     width: parent ? parent.width : implicitWidth
     implicitHeight: Math.max(omi.height, titles.implicitHeight)
@@ -17,7 +17,7 @@ Item {
     CardOmi {
         id: omi
         host: header.host
-        width: header.omiSize
+        size: header.omiSize
         anchors { left: parent.left; verticalCenter: parent.verticalCenter }
     }
 

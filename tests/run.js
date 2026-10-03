@@ -540,6 +540,14 @@ test("Omi on the cards: the step's mode, unless something more pressing", () => 
     eq(U.cardOmi({}), "idle");
 });
 
+test("Omi sizes round up to even ones", () => {
+    eq(U.evenOmiSize(48, 1.6), 55, "88 device pixels, 4 per cell");
+    eq(U.evenOmiSize(76, 1.6), 82.5, "132 device pixels");
+    eq(U.evenOmiSize(96, 1.6), 96.25, "154 device pixels");
+    eq(U.evenOmiSize(44, 1), 44, "already even");
+    eq(U.evenOmiSize(48, 2), 55, "110 device pixels");
+});
+
 test("Omi looks at what each card is about", () => {
     eq(U.cardOmiLook("workspaces", "top-left"), [0, -1], "up, under a top bar");
     eq(U.cardOmiLook("workspaces", "bottom-left"), [0, 1], "down, above a bottom bar");

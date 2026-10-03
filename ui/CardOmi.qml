@@ -1,6 +1,7 @@
 import QtQuick
 import qs.Commons
 import "../omi"
+import "../lib/Ui.js" as Ui
 
 // Omi on a card, speaking its text: the overlay's omiMode, with a short
 // reaction when the overlay calls omiReact(). Small, so no whole-body motion:
@@ -10,7 +11,9 @@ Omi {
 
     property var host
 
-    width: Style.space(48)
+    // The size asked for; drawn at the next even size up (Ui.evenOmiSize).
+    property real size: Style.space(48)
+    width: Ui.evenOmiSize(size, dpr)
     height: width
     color: Color.accent
     bodyMotion: false
