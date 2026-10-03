@@ -19,7 +19,8 @@ FocusScope {
     implicitHeight: column.implicitHeight
 
     Component.onCompleted: Qt.callLater(function () { yesButton.forceActiveFocus(); })
-    Keys.onEscapePressed: view.host.askPause()
+    // On the welcome page Esc is the same as "No, exit": no confirmation.
+    Keys.onEscapePressed: view.host.closeWelcome()
 
     Column {
         id: column
@@ -169,12 +170,8 @@ FocusScope {
             }
         }
 
-        // --- the tutorial
-        Rectangle {
-            width: parent.width
-            height: 1
-            color: Style.normalBorderColor
-        }
+        // --- the tutorial, set apart from the checklist by space alone
+        Item { width: 1; height: Style.space(14) }
 
         Row {
             width: parent.width
@@ -188,8 +185,8 @@ FocusScope {
                 font.family: Style.font.family
                 font.pixelSize: Style.font.title
             }
-            Button { id: noButton; text: "No, exit"; onClicked: view.host.closeWelcome() }
             Button { id: yesButton; text: "Yes"; primary: true; onClicked: view.host.startTutorial() }
+            Button { id: noButton; text: "No, exit"; onClicked: view.host.closeWelcome() }
         }
     }
 }
