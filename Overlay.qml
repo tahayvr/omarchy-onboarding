@@ -151,6 +151,7 @@ Item {
         logLines = [];
         startedAt = Date.now();
         opened = true;
+        keepCornerCardOnTop();
 
         flow = null;
         try {
@@ -187,6 +188,16 @@ Item {
         var lines = exitCode === 0 ? String(text).split("\n").filter(function (l) { return l !== ""; }) : [];
         logLines = lines.slice(Math.max(0, lines.length - 2000));
         factsProbe.running = true;
+    }
+
+    // The corner card shares Hyprland's overlay level with Omarchy's menus,
+    // whose full-screen dimming would otherwise cover it. Within a level
+    // Hyprland draws higher `order` first, so a negative order keeps the card
+    // on top. It's a runtime rule (a config reload clears it), so it's set on
+    // every open; the name makes Hyprland reuse it rather than add another.
+    function keepCornerCardOnTop() {
+        Quickshell.execDetached(["hyprctl", "eval",
+            'hl.layer_rule({ name = "omarchy-onboarding-coach", match = { namespace = "^omarchy-onboarding-coach$" }, order = -10 })']);
     }
 
     // Idempotent: dismissOverlay() calls it and then shell.hide(), which calls it again.
@@ -953,10 +964,17 @@ Item {
     // the keyboard to Hyprland, except the clipboard step, whose field the
     // user clicks to paste into.
     PanelWindow {
+        id: cornerWindow
         visible: root.opened && root.flow !== null && !root.centered && (root.step !== null || root.away !== "")
         color: "transparent"
-        anchors { bottom: true; right: true }
-        margins { bottom: Style.gapsOut * 4; right: Style.gapsOut * 4 }
+        // Unanchored on an axis means centred on it.
+        readonly property string place: root.away !== "" ? "bottom-right" : Ui.coachPlacement(root.step ? root.step.id : "", root.ticked)
+        anchors {
+            bottom: cornerWindow.place.indexOf("bottom") === 0
+            left: cornerWindow.place === "bottom-left"
+            right: cornerWindow.place === "bottom-right" || cornerWindow.place === "right-center"
+        }
+        margins { bottom: Style.gapsOut * 4; left: Style.gapsOut * 4; right: Style.gapsOut * 4 }
         implicitWidth: coach.item ? coach.item.implicitWidth : 1
         implicitHeight: coach.item ? coach.item.implicitHeight : 1
         exclusionMode: ExclusionMode.Ignore

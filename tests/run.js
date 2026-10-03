@@ -507,6 +507,15 @@ test("centered steps take the keyboard; drills and panel steps stay in the corne
     D.DRILL_STEPS.concat(["clipboard", "display", "apps"]).forEach(id => ok(!U.isCentered(id), id));
 });
 
+test("the corner card moves out of the way while tiling", () => {
+    eq(U.coachPlacement("menu", {}), "bottom-right");
+    eq(U.coachPlacement("tiling", {}), "bottom-right");
+    eq(U.coachPlacement("tiling", { terminal: true }), "bottom-center");
+    eq(U.coachPlacement("tiling", { terminal: true, browser: true }), "right-center");
+    eq(U.coachPlacement("tiling", { terminal: true, browser: true, split: true }), "right-center");
+    eq(U.coachPlacement("tiling", { browser: true }), "bottom-right", "terminal closed again");
+});
+
 function rows(status) { return U.welcomeChecklist(status); }
 function row(status, id) { return rows(status).find(r => r.id === id); }
 
