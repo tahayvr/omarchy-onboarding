@@ -510,6 +510,10 @@ test("centered steps take the keyboard; drills and panel steps stay in the corne
 test("the corner card moves out of the way while tiling", () => {
     eq(U.coachPlacement("menu", {}), "bottom-right");
     eq(U.coachPlacement("theme", {}), "bottom-center", "under the theme picker");
+    eq(U.coachPlacement("workspaces", {}, "top"), "top-left", "next to the bar's workspaces");
+    eq(U.coachPlacement("workspaces", {}, "bottom"), "bottom-left");
+    eq(U.coachPlacement("workspaces", {}), "top-left", "the bar defaults to the top");
+    ["clipboard", "shortcuts", "window-controls", "display", "apps"].forEach(id => eq(U.coachPlacement(id, {}), "bottom-right", id));
     eq(U.coachPlacement("tiling", {}), "bottom-right");
     eq(U.coachPlacement("tiling", { terminal: true }), "bottom-center");
     eq(U.coachPlacement("tiling", { terminal: true, browser: true }), "right-center");

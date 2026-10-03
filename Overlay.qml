@@ -51,6 +51,8 @@ Item {
     property var flow: null
     property var facts: ({ online: null, missing: [] })
     property string defaultBrowser: ""
+    // Where Omarchy's bar is (shell.json), for the workspaces card.
+    property string barPosition: "top"
     property string error: ""
     property var pendingPayload: null
 
@@ -680,6 +682,7 @@ Item {
                 root.facts = { online: Drills.parseConnectivity(lines[0]), missing: [] };
                 root.defaultBrowser = String(lines[1] || "").trim();
                 root.ssid = String(lines[2] || "").trim();
+                root.barPosition = String(lines[3] || "top").trim();
                 // Then check that every command a step needs exists.
                 checkProbe.command = [root.pluginDir + "/bin/onboarding-check"].concat(Engine.allRequirements(root.steps));
                 checkProbe.running = true;
@@ -976,16 +979,19 @@ Item {
         visible: root.opened && root.flow !== null && !root.centered && (root.step !== null || root.away !== "")
         color: "transparent"
         // Unanchored on an axis means centred on it.
-        readonly property string place: root.away !== "" ? "bottom-right" : Ui.coachPlacement(root.step ? root.step.id : "", root.ticked)
+        readonly property string place: root.away !== "" ? "bottom-right"
+            : Ui.coachPlacement(root.step ? root.step.id : "", root.ticked, root.barPosition)
         anchors {
+            top: cornerWindow.place.indexOf("top") === 0
             bottom: cornerWindow.place.indexOf("bottom") === 0
-            left: cornerWindow.place === "bottom-left"
-            right: cornerWindow.place === "bottom-right" || cornerWindow.place === "right-center"
+            left: /-left$/.test(cornerWindow.place)
+            right: /-right$/.test(cornerWindow.place) || cornerWindow.place === "right-center"
         }
-        margins { bottom: Style.gapsOut * 4; left: Style.gapsOut * 4; right: Style.gapsOut * 4 }
+        margins { top: Style.gapsOut * 4; bottom: Style.gapsOut * 4; left: Style.gapsOut * 4; right: Style.gapsOut * 4 }
         implicitWidth: coach.item ? coach.item.implicitWidth : 1
         implicitHeight: coach.item ? coach.item.implicitHeight : 1
-        exclusionMode: ExclusionMode.Ignore
+        // Respect the bar's reserved space, so a top card sits under it.
+        exclusionMode: ExclusionMode.Normal
         WlrLayershell.layer: WlrLayer.Overlay
         WlrLayershell.namespace: "omarchy-onboarding-coach"
         WlrLayershell.keyboardFocus: root.away === "" && root.step && root.step.id === "clipboard"

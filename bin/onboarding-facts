@@ -3,9 +3,11 @@
 #   1. `nmcli networking connectivity` (full, limited, portal, none, or empty)
 #   2. `omarchy default browser`
 #   3. the Wi-Fi network in use, or empty (wired, or offline)
+#   4. where the bar is: top, bottom, left or right
 exec </dev/null
 
 nmcli networking connectivity 2>/dev/null || echo
 omarchy default browser 2>/dev/null || echo
 # Terse output escapes colons in names as "\:"; the active row starts "yes:".
 nmcli -t -f active,ssid device wifi 2>/dev/null | sed -n 's/^yes://p' | sed 's/\\:/:/g' | head -n1
+jq -r '.bar.position // "top"' "$HOME/.config/omarchy/shell.json" 2>/dev/null || echo top
