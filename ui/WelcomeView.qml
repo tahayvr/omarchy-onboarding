@@ -14,22 +14,24 @@ FocusScope {
     property string logoPath: ""
     // From Ui.welcomeChecklist: [{id, done, info, title, detail, action, keys}].
     property var rows: []
-    // From Ui.welcomeOmi: what Omi shows while the checklist is in this state.
-    property string omiMode: "idle"
+    // The checklist's status, {online, update}: Omi's mode comes from it
+    // (Ui.welcomeOmi), and so do its reactions (Ui.welcomeOmiReaction).
+    property var omiStatus: ({})
+    readonly property string omiMode: Ui.welcomeOmi(omiStatus)
 
     // Omi starts as the plain logo and comes to life once the card is up.
     property bool omiAwake: false
-    property string omiBefore: ""
-    onOmiModeChanged: {
-        const reaction = Ui.welcomeOmiReaction(omiBefore, omiMode);
-        omiBefore = omiMode;
+    property var omiBefore: ({})
+    onOmiStatusChanged: {
+        const reaction = Ui.welcomeOmiReaction(omiBefore, omiStatus);
+        omiBefore = omiStatus;
         if (omiAwake && reaction) omi.react(reaction);
     }
     Timer {
         interval: 450
         running: true
         onTriggered: {
-            view.omiBefore = view.omiMode;
+            view.omiBefore = view.omiStatus;
             view.omiAwake = true;
         }
     }

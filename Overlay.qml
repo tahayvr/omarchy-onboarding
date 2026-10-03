@@ -1178,7 +1178,7 @@ Item {
             host: root
             logoPath: (root.omarchyPath || "/usr/share/omarchy") + "/logo.svg"
             rows: root.checklist
-            omiMode: Ui.welcomeOmi({ online: root.facts.online === true, update: root.updating ? "updating" : root.updateStatus })
+            omiStatus: ({ online: root.facts.online === true, update: root.updating ? "updating" : root.updateStatus })
         }
     }
 

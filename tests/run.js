@@ -522,27 +522,28 @@ test("Omi on the cards: the step's mode, unless something more pressing", () => 
     eq(U.cardOmi({ stepId: "tiling", pausing: true, doingIt: true }), "sleeping");
     eq(U.cardOmi({ stepId: "tiling", pausing: true, confirm: true }), "sudo");
     eq(U.cardOmi({ confirm: true, error: "x" }), "error");
-    eq(U.cardOmi({ away: "wifi" }), "offline-searching");
+    eq(U.cardOmi({ away: "wifi" }), "sleeping", "waits while you pick a network");
     eq(U.cardOmi({ away: "update" }), "updating");
     eq(U.cardOmi({ away: "keys" }), "peek");
     eq(U.cardOmi({}), "idle");
 });
 
 test("welcome Omi follows the checklist", () => {
-    eq(U.welcomeOmi({ online: false }), "offline-searching");
-    eq(U.welcomeOmi({ online: false, update: "current" }), "offline-searching", "offline wins");
+    eq(U.welcomeOmi({ online: false }), "idle", "offline is plain idle");
+    eq(U.welcomeOmi({ online: false, update: "current" }), "idle");
     eq(U.welcomeOmi({ online: true }), "thinking", "the check hasn't landed");
     eq(U.welcomeOmi({ online: true, update: "checking" }), "thinking");
     eq(U.welcomeOmi({ online: true, update: "current" }), "idle");
     eq(U.welcomeOmi({ online: true, update: "available" }), "idle");
     eq(U.welcomeOmi({ online: true, update: "updating" }), "updating");
     eq(U.welcomeOmi({ online: true, update: "unknown" }), "confused");
-    eq(U.welcomeOmiReaction("offline-searching", "thinking"), "success", "came online");
-    eq(U.welcomeOmiReaction("updating", "idle"), "success", "update finished");
-    eq(U.welcomeOmiReaction("updating", "confused"), "", "update failed");
-    eq(U.welcomeOmiReaction("thinking", "idle"), "", "a check landing isn't news");
-    eq(U.welcomeOmiReaction("idle", "offline-searching"), "", "going offline");
-    eq(U.welcomeOmiReaction("idle", "idle"), "");
+    eq(U.welcomeOmiReaction({ online: false }, { online: true }), "success", "came online");
+    eq(U.welcomeOmiReaction({ online: false, update: "current" }, { online: true, update: "current" }), "success", "online again, nothing else new");
+    eq(U.welcomeOmiReaction({ online: true, update: "updating" }, { online: true, update: "current" }), "success", "update finished");
+    eq(U.welcomeOmiReaction({ online: true, update: "updating" }, { online: true, update: "unknown" }), "", "update failed");
+    eq(U.welcomeOmiReaction({ online: true, update: "checking" }, { online: true, update: "current" }), "", "a check landing isn't news");
+    eq(U.welcomeOmiReaction({ online: true }, { online: false }), "", "going offline");
+    eq(U.welcomeOmiReaction({ online: true, update: "current" }, { online: true, update: "current" }), "");
 });
 
 test("the corner card moves out of the way while tiling", () => {
