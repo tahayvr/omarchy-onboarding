@@ -139,6 +139,14 @@ code, because Omarchy ships only bash and QML. Built against Omarchy 4.0.4
   stacked, or back.
 - **A new window's first focus doesn't count.** Hyprland focuses windows as
   they open, so only focus moving between the drill windows ticks.
+- **Onboarding cleans up after itself.** The clipboard terminal has its own
+  class (`Ui.SAMPLE_APP_ID`) and closes when that step is over. The class
+  must stay under `org.omarchy.`: Omarchy tags only known classes as
+  terminals, and Super + C / V copy and paste in a terminal only when it's
+  tagged. The tiling drill's terminal and browser close, by address, when
+  onboarding closes (finish, quit, pause, or a replay ending), and focus
+  returns to the workspace the tutorial began on. Never close a window
+  onboarding didn't open or ask for.
 - **Close test windows by address**, never by PID. Chromium windows share one
   process with the user's own browser.
 - **Window classes.** The terminal is `foot` (the full regex is in

@@ -164,7 +164,7 @@ require_active "$terminal" "the terminal"
 before=$(hyprctl -j clients | jq -c '[.[].address]')
 dispatch "hl.dsp.window.move({ workspace = '$WS_B' })"
 wait_step clipboard
-sample_terminal=$(wait_window '^foot$' "^($WS_A|$WS_B)$" "$before")
+sample_terminal=$(wait_window '^org\.omarchy\.onboarding-sample$' "^($WS_A|$WS_B)$" "$before")
 "${CLI[@]}" next >/dev/null # pasting into the overlay's field needs a pointer click
 wait_step shortcuts
 

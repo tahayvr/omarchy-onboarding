@@ -61,6 +61,11 @@ Item {
     // The tiling drill's terminal and browser, kept for the later drills and
     // "Do it for me", which only ever act on these.
     property var drillWindows: ({})
+    // Every window the tutorial had the user open (the tiling drill's terminal
+    // and browser), closed when onboarding closes so the desktop is left clean.
+    property var tutorialWindows: []
+    // The workspace the tutorial began on, focused again at the end.
+    property int tutorialHome: 0
     // The workspace a drill began on: "Do it for me" comes back to it.
     property int drillHome: 1
     property double startedAt: 0
@@ -177,6 +182,8 @@ Item {
         away = "";
         preparedStep = "";
         drillWindows = {};
+        tutorialWindows = [];
+        tutorialHome = 0;
         statePath = payload.state ? String(payload.state) : defaultStatePath;
         recordPath = payload.record ? String(payload.record) : "";
         dryRun = !!payload.dryRun;
@@ -239,6 +246,7 @@ Item {
 
     // Idempotent: dismissOverlay() calls it and then shell.hide(), which calls it again.
     function close() {
+        if (opened) cleanUp();
         opened = false;
         pausing = false;
         away = "";
@@ -247,6 +255,49 @@ Item {
         queue = [];
         doItQueue = [];
         pendingPayload = null;
+    }
+
+    // Leaves the desktop as the user had it: closes the clipboard terminal and
+    // the windows the tutorial had them open, by address, and goes back to the
+    // workspace the tutorial began on. Only ever windows onboarding knows.
+    function cleanUp() {
+        closeSample();
+        tutorialWindows.forEach(function (addr) {
+            Quickshell.execDetached(["hyprctl", "dispatch", "hl.dsp.window.close({ window = 'address:0x" + addr + "' })"]);
+        });
+        if (tutorialWindows.length) log("closed the tutorial's windows: " + tutorialWindows.join(", "));
+        if (tutorialHome && Hyprland.focusedWorkspace && Hyprland.focusedWorkspace.id !== tutorialHome)
+            Quickshell.execDetached(["hyprctl", "dispatch", "hl.dsp.focus({ workspace = '" + tutorialHome + "' })"]);
+        tutorialWindows = [];
+        tutorialHome = 0;
+    }
+
+    // Opens the clipboard step's terminal unless one is already up (say, after
+    // a shell restart mid-step).
+    Process {
+        id: sampleCheck
+        command: ["hyprctl", "-j", "clients"]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                var open = false;
+                try {
+                    open = JSON.parse(text).some(function (c) { return c.class === Ui.SAMPLE_APP_ID; });
+                } catch (e) {}
+                if (!root.step || root.step.id !== "clipboard") return;
+                if (open) {
+                    root.log("clipboard: its terminal is already open");
+                    return;
+                }
+                Quickshell.execDetached(["omarchy-launch-terminal", "--app-id=" + Ui.SAMPLE_APP_ID, "bash", "-c",
+                    "printf '\\n  %s\\n\\n' '" + Ui.CLIPBOARD_SAMPLE + "'; exec bash"]);
+                root.log("clipboard: opened a terminal with the sample line");
+            }
+        }
+    }
+
+    // The clipboard step's terminal, by its own window class.
+    function closeSample() {
+        Quickshell.execDetached(["hyprctl", "dispatch", "hl.dsp.window.close({ window = 'class:^" + Ui.SAMPLE_APP_ID + "$' })"]);
     }
 
     function dismissOverlay() {
@@ -560,7 +611,11 @@ Item {
     function stepEntered() {
         resetIdle();
         if (!step || step.id === preparedStep) return;
+        // The clipboard step is over: its terminal goes.
+        if (preparedStep === "clipboard") closeSample();
         preparedStep = step.id;
+        if (!tutorialHome && step.id !== "welcome")
+            tutorialHome = Hyprland.focusedWorkspace ? Hyprland.focusedWorkspace.id : 0;
         if (step.id === "welcome") {
             checkForUpdate();
         } else if (step.id === "theme") {
@@ -572,11 +627,10 @@ Item {
             sunsetSeen = false;
         } else if (step.id === "apps") {
             appsProbe.running = true;
-        } else if (step.id === "clipboard" && !flow.steps.clipboard) {
-            // Spec: the app opens a terminal with a sample line to copy.
-            Quickshell.execDetached(["omarchy-launch-terminal", "bash", "-c",
-                "printf '\\n  %s\\n\\n' '" + Ui.CLIPBOARD_SAMPLE + "'; exec bash"]);
-            log("clipboard: opened a terminal with the sample line");
+        } else if (step.id === "clipboard") {
+            // Spec: the app opens a terminal with a sample line to copy, on
+            // every visit (re-runs and replays too), unless one is still open.
+            sampleCheck.running = true;
         }
     }
 
@@ -632,7 +686,12 @@ Item {
         }
         if (!drill) return;
         var changes = drill.observe(obs);
-        if (drill.windows) drillWindows = drill.windows();
+        if (drill.windows) {
+            drillWindows = drill.windows();
+            [drillWindows.terminal, drillWindows.browser].forEach(function (addr) {
+                if (addr && tutorialWindows.indexOf(addr) < 0) tutorialWindows = tutorialWindows.concat([addr]);
+            });
+        }
         if (changes.length) {
             var t = Object.assign({}, ticked);
             changes.forEach(function (c) {
