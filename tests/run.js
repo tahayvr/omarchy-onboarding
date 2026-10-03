@@ -507,6 +507,25 @@ test("centered steps take the keyboard; drills and panel steps stay in the corne
     D.DRILL_STEPS.concat(["clipboard", "theme", "display", "apps"]).forEach(id => ok(!U.isCentered(id), id));
 });
 
+test("Omi on the cards: the step's mode, unless something more pressing", () => {
+    eq(U.cardOmi({ stepId: "super-key" }), "listening");
+    eq(U.cardOmi({ stepId: "tiling" }), "tiling");
+    eq(U.cardOmi({ stepId: "clipboard" }), "typing");
+    eq(U.cardOmi({ stepId: "theme" }), "excited");
+    eq(U.cardOmi({ stepId: "finish" }), "party");
+    ["menu", "window-controls", "workspaces", "shortcuts", "display", "apps"].forEach(id => eq(U.cardOmi({ stepId: id }), "idle", id));
+    eq(U.cardOmi({ stepId: "tiling", hint: 1 }), "tiling", "no fuss at 20 s");
+    eq(U.cardOmi({ stepId: "tiling", hint: 2 }), "confused", "stuck at 40 s");
+    eq(U.cardOmi({ stepId: "tiling", hint: 2, doingIt: true }), "working", "doing it for you");
+    eq(U.cardOmi({ stepId: "tiling", pausing: true, doingIt: true }), "sleeping");
+    eq(U.cardOmi({ stepId: "tiling", pausing: true, confirm: true }), "sudo");
+    eq(U.cardOmi({ confirm: true, error: "x" }), "error");
+    eq(U.cardOmi({ away: "wifi" }), "offline-searching");
+    eq(U.cardOmi({ away: "update" }), "updating");
+    eq(U.cardOmi({ away: "keys" }), "peek");
+    eq(U.cardOmi({}), "idle");
+});
+
 test("welcome Omi follows the checklist", () => {
     eq(U.welcomeOmi({ online: false }), "offline-searching");
     eq(U.welcomeOmi({ online: false, update: "current" }), "offline-searching", "offline wins");

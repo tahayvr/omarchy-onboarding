@@ -227,7 +227,7 @@ FocusScope {
                 spacing: Style.space(2)
                 Text {
                     width: parent.width
-                    text: "Meet Omi"
+                    text: "Hi, I'm Omi"
                     wrapMode: Text.Wrap
                     color: Color.foreground
                     font.family: Style.font.family
@@ -236,7 +236,7 @@ FocusScope {
                 }
                 Text {
                     width: parent.width
-                    text: "Omi can walk you through how Omarchy works."
+                    text: "I can walk you through how Omarchy works."
                     wrapMode: Text.Wrap
                     color: view.secondary
                     font.family: Style.font.family

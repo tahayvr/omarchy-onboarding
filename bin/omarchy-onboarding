@@ -186,7 +186,7 @@ cmd_login() {
       jq '.pause_notified = true | .updated_at = (now | floor)' "$path" >"$tmp" && mv -- "$tmp" "$path"
       log_line "$path" "login: remind"
       wait_for_shell || true
-      omarchy-notification-send -g "󰋗" "Onboarding is paused" "Pick up where you left off." \
+      omarchy-notification-send -g "󰋗" "Omi here" "Ready to pick up where we left off?" \
         --exec "$(readlink -f "$0")" run
       ;;
     nothing)

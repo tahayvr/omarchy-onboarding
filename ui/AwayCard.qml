@@ -23,16 +23,17 @@ Rectangle {
         anchors { left: parent.left; right: parent.right; top: parent.top; margins: Style.space(16) }
         spacing: Style.space(10)
 
-        Text {
-            text: "Welcome to Omarchy"
-            color: Qt.rgba(Color.foreground.r, Color.foreground.g, Color.foreground.b, 0.62)
-            font.family: Style.font.family
-            font.pixelSize: Style.font.caption
-        }
-        Line {
-            text: card.reason === "wifi" ? "Pick your network in the panel. This card returns once you're online."
-                : card.reason === "update" ? "Omarchy is updating in the terminal. This card returns when it closes."
-                : "Every shortcut, searchable. Press Esc to close the list and come back."
+        Row {
+            width: parent.width
+            spacing: Style.space(10)
+            CardOmi { id: omi; host: card.host; anchors.verticalCenter: parent.verticalCenter }
+            Line {
+                width: parent.width - omi.width - parent.spacing
+                anchors.verticalCenter: parent.verticalCenter
+                text: card.reason === "wifi" ? "Pick your network in the panel. I'll be back once you're online."
+                    : card.reason === "update" ? "Omarchy is updating in the terminal. I'll be back when it's done."
+                    : "That's every shortcut, and you can search it. Press Esc and I'll be back."
+            }
         }
         Button {
             anchors.right: parent.right

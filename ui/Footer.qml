@@ -9,7 +9,7 @@ Item {
     property int hint: 0
     property bool canDoIt: false
     // What to say after 20 s without progress; views with their own hint pass "".
-    property string idleText: "Take your time. The keys are on the right."
+    property string idleText: "Take your time. The keys are right here."
     // An optional main button, e.g. "Looks right" or "Continue".
     property string primaryText: ""
     property bool primaryEnabled: true

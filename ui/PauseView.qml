@@ -18,16 +18,21 @@ FocusScope {
         width: parent.width
         spacing: Style.space(14)
 
-        Text {
-            text: "Pause or quit onboarding?"
-            color: Color.foreground
-            font.family: Style.font.family
-            font.pixelSize: Style.font.heading
-            font.weight: Font.DemiBold
+        Row {
+            spacing: Style.space(10)
+            CardOmi { host: view.host; anchors.verticalCenter: parent.verticalCenter }
+            Text {
+                anchors.verticalCenter: parent.verticalCenter
+                text: "Taking a break?"
+                color: Color.foreground
+                font.family: Style.font.family
+                font.pixelSize: Style.font.heading
+                font.weight: Font.DemiBold
+            }
         }
         Text {
             width: parent.width
-            text: "Remind me later shows one notification at your next login. Either way, omarchy onboarding brings it back."
+            text: "Pick Remind me later and I'll nudge you once at your next login. Either way, omarchy onboarding brings me back."
             wrapMode: Text.Wrap
             color: Qt.rgba(Color.foreground.r, Color.foreground.g, Color.foreground.b, 0.62)
             font.family: Style.font.family

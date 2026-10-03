@@ -10,7 +10,7 @@ Column {
     Line {
         visible: panel.host.apps.length === 0
         secondary: true
-        text: "Couldn't read the app shortcuts. Super + K lists them all."
+        text: "I couldn't read your app shortcuts, but Super + K lists them all."
     }
 
     Repeater {

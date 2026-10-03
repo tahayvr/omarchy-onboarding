@@ -20,6 +20,7 @@ FocusScope {
             event.accepted = true;
             if (!view.pressed) {
                 view.pressed = true;
+                view.host.omiReact("success");
                 done.start();
             }
         }
@@ -70,7 +71,7 @@ FocusScope {
         Text {
             width: parent.width
             horizontalAlignment: Text.AlignHCenter
-            text: view.pressed ? "That's the one." : view.hint > 0 ? "Bottom row, left of the space bar, next to Alt." : ""
+            text: view.pressed ? "That's the one!" : view.hint > 0 ? "Look on the bottom row, left of the space bar, next to Alt." : ""
             color: view.pressed ? Color.accent : Qt.rgba(Color.foreground.r, Color.foreground.g, Color.foreground.b, 0.62)
             font.family: Style.font.family
             font.pixelSize: Style.font.body

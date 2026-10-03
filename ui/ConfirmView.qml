@@ -21,13 +21,19 @@ FocusScope {
         width: parent.width
         spacing: Style.space(16)
 
-        Text {
+        Row {
             width: parent.width
-            text: view.question
-            wrapMode: Text.Wrap
-            color: Color.foreground
-            font.family: Style.font.family
-            font.pixelSize: Style.font.title
+            spacing: Style.space(10)
+            CardOmi { id: omi; host: view.host; anchors.verticalCenter: parent.verticalCenter }
+            Text {
+                width: parent.width - omi.width - parent.spacing
+                anchors.verticalCenter: parent.verticalCenter
+                text: view.question
+                wrapMode: Text.Wrap
+                color: Color.foreground
+                font.family: Style.font.family
+                font.pixelSize: Style.font.title
+            }
         }
         Text {
             visible: view.host.dryRun

@@ -131,6 +131,20 @@ Item {
         skipBinder.running = true;
     }
 
+    // Omi on every card but the welcome page (which follows its checklist).
+    readonly property string omiMode: Ui.cardOmi({
+        stepId: step ? step.id : "",
+        hint: hint,
+        doingIt: doItQueue.length > 0,
+        pausing: pausing,
+        confirm: confirm !== null,
+        error: error,
+        away: away
+    })
+    // Whichever Omi is on screen plays this on top of omiMode for a moment.
+    signal omiReacted(string mode)
+    function omiReact(mode) { omiReacted(mode); }
+
     // The corner card's main button for the tutorial's action steps.
     readonly property string primaryText: !step ? "" : step.id === "theme" ? "Keep my theme"
                                         : step.id === "display" ? "Looks right"
@@ -358,7 +372,7 @@ Item {
     // until that terminal closes.
     function update() {
         if (facts.online !== true || updating) return "not now";
-        askConfirm("Update Omarchy now? It takes a snapshot first, then updates the system in a terminal. It may ask for your password.",
+        askConfirm("Ready to update? Omarchy takes a snapshot first, then updates in a terminal. It may ask for your password.",
                    "Update", function () {
             updating = true;
             away = "update";
@@ -510,6 +524,7 @@ Item {
         ticked = t;
         resetIdle();
         log("step " + (step ? step.id : "?") + "/" + id + " ticked");
+        omiReact("success");
         // A new theme: let the restyle land before moving on.
         if (step && step.id === "theme" && id === "apply") themeDone.start();
         if (step && step.id === "clipboard" && t.copy && t.paste) {
@@ -609,6 +624,7 @@ Item {
             });
             ticked = t;
             resetIdle();
+            if (changes.some(function (c) { return c.ticked; })) omiReact("success");
         }
         if (drill.complete()) {
             log("drill " + drill.step + " complete");
@@ -1099,11 +1115,19 @@ Item {
                 id: errorColumn
                 width: parent.width
                 spacing: Style.space(12)
-                Text {
-                    text: "Onboarding can't start"
-                    color: Color.foreground
-                    font.family: Style.font.family
-                    font.pixelSize: Style.font.heading
+                Row {
+                    width: parent.width
+                    spacing: Style.space(10)
+                    CardOmi { id: errorOmi; host: root; anchors.verticalCenter: parent.verticalCenter }
+                    Text {
+                        width: parent.width - errorOmi.width - parent.spacing
+                        anchors.verticalCenter: parent.verticalCenter
+                        text: "Something went wrong, and I can't start."
+                        wrapMode: Text.Wrap
+                        color: Color.foreground
+                        font.family: Style.font.family
+                        font.pixelSize: Style.font.heading
+                    }
                 }
                 Text {
                     width: parent.width

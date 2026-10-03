@@ -32,7 +32,7 @@
       "phase": 1,
       "title": "Meet the Super key",
       "goal": "One concept before any drills.",
-      "screen": "Super is the key with the Windows logo, or ⌘ on a Mac keyboard, between Ctrl and Alt. Almost every Omarchy shortcut starts with it. Press it once.",
+      "screen": "This is the Super key: the one with the Windows logo, or ⌘ on a Mac keyboard, between Ctrl and Alt. Almost every shortcut I'll show you starts with it. Give it a press.",
       "done_when": "The app sees the key press while focused.",
       "keys": "Super"
     },
@@ -41,7 +41,7 @@
       "number": 2,
       "phase": 1,
       "title": "Open the Omarchy menu",
-      "screen": "Almost everything lives in here. When you're lost, start here.",
+      "screen": "Almost everything lives in this menu. Whenever you're lost, start here.",
       "done_when": "The menu opens and closes.",
       "subtasks": [
         {
@@ -61,7 +61,7 @@
       "number": 3,
       "phase": 1,
       "title": "Launch and tile two apps",
-      "screen": "Omarchy places windows side by side for you. Open two and watch them tile behind this card.",
+      "screen": "Omarchy puts windows side by side for you. Open two and watch them tile behind me.",
       "done_when": "A terminal and a browser are open on the same workspace and focus has moved once.",
       "subtasks": [
         {
@@ -91,7 +91,7 @@
       "number": 4,
       "phase": 1,
       "title": "Close, float and full screen",
-      "screen": "Any window can float above the others, fill the screen, or close.",
+      "screen": "Any window can float above the others, fill the screen, or close. Let's try all three.",
       "done_when": "Each event is seen once.",
       "subtasks": [
         {
@@ -116,7 +116,7 @@
       "number": 5,
       "phase": 1,
       "title": "Workspaces",
-      "screen": "Each number is a workspace: a separate desktop. Super + a number jumps there.",
+      "screen": "See the numbers in the bar? Each one is a workspace: a separate desktop. Super + a number jumps there.",
       "done_when": "A workspace switch and a move-to-workspace are seen.",
       "subtasks": [
         {
@@ -136,7 +136,7 @@
       "number": 6,
       "phase": 1,
       "title": "Copy and paste the Omarchy way",
-      "screen": "Super + C, V and X copy, paste and cut everywhere, even in the terminal. Select the line in the terminal that opened, copy it, then paste it below.",
+      "screen": "Super + C, V and X copy, paste and cut everywhere, even in the terminal. Copy the line in the terminal I opened, then paste it below.",
       "done_when": "The field contains the expected text.",
       "subtasks": [
         {
@@ -156,7 +156,7 @@
       "number": 7,
       "phase": 1,
       "title": "Find any shortcut",
-      "screen": "You don't need to memorize anything. Super + K is always there. Close it with Esc.",
+      "screen": "You don't have to remember any of this. Super + K lists every shortcut, any time, and Esc closes it.",
       "done_when": "The bindings overlay was opened.",
       "subtasks": [
         {
@@ -171,7 +171,7 @@
       "number": 8,
       "phase": 2,
       "title": "Pick a theme",
-      "screen": "Every theme restyles the whole desktop, this card included. Keeping yours counts too.",
+      "screen": "Pick a theme and the whole desktop changes with it, me included. Keeping yours is fine too.",
       "done_when": "A theme is applied, or the user keeps theirs.",
       "requires": [
         "omarchy-theme-switcher"
@@ -194,7 +194,7 @@
       "number": 9,
       "phase": 2,
       "title": "Display and comfort",
-      "screen": "Check that text is a comfortable size, and try the night light.",
+      "screen": "Let's make sure text is a comfortable size. Then try the night light.",
       "done_when": "The user confirms it looks right.",
       "subtasks": [
         {
@@ -214,7 +214,7 @@
       "number": 10,
       "phase": 2,
       "title": "Your everyday apps",
-      "screen": "Your everyday apps each have their own shortcut. Try one.",
+      "screen": "Each of your everyday apps has its own shortcut. Pick one to try.",
       "done_when": "The user presses Continue.",
       "requires": [
         "omarchy-menu-keybindings"
@@ -225,7 +225,7 @@
       "number": 11,
       "phase": 3,
       "title": "You're ready",
-      "screen": "That's the tour. Super + K shows every shortcut, and Super + Space opens the menu. Run omarchy onboarding to see this again, or omarchy onboarding --step <name> for one lesson.",
+      "screen": "That's the tour! Remember two keys: Super + K shows every shortcut, and Super + Space opens the menu. Run omarchy onboarding to see me again, or omarchy onboarding --step <name> for one lesson.",
       "done_when": "The user presses Finish."
     }
   ]
