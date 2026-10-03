@@ -141,9 +141,20 @@ FocusScope {
                     width: parent.width
                     height: Math.max(texts.implicitHeight, actions.implicitHeight) + Style.space(20)
                     radius: Style.cornerRadius
-                    color: Style.normalFill
+                    color: rowMouse.containsMouse ? Style.hoverFill : Style.normalFill
                     border.width: 1
-                    border.color: Style.normalBorderColor
+                    border.color: rowMouse.containsMouse ? Color.accent : Style.normalBorderColor
+
+                    // A row without a button (the shortcuts one) is a button
+                    // itself; its keys work too.
+                    MouseArea {
+                        id: rowMouse
+                        anchors.fill: parent
+                        enabled: !!row.modelData.clickable
+                        hoverEnabled: enabled
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: view.host.checklistAction(row.modelData.id)
+                    }
 
                     // The row's icon: in the accent once done. Every icon
                     // fills the same square, so they line up across rows.

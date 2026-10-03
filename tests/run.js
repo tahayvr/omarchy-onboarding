@@ -617,7 +617,7 @@ test("welcome checklist: each row has its icon; the update row uses Omarchy's lo
 
 test("welcome checklist: keybindings", () => {
     const k = row({}, "keys");
-    eq([k.action, k.keys, k.info], ["Show all", "Super + K", true]);
+    eq([k.action, k.keys, k.info, k.clickable], ["", "Super + K", true, true], "the whole row opens the list");
 });
 
 function argvs(plan) { return plan.run.map(s => s.argv.join(" ")); }
