@@ -17,8 +17,24 @@ Rectangle {
     readonly property bool isWorkspaces: step && step.id === "workspaces"
     readonly property bool isClipboard: step && step.id === "clipboard"
 
-    implicitWidth: Style.space(460)
+    // Wide enough for its widest row that can't wrap: the footer's buttons,
+    // or the widest key caps with room for a label beside them. Never
+    // narrower than the base width, never wider than the cap.
+    readonly property real baseWidth: Style.space(460)
+    property real capsNeed: 0
+    readonly property real panelNeed: panel.item && panel.item.capsNeed !== undefined ? panel.item.capsNeed : 0
+    readonly property real rowNeed: Math.max(footer.implicitWidth, Math.max(capsNeed, panelNeed) + Style.space(200))
+    implicitWidth: Math.min(Style.space(680), Math.max(baseWidth, rowNeed + Style.space(32)))
     implicitHeight: column.implicitHeight + Style.space(32)
+
+    function measure() {
+        var m = 0;
+        for (var i = 0; i < subtasks.count; i++) {
+            var it = subtasks.itemAt(i);
+            if (it) m = Math.max(m, it.capsWidth);
+        }
+        capsNeed = m;
+    }
 
     ProgressLine { progress: card.host ? card.host.progress : -1 }
     color: Color.popups.background
@@ -47,7 +63,10 @@ Rectangle {
             width: parent.width
             spacing: Style.space(8)
             Repeater {
+                id: subtasks
                 model: card.step && card.step.subtasks ? card.step.subtasks : []
+                onCountChanged: card.measure()
+                onItemAdded: card.measure()
                 delegate: Subtask {
                     required property var modelData
                     width: parent.width
@@ -124,6 +143,7 @@ Rectangle {
 
         // The action steps' own controls.
         Loader {
+            id: panel
             width: parent.width
             sourceComponent: !card.step ? null
                 : card.step.id === "display" ? displayPanel
@@ -132,6 +152,7 @@ Rectangle {
         }
 
         Footer {
+            id: footer
             host: card.host
             hint: card.hint
             canDoIt: !!(card.step && Ui.doItPlan(card.step.id, { ticked: card.ticked, windows: card.host.drillWindows }))

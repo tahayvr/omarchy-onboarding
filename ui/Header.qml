@@ -54,7 +54,8 @@ Item {
     }
 
     // The ✕'s key: plain Esc on a centered card, which has the keyboard;
-    // the tutorial's bind (Ctrl + Esc) on the corner card.
+    // on the corner card it's Ctrl + Esc, and the footer's "Ctrl + key"
+    // legend says so for every chip on the card.
     KeyChip {
         id: pauseKey
         anchors { right: pauseButton.left; rightMargin: Style.space(8); verticalCenter: pauseButton.verticalCenter }

@@ -24,8 +24,10 @@
 #   uninstall        remove it
 #
 # Development calls, answered by the open overlay:
-#   tutorial, close-welcome, connect, update, keys, back,
-#   next, skip, pause, dismiss, do-it, info
+#   tutorial, close-welcome, connect, update, keys, come-back (the
+#   checklist, from its "come back" card), previous (the card's Back),
+#   redo (the finish screen's Do them now), next, skip, pause, dismiss,
+#   do-it, info
 
 set -euo pipefail
 
@@ -262,6 +264,8 @@ case $command in
   tutorial) cmd_call startTutorial "" ;;
   close-welcome) cmd_call closeWelcome "" ;;
   keys) cmd_call showKeybindings "" ;;
-  back) cmd_call comeBack "" ;;
+  come-back) cmd_call comeBack "" ;;
+  previous) cmd_call back "" ;;
+  redo) cmd_call redoOpen "" ;;
   *) die "unknown command '$command' (try --help)" ;;
 esac

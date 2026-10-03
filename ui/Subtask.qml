@@ -11,6 +11,8 @@ Item {
     property bool big: false
 
     implicitHeight: Math.max(line.implicitHeight, caps.implicitHeight)
+    // How wide the key caps are, so the card can make room for them.
+    readonly property real capsWidth: caps.implicitWidth
 
     Text {
         id: mark

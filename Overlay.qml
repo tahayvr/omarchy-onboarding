@@ -128,7 +128,9 @@ Item {
     // keyboard; each calls key(), which acts only while its button is shown.
     // tutorialKeys has the label of each one bound: none for a combo the user
     // has bound to something else.
-    readonly property var tutorialKeyLabels: ({ skip: "Ctrl + /", primary: "Ctrl + Enter", doit: "Ctrl + .", pause: "Ctrl + Esc", back: "Ctrl + ," })
+    // Each is Ctrl + the key; the card says "Ctrl + key" once (Footer) and
+    // every button carries only its key, so buttons stay small.
+    readonly property var tutorialKeyLabels: ({ skip: "/", primary: "\u21b5", doit: ".", pause: "Esc", back: "," })
     readonly property bool tutorialKeysWanted: opened && flow !== null && step !== null
                                                && step.id !== "welcome" && step.id !== "finish"
                                                && away === "" && !pausing && confirm === null && error === ""
@@ -898,7 +900,7 @@ Item {
                         if (root.tutorialKeyLabels[a]) keys[a] = root.tutorialKeyLabels[a];
                     });
                     Object.keys(root.tutorialKeyLabels).forEach(function (a) {
-                        if (!keys[a]) root.log("key not bound: " + root.tutorialKeyLabels[a] + " is taken");
+                        if (!keys[a]) root.log("key not bound: Ctrl + " + root.tutorialKeyLabels[a] + " is taken");
                     });
                 }
                 root.tutorialKeys = keys;

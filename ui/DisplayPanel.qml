@@ -20,5 +20,21 @@ Column {
         secondary: true
         text: "With more than one screen, Display settings arranges them."
     }
-    Button { text: "Display settings"; key: "Super + Ctrl + D"; onClicked: panel.host.openPanel("omarchy.monitor") }
+    // Omarchy's own bind, so it's shown as key caps beside the button, like
+    // a sub-task's, not as the button's key.
+    Item {
+        width: parent.width
+        implicitHeight: Math.max(settingsButton.implicitHeight, settingsCaps.implicitHeight)
+        Button {
+            id: settingsButton
+            anchors { left: parent.left; verticalCenter: parent.verticalCenter }
+            text: "Display settings"
+            onClicked: panel.host.openPanel("omarchy.monitor")
+        }
+        KeyCaps {
+            id: settingsCaps
+            anchors { right: parent.right; verticalCenter: parent.verticalCenter }
+            keys: "Super + Ctrl + D"
+        }
+    }
 }

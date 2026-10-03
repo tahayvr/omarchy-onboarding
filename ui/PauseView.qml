@@ -7,7 +7,8 @@ FocusScope {
 
     property var host
 
-    implicitWidth: Style.space(460)
+    // Wide enough for its three buttons.
+    implicitWidth: Math.max(Style.space(460), pauseButtons.implicitWidth)
     implicitHeight: column.implicitHeight
 
     Component.onCompleted: Qt.callLater(function () { keepGoing.forceActiveFocus(); })
@@ -45,6 +46,7 @@ FocusScope {
             font.pixelSize: Style.font.body
         }
         Row {
+            id: pauseButtons
             anchors.right: parent.right
             spacing: Style.space(8)
             Button { text: "Quit onboarding"; key: "Q"; onClicked: view.host.dismiss() }

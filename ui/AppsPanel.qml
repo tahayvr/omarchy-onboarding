@@ -9,6 +9,17 @@ Column {
     property var host
     spacing: Style.space(8)
 
+    // The widest key caps, so the card can make room for them (CoachCard).
+    property real capsNeed: 0
+    function measure() {
+        var m = 0;
+        for (var i = 0; i < rows.count; i++) {
+            var it = rows.itemAt(i);
+            if (it) m = Math.max(m, it.capsWidth);
+        }
+        capsNeed = m;
+    }
+
     Row {
         visible: panel.host.apps.length === 0
         width: panel.width
@@ -23,12 +34,16 @@ Column {
     }
 
     Repeater {
+        id: rows
         model: panel.host.apps
+        onCountChanged: panel.measure()
+        onItemAdded: panel.measure()
         delegate: Item {
             id: row
             required property var modelData
             required property int index
             readonly property bool tried: !!panel.host.appsTried[modelData.label]
+            readonly property real capsWidth: caps.implicitWidth
             width: panel.width
             implicitHeight: Math.max(caps.implicitHeight, mark.implicitHeight)
 

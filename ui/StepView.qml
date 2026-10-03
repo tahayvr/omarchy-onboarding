@@ -159,7 +159,7 @@ FocusScope {
             Button {
                 id: primary
                 text: view.finishing ? "Finish" : "Continue"
-                key: "Enter"
+                key: "\u21b5"
                 primary: true
                 onClicked: view.host.next()
             }

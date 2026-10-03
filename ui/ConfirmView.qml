@@ -50,7 +50,7 @@ FocusScope {
             anchors.right: parent.right
             spacing: Style.space(8)
             Button { text: "Not now"; key: "Esc"; onClicked: view.host.answerConfirm(false) }
-            Button { id: yes; text: view.confirmText; key: "Enter"; primary: true; onClicked: view.host.answerConfirm(true) }
+            Button { id: yes; text: view.confirmText; key: "\u21b5"; primary: true; onClicked: view.host.answerConfirm(true) }
         }
     }
 }

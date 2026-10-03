@@ -112,16 +112,20 @@ code, because Omarchy ships only bash and QML. Built against Omarchy 4.0.4
   descending, so a negative order draws last, on top. Named rules replace each
   other, so re-applying the rule is safe.
 - **Keyboard first: every button has a key.** Centered cards have the
-  keyboard, so plain keys work there (Y, U, R, Q, M, Enter, Esc). The corner
-  card never has it, so its buttons' keys are Hyprland binds, added with
+  keyboard, so plain keys work there (Y, U, R, Q, M, D, Enter, Esc). The
+  corner card never has it, so its buttons' keys are Hyprland binds, added with
   `hl.bind` by `bin/onboarding-binds` while a tutorial step is up, removed
   after, and re-added on `configreloaded`: Ctrl + / (skip), Ctrl + Enter
   (the main button), Ctrl + . (do it for me), Ctrl + Esc (pause), Ctrl + ,
   (back). Ctrl + Backspace was avoided: terminals use it. Each calls
   the overlay's `key()`, which acts only while that button is shown. A combo
-  the user has bound is left alone, and its button shows no key. Keys the
-  welcome checklist shows (Super + Ctrl + W, Super + K) open the panel or list
-  through Omarchy's own binds; the card sees the layer open and steps aside.
+  the user has bound is left alone, and its button shows no key. A button's
+  chip carries only its key (/, ., `,`, Esc, ↵) and the footer says
+  "Ctrl + key" once while the binds are on, so buttons stay small. Omarchy's
+  own binds shown on a card (Display settings) are key caps beside the
+  button, never the button's key. Keys the welcome checklist shows
+  (Super + Ctrl + W, Super + K) open the panel or list through Omarchy's own
+  binds; the card sees the layer open and steps aside.
 - **Card placement** is `Ui.coachPlacement` and depends on the step, its ticked
   sub-tasks and the bar position from `onboarding-facts`.
 - A bare Super press reaches the centered card as `Qt.Key_Super_L`, because
