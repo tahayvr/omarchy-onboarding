@@ -520,7 +520,7 @@ test("welcome checklist: Wi-Fi", () => {
     eq(row({ online: true }, "wifi").title, "Connected to the internet", "wired has no SSID");
     const off = row({ online: false }, "wifi");
     ok(!off.done && off.action === "Connect" && off.keys === "Super + Ctrl + W");
-    ok(off.detail.split(". ").length === 1, "one sentence: " + off.detail);
+    eq(off.detail, "", "the keys and the button say it all");
 });
 
 test("welcome checklist: the update waits for the internet", () => {
