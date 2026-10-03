@@ -304,9 +304,31 @@ Item {
         logSkips(beforeSteps);
         tip = tipsSince(before);
         save();
+        markDone();
         syncDrill();
         if (!step) dismissOverlay();
         return "ok";
+    }
+
+    // omarchy-done markers, only for the real state file so test runs never
+    // mark the real account. `onboarding` once finished or dismissed, and
+    // `agent-setup-invitation` once the agent step is answered, so Omarchy's
+    // one-time "pick your default agent" notice doesn't repeat it.
+    function markDone() {
+        if (statePath !== defaultStatePath) return;
+        if (flow.status === "completed" || flow.status === "dismissed") doneMark("onboarding");
+        if (flow.steps["ai-agent"]) doneMark("agent-setup-invitation");
+    }
+
+    property var marked: ({})
+
+    function doneMark(name) {
+        if (marked[name]) return;
+        var m = Object.assign({}, marked);
+        m[name] = true;
+        marked = m;
+        Quickshell.execDetached(["omarchy-done", "mark", name]);
+        log("omarchy-done mark " + name);
     }
 
     // Tips of the steps the track turned into one-liners since `fromId`.

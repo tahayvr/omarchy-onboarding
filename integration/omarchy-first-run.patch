@@ -1,0 +1,60 @@
+diff --git i/bin/omarchy-provision-first-run w/bin/omarchy-provision-first-run
+index 11c2eb8..f914ae4 100755
+--- i/bin/omarchy-provision-first-run
++++ w/bin/omarchy-provision-first-run
+@@ -68,12 +68,21 @@ run_first_run_step() {
+   fi
+ }
+ 
++# With the onboarding app installed, it teaches the keys, gets the user online,
++# offers the update and asks for a default agent itself, so the matching
++# one-time notices are skipped. It starts from autostart (omarchy-onboarding
++# login) on every login until it is finished or dismissed.
++onboarding=0
++omarchy-cmd-present omarchy-onboarding && onboarding=1
++
+ run_first_run_step "install Voxtype post-update hook" \
+   omarchy-hook-install post-update "$OMARCHY_PATH/install/user/first-run/install-voxtype.hook"
+ run_first_run_step "install fingerprint setup post-update hook" \
+   omarchy-hook-install post-update "$OMARCHY_PATH/install/user/first-run/setup-fingerprint.hook"
+-run_first_run_step "install agent setup post-update hook" \
+-  omarchy-hook-install post-update "$OMARCHY_PATH/install/user/first-run/setup-agent.hook"
++if (( onboarding == 0 )); then
++  run_first_run_step "install agent setup post-update hook" \
++    omarchy-hook-install post-update "$OMARCHY_PATH/install/user/first-run/setup-agent.hook"
++fi
+ 
+ run_first_run_step "enable user systemd units" \
+   bash "$OMARCHY_PATH/install/user/first-run/enable-user-units.sh"
+@@ -87,10 +96,14 @@ run_first_run_step "apply speaker tuning" \
+ omarchy-notification-wait || log_first_run "Timed out waiting for notification service; continuing"
+ # Each send returns only once the server has taken the toast, so sending in
+ # order is enough to stack them newest-on-top.
+-run_first_run_step "show welcome notification" \
+-  bash "$OMARCHY_PATH/install/user/first-run/welcome.sh"
+-run_first_run_step "schedule Wi-Fi/update notifications" \
+-  bash "$OMARCHY_PATH/install/user/first-run/wifi.sh"
++if (( onboarding == 1 )); then
++  log_first_run "Skipped welcome and Wi-Fi/update notifications: omarchy-onboarding covers them"
++else
++  run_first_run_step "show welcome notification" \
++    bash "$OMARCHY_PATH/install/user/first-run/welcome.sh"
++  run_first_run_step "schedule Wi-Fi/update notifications" \
++    bash "$OMARCHY_PATH/install/user/first-run/wifi.sh"
++fi
+ 
+ if (( first_run_failed == 0 )); then
+   omarchy-done mark "$FIRST_RUN_DONE"
+diff --git i/default/hypr/autostart.lua w/default/hypr/autostart.lua
+index d679729..6141b63 100644
+--- i/default/hypr/autostart.lua
++++ w/default/hypr/autostart.lua
+@@ -5,6 +5,8 @@ hl.on("hyprland.start", function()
+ 
+   hl.exec_cmd("omarchy-launch-shell")
+   hl.exec_cmd("omarchy-provision-first-run")
++  -- Starts, resumes or reminds about onboarding; does nothing once it's done.
++  hl.exec_cmd("omarchy-cmd-present omarchy-onboarding && omarchy-onboarding login")
+   hl.exec_cmd("omarchy-powerprofiles-init")
+   hl.exec_cmd(o.launch("omarchy-hyprland-monitor-watch"))
+   hl.exec_cmd(o.launch("udiskie --automount --no-notify --no-tray"))

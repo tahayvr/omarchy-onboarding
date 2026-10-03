@@ -687,6 +687,60 @@ test("developer steps declare what they run", () => {
     eq(MANIFEST.steps.find(s => s.id === "dev-basics").subtasks.map(t => t.id), ["git", "ssh", "editor"]);
 });
 
+// ================================================================ login hook (M6)
+
+const { execFileSync } = require("child_process");
+const os = require("os");
+const CLI = path.join(ROOT, "bin", "omarchy-onboarding");
+
+function tmpdir() { return fs.mkdtempSync(path.join(os.tmpdir(), "onboarding-test-")); }
+
+function cli(args, env) {
+    return execFileSync(CLI, args, { env: Object.assign({}, process.env, env || {}), encoding: "utf8" }).trim();
+}
+
+function decide(state) {
+    const dir = tmpdir(), file = path.join(dir, "state.json");
+    if (state !== undefined) fs.writeFileSync(file, typeof state === "string" ? state : E.serialize(state));
+    try { return cli(["--state", file, "login", "--decide"]); } finally { fs.rmSync(dir, { recursive: true }); }
+}
+
+test("the bash login hook decides like Engine.login", () => {
+    const fresh = E.newState(NOW);
+    const running = started(ONLINE).done().s;                       // in progress at menu
+    const paused = E.pause(running, NOW);
+    const reminded = E.login(paused, NOW).state;
+    const done = (() => { const r = started(ONLINE, "knows-linux"); r.walk(); return r.s; })();
+    const dismissed = E.dismiss(running, NOW);
+    [fresh, running, paused, reminded, done, dismissed].forEach(s => {
+        const l = E.login(s, NOW);
+        eq(decide(s), l.action + (l.action === "resume" ? " " + l.step : ""), s.status);
+    });
+    eq(decide(undefined), "start", "no state file");
+});
+
+test("the login hook flags a corrupt or newer state", () => {
+    eq(decide("{ nope"), "corrupt");
+    eq(decide(JSON.stringify({ version: 99, status: "in-progress" })), "corrupt");
+});
+
+test("install adds one autostart line and uninstall removes it", () => {
+    const home = tmpdir();
+    const autostart = path.join(home, ".config/hypr/autostart.lua");
+    fs.mkdirSync(path.dirname(autostart), { recursive: true });
+    fs.writeFileSync(autostart, "-- Extra autostart processes.\n");
+    try {
+        ok(cli(["install"], { HOME: home }).startsWith("Added"));
+        ok(cli(["install"], { HOME: home }).startsWith("Already"), "idempotent");
+        const text = fs.readFileSync(autostart, "utf8");
+        eq(text.split("\n").filter(l => l.includes("-- omarchy-onboarding")).length, 1);
+        ok(text.includes('o.launch_on_start("' + fs.realpathSync(CLI) + ' login")'), text);
+        ok(text.startsWith("-- Extra autostart processes."), "keeps what was there");
+        ok(cli(["uninstall"], { HOME: home }).startsWith("Removed"));
+        eq(fs.readFileSync(autostart, "utf8"), "-- Extra autostart processes.\n");
+    } finally { fs.rmSync(home, { recursive: true }); }
+});
+
 // ================================================================ recordings
 
 function recording(name) {

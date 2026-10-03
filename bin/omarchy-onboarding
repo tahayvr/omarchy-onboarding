@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # omarchy:summary=Learn Omarchy by doing: start, resume or replay the first-boot onboarding.
-# omarchy:args=[run [--only-skipped] | --step <name> | status [--json] | reset [--yes] | steps]
+# omarchy:args=[run [--only-skipped] | --step <name> | status [--json] | reset [--yes] | steps | login | install | uninstall]
 # omarchy:examples=omarchy onboarding|omarchy onboarding --step theme|omarchy onboarding status
 
 # The onboarding runs inside the Omarchy shell as the tahayvr.onboarding
@@ -15,6 +15,13 @@
 #                    on by default with --state, so test runs never change the system
 #   --live           with --state: run system changes for real
 #   --facts <json>   pin detected facts, for testing, e.g. '{"online":false}'
+#
+# At login (run by the autostart line that `install` adds):
+#   login            start on the first login, resume an unfinished run, remind
+#                    once when paused, otherwise do nothing
+#   login --decide   only print what login would do
+#   install          add the login line to ~/.config/hypr/autostart.lua
+#   uninstall        remove it
 #
 # Development calls, answered by the open overlay:
 #   next, skip, pause, dismiss, do-it, info, track <track> [--code]
@@ -120,6 +127,102 @@ cmd_reset() {
   fi
 }
 
+# Mirrors Engine.login() in lib/Engine.js; tests/run.js checks they agree.
+decide_login() {
+  local path=$1 state status notified
+  [[ -f $path ]] || { echo start; return; }
+  if ! state=$(jq -c . "$path" 2>/dev/null) || [[ $(jq -r '.version' <<<"$state") != 1 ]]; then
+    echo corrupt
+    return
+  fi
+  status=$(jq -r '.status // "not-started"' <<<"$state")
+  notified=$(jq -r '.pause_notified // false' <<<"$state")
+  case $status in
+    not-started) echo start ;;
+    in-progress) echo "resume $(jq -r '.current // "welcome"' <<<"$state")" ;;
+    paused) [[ $notified == true ]] && echo nothing || echo remind ;;
+    *) echo nothing ;;
+  esac
+}
+
+log_line() {
+  local log=${1%.json}.log
+  mkdir -p "$(dirname "$log")"
+  printf '%s %s\n' "$(date +%s)" "$2" >>"$log"
+}
+
+wait_for_shell() {
+  local i
+  for i in $(seq 1 60); do
+    omarchy-shell shell ping >/dev/null 2>&1 && return 0
+    sleep 0.5
+  done
+  return 1
+}
+
+cmd_login() {
+  local path decision
+  path=$(state_path)
+  decision=$(decide_login "$path")
+  if [[ ${1:-} == --decide ]]; then
+    echo "$decision"
+    return
+  fi
+  if [[ $decision == corrupt ]]; then
+    # A broken state file must never stop a session: set it aside, start fresh.
+    mv -- "$path" "$path.corrupt-$(date +%s)"
+    log_line "$path" "login: state file unreadable, moved aside"
+    decision=start
+  fi
+  case $decision in
+    start | resume*)
+      log_line "$path" "login: $decision"
+      wait_for_shell || die "the Omarchy shell did not start"
+      cmd_run
+      ;;
+    remind)
+      local tmp
+      tmp=$(mktemp "$path.XXXXXX")
+      jq '.pause_notified = true | .updated_at = (now | floor)' "$path" >"$tmp" && mv -- "$tmp" "$path"
+      log_line "$path" "login: remind"
+      wait_for_shell || true
+      omarchy-notification-send -g "󰋗" "Onboarding is paused" "Pick up where you left off." \
+        --exec "$(readlink -f "$0")" run
+      ;;
+    nothing)
+      log_line "$path" "login: nothing to do"
+      ;;
+  esac
+}
+
+AUTOSTART="$HOME/.config/hypr/autostart.lua"
+AUTOSTART_MARK="-- omarchy-onboarding"
+
+cmd_install() {
+  local self line
+  self=$(readlink -f "$0")
+  line="o.launch_on_start(\"$self login\") $AUTOSTART_MARK"
+  if grep -qF -- "$AUTOSTART_MARK" "$AUTOSTART" 2>/dev/null; then
+    echo "Already in $AUTOSTART"
+    return
+  fi
+  mkdir -p "$(dirname "$AUTOSTART")"
+  [[ -f $AUTOSTART ]] && cp -- "$AUTOSTART" "$AUTOSTART.bak.$(date +%s)"
+  printf '%s\n' "$line" >>"$AUTOSTART"
+  echo "Added to $AUTOSTART:"
+  echo "  $line"
+}
+
+cmd_uninstall() {
+  if ! grep -qF -- "$AUTOSTART_MARK" "$AUTOSTART" 2>/dev/null; then
+    echo "Not in $AUTOSTART"
+    return
+  fi
+  cp -- "$AUTOSTART" "$AUTOSTART.bak.$(date +%s)"
+  grep -vF -- "$AUTOSTART_MARK" "$AUTOSTART" >"$AUTOSTART.tmp" && mv -- "$AUTOSTART.tmp" "$AUTOSTART"
+  echo "Removed from $AUTOSTART"
+}
+
 cmd_call() {
   local out
   out=$(shell_call call "$PLUGIN" "$@") || die "the Omarchy shell is not running"
@@ -150,6 +253,9 @@ case $command in
   run) cmd_run "$@" ;;
   status) cmd_status "$@" ;;
   reset) cmd_reset "$@" ;;
+  login) cmd_login "$@" ;;
+  install) cmd_install ;;
+  uninstall) cmd_uninstall ;;
   steps) jq -r '.steps[] | "\(.id | . + (" " * (16 - length))) \(.title)"' "$DIR/steps.json" ;;
   next | skip | pause | dismiss | info) cmd_call "$command" "" ;;
   do-it) cmd_call doIt "" ;;
