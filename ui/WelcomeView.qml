@@ -136,21 +136,20 @@ FocusScope {
                     border.width: 1
                     border.color: Style.normalBorderColor
 
-                    // The row's icon: in the accent once done.
-                    Text {
+                    // The row's icon: in the accent once done. Every icon
+                    // fills the same square, so they line up across rows.
+                    GlyphIcon {
                         id: mark
                         anchors { left: parent.left; leftMargin: Style.space(14); verticalCenter: parent.verticalCenter }
-                        width: Style.space(32)
-                        horizontalAlignment: Text.AlignHCenter
-                        text: row.modelData.icon || ""
+                        size: Style.space(24)
+                        glyph: row.modelData.icon || ""
+                        family: row.modelData.iconFont || Style.font.family
                         color: row.modelData.done ? Color.accent : Color.foreground
-                        font.family: row.modelData.iconFont || Style.font.family
-                        font.pixelSize: Style.font.display
                     }
 
                     Column {
                         id: texts
-                        anchors { left: mark.right; leftMargin: Style.space(10); right: actions.left; rightMargin: Style.space(12); verticalCenter: parent.verticalCenter }
+                        anchors { left: mark.right; leftMargin: Style.space(14); right: actions.left; rightMargin: Style.space(12); verticalCenter: parent.verticalCenter }
                         spacing: Style.space(2)
                         Text {
                             width: parent.width
