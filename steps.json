@@ -195,7 +195,7 @@
         {
           "id": "apply",
           "label": "Pick one and apply it",
-          "keys": "Arrows + Enter"
+          "keys": "← + → + Enter"
         }
       ]
     },
