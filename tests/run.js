@@ -523,9 +523,8 @@ test("welcome checklist: Wi-Fi", () => {
     eq(off.detail, "", "the keys and the button say it all");
 });
 
-test("welcome checklist: the update waits for the internet", () => {
-    eq(row({ online: false, update: "available" }, "update").action, "", "no Update button offline");
-    ok(row({ online: false }, "update").detail.includes("Connect"));
+test("welcome checklist: the update row only appears online", () => {
+    eq(rows({ online: false, update: "available" }).map(r => r.id), ["wifi", "keys"]);
     eq(row({ online: true }, "update").title, "Checking for updates…");
     eq(row({ online: true, update: "available" }, "update").action, "Update");
     ok(row({ online: true, update: "current" }, "update").done);

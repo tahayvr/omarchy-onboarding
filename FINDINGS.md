@@ -193,7 +193,7 @@ Replaces the spec's tracks and the 18-step flow, by decision. This section super
 - **No tracks.** The welcome screen no longer asks how well you know Linux or whether you write code.
 - **Welcome checklist,** shown first:
   - **Wi-Fi.** "Connected to <network>" with a tick (the network comes from `nmcli -t -f active,ssid device wifi`; wired says "Connected to the internet"). Otherwise "Not connected", one sentence, and **Connect**, which opens the shell's network panel.
-  - **Omarchy update.** Checked with `omarchy update available` once online. Shows "Up to date" with a tick, an **Update** button (asks first, then runs `omarchy-update` in the presentation terminal), "Couldn't check" with **Try again**, or "Connect to the internet to check" while offline.
+  - **Omarchy update.** Shown only once online, and checked with `omarchy update available`. Shows "Up to date" with a tick, an **Update** button (asks first, then runs `omarchy-update` in the presentation terminal), or "Couldn't check" with **Try again**.
   - **Keybindings.** Super + K, with **Show all**, which opens Omarchy's keybindings list.
 - **Stepping aside.** Connect, Update and Show all hand over to a panel, a terminal or the keybindings list, which need the keyboard. So the centered card steps aside to a small corner card. It returns by itself when the machine comes online, the update terminal closes, or the list closes (`closelayer>>omarchy-menu`), or with "Back to the checklist".
 - **The way out.** **Start the tutorial** walks the steps below. **Close** finishes onboarding (`Engine.finishNow`), and the tutorial stays available through a re-run.
