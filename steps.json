@@ -171,10 +171,22 @@
       "number": 8,
       "phase": 2,
       "title": "Pick a theme",
-      "screen": "Arrow keys move, Enter applies. Everything restyles at once, this card included.",
-      "done_when": "A theme is applied (keeping the current one counts).",
+      "screen": "Every theme restyles the whole desktop, this card included. Keeping yours counts too.",
+      "done_when": "A theme is applied, or the user keeps theirs.",
       "requires": [
-        "omarchy theme set"
+        "omarchy-theme-switcher"
+      ],
+      "subtasks": [
+        {
+          "id": "open",
+          "label": "Open the theme picker",
+          "keys": "Super + Ctrl + Shift + Space"
+        },
+        {
+          "id": "apply",
+          "label": "Pick one with the arrows and Enter",
+          "keys": "Enter"
+        }
       ]
     },
     {

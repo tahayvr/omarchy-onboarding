@@ -204,3 +204,11 @@ Replaces the spec's tracks and the 18-step flow, by decision. This section super
 - **Removed,** still in git history: the tracks and their per-track copy, the separate internet, personal-setup, hardware, updates, AI-agent and developer-basics steps, and their views and probes.
 - **Markers.** With the agent step gone, onboarding no longer marks `agent-setup-invitation`; only `onboarding` is marked, on the real state only.
 - **Tested live in dry-run.** Online (both rows ticked); offline pinned (Connect steps aside to the real network panel, and Back returns); update pinned "available" (asks, then only logs `omarchy-update`); Show all (the list opens, and the checklist returns when it closes); Close (completed, and the next login does nothing); Start the tutorial (Super-key step); and the full drill walkthrough.
+- **Theme step uses Omarchy's own picker (Oct 2).** No grid of our own. The corner card teaches Super + Ctrl + Shift + Space, which runs `omarchy-menu toggle theme` → `omarchy-theme-switcher` → the image picker (layer `omarchy-image-selector`) → `omarchy-theme-set`.
+  - "Open the theme picker" ticks on `openlayer>>omarchy-image-selector`.
+  - "Pick one" ticks when `omarchy theme current` (polled every second) differs from its value when the step began; the step moves on 1.2 s later, after the restyle.
+  - "Keep my theme" completes it unchanged. "Do it for me" runs `omarchy-menu toggle theme`.
+  - The card stays above the picker thanks to the corner-card layer rule.
+  - Esc in the picker cancels it without changing the theme, and the step stays open.
+  - The theme change is Omarchy's own action, so dry-run doesn't apply to it.
+  - Requires `omarchy-theme-switcher`; `bin/onboarding-themes` and `ui/ThemeView.qml` are gone.

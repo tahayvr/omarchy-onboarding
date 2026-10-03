@@ -81,10 +81,9 @@ Item {
         update: updating ? "updating" : updateStatus
     })
 
-    // The tutorial's action steps.
-    property var themes: []
-    property bool themeApplying: false
-    property string themeApplied: ""
+    // The tutorial's action steps. The theme step watches the current theme
+    // against what it was when the step began.
+    property string themeBaseline: ""
     property var monitors: []
     property var baselineScales: null
     property string sunsetBaseline: ""
@@ -114,7 +113,8 @@ Item {
     readonly property bool centered: away === "" && (pausing || confirm !== null || error !== ""
                                                      || (step !== null && Ui.isCentered(step.id)))
     // The corner card's main button for the tutorial's action steps.
-    readonly property string primaryText: !step ? "" : step.id === "display" ? "Looks right"
+    readonly property string primaryText: !step ? "" : step.id === "theme" ? "Keep my theme"
+                                        : step.id === "display" ? "Looks right"
                                         : step.id === "apps" ? "Continue" : ""
     readonly property bool primaryEnabled: true
     // How far through the tutorial, 0 to 1: the current tutorial step counts,
@@ -286,7 +286,7 @@ Item {
             ssid: ssid,
             updateStatus: updateStatus,
             updating: updating,
-            themeApplied: themeApplied,
+            themeBaseline: themeBaseline,
             monitors: monitors,
             apps: apps.map(function (a) { return a.label; }),
             appsTried: Object.keys(appsTried),
@@ -459,31 +459,6 @@ Item {
 
     // ------------------------------------------------------------ tutorial action steps
 
-    // Theme. Enter or Apply on a theme is the explicit confirmation.
-    function applyTheme(theme) {
-        // Scripts pass a slug through `shell call`.
-        if (typeof theme === "string") theme = themes.filter(function (t) { return t.slug === theme; })[0];
-        if (!theme || themeApplying) return "no such theme";
-        themeApplying = true;
-        runSystem(["omarchy", "theme", "set", theme.slug], function (code) {
-            themeApplying = false;
-            if (code === 0) {
-                themeApplied = theme.slug;
-                tick("applied");
-                themesProbe.running = true;
-            } else {
-                log("theme set " + theme.slug + " failed with " + code);
-            }
-        });
-        return "ok";
-    }
-
-    // "Keeping the current one counts" (spec).
-    function keepTheme() {
-        themeApplied = "current";
-        return next();
-    }
-
     // Apps. An app that installs on first use asks first.
     function tryApp(app) {
         if (typeof app === "string") app = apps.filter(function (a) { return a.label === app; })[0];
@@ -516,6 +491,8 @@ Item {
         ticked = t;
         resetIdle();
         log("step " + (step ? step.id : "?") + "/" + id + " ticked");
+        // A new theme: let the restyle land before moving on.
+        if (step && step.id === "theme" && id === "apply") themeDone.start();
         if (step && step.id === "clipboard" && t.copy && t.paste) {
             log("drill clipboard complete");
             next();
@@ -536,8 +513,8 @@ Item {
         if (step.id === "welcome") {
             checkForUpdate();
         } else if (step.id === "theme") {
-            themeApplied = "";
-            themesProbe.running = true;
+            themeBaseline = "";
+            themeProbe.running = true;
         } else if (step.id === "display") {
             baselineScales = null;
             sunsetBaseline = "";
@@ -776,14 +753,35 @@ Item {
         }
     }
 
+    // Theme: Omarchy's picker applies the theme itself; the step sees it in
+    // `omarchy theme current`.
+    Timer {
+        interval: 1000
+        repeat: true
+        running: root.opened && root.step !== null && root.step.id === "theme" && !root.ticked.apply
+        onTriggered: if (!themeProbe.running) themeProbe.running = true
+    }
+
     Process {
-        id: themesProbe
-        command: [root.pluginDir + "/bin/onboarding-themes"]
+        id: themeProbe
+        command: ["omarchy", "theme", "current"]
         stdout: StdioCollector {
             onStreamFinished: {
-                try { root.themes = JSON.parse(text); } catch (e) { root.themes = []; }
+                var name = String(text || "").trim();
+                if (!name) return;
+                if (!root.themeBaseline) root.themeBaseline = name;
+                else if (name !== root.themeBaseline) {
+                    root.log("theme changed to " + name);
+                    root.tick("apply");
+                }
             }
         }
+    }
+
+    Timer {
+        id: themeDone
+        interval: 1200
+        onTriggered: if (root.step && root.step.id === "theme") root.next()
     }
 
     Process {
@@ -903,8 +901,14 @@ Item {
 
     Connections {
         target: Hyprland
-        enabled: root.opened && (root.drill !== null || root.recordPath !== "" || root.away === "keys")
+        enabled: root.opened && (root.drill !== null || root.recordPath !== "" || root.away === "keys"
+                                 || (root.step !== null && root.step.id === "theme"))
         function onRawEvent(event) {
+            // The theme step ticks when Omarchy's picker opens.
+            if (root.step && root.step.id === "theme" && !root.drill) {
+                if (String(event.name) === "openlayer" && String(event.data) === "omarchy-image-selector") root.tick("open");
+                return;
+            }
             // The checklist comes back when the keybindings list closes.
             if (root.away === "keys") {
                 if (String(event.name) === "closelayer" && String(event.data) === Drills.MENU_LAYER) root.comeBack();
@@ -959,7 +963,6 @@ Item {
                                : !root.step ? null
                                : root.step.id === "welcome" ? welcomeView
                                : root.step.id === "super-key" ? superKeyView
-                               : root.step.id === "theme" ? themeView
                                : genericView
             }
         }
@@ -1018,11 +1021,6 @@ Item {
     Component {
         id: confirmView
         ConfirmView { host: root; question: root.confirm ? root.confirm.question : ""; confirmText: root.confirm ? root.confirm.confirmText : "" }
-    }
-
-    Component {
-        id: themeView
-        ThemeView { host: root; step: root.step; themes: root.themes; applying: root.themeApplying; applied: root.themeApplied }
     }
 
     Component {

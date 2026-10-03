@@ -260,15 +260,15 @@ test("dismiss works before starting and while paused, not after completing", () 
 });
 
 test("a missing command auto-skips its step and names it", () => {
-    const r = started({ online: true, missing: ["omarchy theme set"] });
+    const r = started({ online: true, missing: ["omarchy-theme-switcher"] });
     const shown = r.walk();
     ok(!shown.includes("theme"), shown.join(","));
-    eq(r.s.steps.theme, { outcome: "auto-skipped", at: NOW, reason: "command 'omarchy theme set' is missing" });
+    eq(r.s.steps.theme, { outcome: "auto-skipped", at: NOW, reason: "command 'omarchy-theme-switcher' is missing" });
 });
 
 test("every requirement is collected once", () => {
     const all = E.allRequirements(MANIFEST);
-    ok(all.includes("omarchy theme set"));
+    ok(all.includes("omarchy-theme-switcher"));
     eq(all.length, new Set(all).size);
 });
 
@@ -503,12 +503,13 @@ test("idle hints at 20 s and 40 s", () => {
 });
 
 test("centered steps take the keyboard; drills and panel steps stay in the corner", () => {
-    ["welcome", "super-key", "theme", "finish"].forEach(id => ok(U.isCentered(id), id));
-    D.DRILL_STEPS.concat(["clipboard", "display", "apps"]).forEach(id => ok(!U.isCentered(id), id));
+    ["welcome", "super-key", "finish"].forEach(id => ok(U.isCentered(id), id));
+    D.DRILL_STEPS.concat(["clipboard", "theme", "display", "apps"]).forEach(id => ok(!U.isCentered(id), id));
 });
 
 test("the corner card moves out of the way while tiling", () => {
     eq(U.coachPlacement("menu", {}), "bottom-right");
+    eq(U.coachPlacement("theme", {}), "bottom-center", "under the theme picker");
     eq(U.coachPlacement("tiling", {}), "bottom-right");
     eq(U.coachPlacement("tiling", { terminal: true }), "bottom-center");
     eq(U.coachPlacement("tiling", { terminal: true, browser: true }), "right-center");
@@ -596,7 +597,7 @@ test("do it for me: display", () => {
 test("do it for me: specials and steps without one", () => {
     eq(U.doItPlan("super-key", {}), { special: "complete" });
     eq(U.doItPlan("clipboard", {}), { special: "fill" });
-    eq(U.doItPlan("theme", {}), null);
+    eq(argvs(U.doItPlan("theme", {})), ["omarchy-menu toggle theme"], "opens Omarchy's own picker");
     eq(U.doItPlan("welcome", {}), null);
 });
 
