@@ -2,14 +2,14 @@ diff --git i/bin/omarchy-provision-first-run w/bin/omarchy-provision-first-run
 index 11c2eb8..f914ae4 100755
 --- i/bin/omarchy-provision-first-run
 +++ w/bin/omarchy-provision-first-run
-@@ -68,12 +68,21 @@ run_first_run_step() {
+@@ -68,12 +68,19 @@ run_first_run_step() {
    fi
  }
  
-+# With the onboarding app installed, it teaches the keys, gets the user online,
-+# offers the update and asks for a default agent itself, so the matching
-+# one-time notices are skipped. It starts from autostart (omarchy-onboarding
-+# login) on every login until it is finished or dismissed.
++# With the onboarding app installed, its welcome page gets the user online and
++# offers the update, so the welcome and Wi-Fi/update notices are skipped. It
++# starts from autostart (omarchy-onboarding login) on every login until it is
++# finished or dismissed. The agent hook stays: onboarding doesn't cover it.
 +onboarding=0
 +omarchy-cmd-present omarchy-onboarding && onboarding=1
 +
@@ -17,16 +17,12 @@ index 11c2eb8..f914ae4 100755
    omarchy-hook-install post-update "$OMARCHY_PATH/install/user/first-run/install-voxtype.hook"
  run_first_run_step "install fingerprint setup post-update hook" \
    omarchy-hook-install post-update "$OMARCHY_PATH/install/user/first-run/setup-fingerprint.hook"
--run_first_run_step "install agent setup post-update hook" \
--  omarchy-hook-install post-update "$OMARCHY_PATH/install/user/first-run/setup-agent.hook"
-+if (( onboarding == 0 )); then
-+  run_first_run_step "install agent setup post-update hook" \
-+    omarchy-hook-install post-update "$OMARCHY_PATH/install/user/first-run/setup-agent.hook"
-+fi
+ run_first_run_step "install agent setup post-update hook" \
+   omarchy-hook-install post-update "$OMARCHY_PATH/install/user/first-run/setup-agent.hook"
  
  run_first_run_step "enable user systemd units" \
    bash "$OMARCHY_PATH/install/user/first-run/enable-user-units.sh"
-@@ -87,10 +96,14 @@ run_first_run_step "apply speaker tuning" \
+@@ -87,10 +94,14 @@ run_first_run_step "apply speaker tuning" \
  omarchy-notification-wait || log_first_run "Timed out waiting for notification service; continuing"
  # Each send returns only once the server has taken the toast, so sending in
  # order is enough to stack them newest-on-top.

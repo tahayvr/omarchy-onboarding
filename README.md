@@ -2,7 +2,7 @@
 
 First-boot onboarding for [Omarchy](https://omarchy.org), built as an Omarchy shell plugin (`tahayvr.onboarding`). A welcome checklist gets you online and up to date and shows where every shortcut lives; an optional tutorial then teaches the keys by having you press them, while an overlay watches Hyprland and ticks each step off as you do it.
 
-Work in progress. The welcome checklist (Wi-Fi, Omarchy update, keybindings) and the tutorial (Super key, menu, tiling, window controls, workspaces, clipboard, Super + K, theme, display, apps) work end to end. The login hook is built; its first-login test on a fresh user is still to do. See `FINDINGS.md` for what was verified on Omarchy 4.0.4 and why things are built the way they are.
+Work in progress. The welcome checklist (Wi-Fi, Omarchy update, keybindings) and the tutorial (Super key, menu, tiling, window controls, workspaces, clipboard, Super + K, theme, display, apps) work end to end. The login hook is built; its first-login test on a fresh user is still to do. See `AGENTS.md` for the contracts with Omarchy and Hyprland and the traps found along the way.
 
 ## Install for development
 
