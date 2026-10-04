@@ -31,8 +31,10 @@ code, because Omarchy ships only bash and QML. Built against Omarchy 4.0.4
 - `bin/omarchy-onboarding` is the CLI. The `onboarding-*` scripts are probes
   the overlay runs.
 - `omi/` is Omi, the Omarchy mascot, copied from Meet Omi
-  (github.com/tahayvr/meet-omi) by `scripts/sync-omi.sh`; `omi/SOURCE` says
-  from which commit. Don't edit it here: fix Meet Omi and sync. New Omi mode
+  (github.com/tahayvr/meet-omi) by `scripts/sync-omi.sh`, which fetches
+  from GitHub (master by default, or a tag, branch or full commit hash) and
+  never from a local checkout, so it must be pushed first. `omi/SOURCE` says
+  which repo and commit. Don't edit it here: fix Meet Omi, push, and sync. New Omi mode
   or reaction ideas go in Meet Omi's `docs/ideas.md`. Which mode Omi shows is
   decided in `lib/Ui.js` (`welcomeOmi`).
 - Onboarding starts at login through the line `omarchy-onboarding install`

@@ -34,6 +34,10 @@ scripts/drive-drills.sh        # live: the whole tutorial through the real plugi
 
 `drive-drills.sh` uses empty workspaces 7 and 8. It only acts on windows it opened, and it refuses to run while the screen is locked. It walks every drill, Back, the apps step ticking on a real app window, and Do them now from the finish screen, through to completion, in about 35 seconds. Pass a path to save the walkthrough as a new fixture; `tests/fixtures/walkthrough-flow.jsonl` is one, and the tests replay its flow changes through the engine.
 
+## Omi
+
+`omi/` is Omi, the Omarchy mascot, from [Meet Omi](https://github.com/tahayvr/meet-omi). Don't edit it here. To update it, run `scripts/sync-omi.sh` (the latest on master) or `scripts/sync-omi.sh <tag or full commit>`, then commit `omi/`. It fetches from GitHub, checks the player against the pack's conformance data, and records the commit in `omi/SOURCE`. It needs `git`, `node` and `jq`.
+
 ## Upstream
 
 Onboarding is built to ship with Omarchy. Until it does, `omarchy-onboarding install` adds its login line to your own `autostart.lua`, so Omarchy's first-run welcome and Wi-Fi/update notices still appear alongside it on first login.
