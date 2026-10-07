@@ -34,7 +34,6 @@
       "goal": "One concept before any drills.",
       "screen": "This is the Super key: the one with the Windows logo, or ⌘ on a Mac keyboard, between Ctrl and Alt. Almost every shortcut I'll show you starts with it. Give it a press.",
       "done_when": "The app sees the key press while focused.",
-      "keys": "Super",
       "cheer": "That's the one!"
     },
     {

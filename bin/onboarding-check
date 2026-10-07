@@ -1,6 +1,6 @@
 #!/bin/bash
 # Prints each requirement that is missing, one per line. Requirements are
-# omarchy routes ("omarchy theme set") or plain programs ("pw-play"). Routes
+# omarchy routes ("omarchy theme set") or plain programs ("nmcli"). Routes
 # come from `omarchy commands --json --all`, so a renamed command shows up as
 # missing and its step is auto-skipped instead of failing.
 exec </dev/null

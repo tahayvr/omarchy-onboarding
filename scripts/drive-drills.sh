@@ -3,8 +3,8 @@
 # running what each binding runs: the "Learn the keys" drills (menu to
 # shortcuts, the clipboard step included), each of which must complete its
 # step by itself, then Back and forward again, and Do them now from the
-# finish screen through the skipped steps. The run passes when the flow completes. The clipboard is restored
-# afterwards.
+# finish screen through the skipped steps. The run passes when the flow
+# completes. The clipboard is restored afterwards.
 #
 #   scripts/drive-drills.sh [recording.jsonl]
 #
@@ -124,7 +124,7 @@ record=()
 wait_step welcome
 "${CLI[@]}" tutorial >/dev/null # "Teach me" on the welcome page
 wait_step super-key
-"${CLI[@]}" next >/dev/null # super-key needs the overlay's key catcher (M3)
+"${CLI[@]}" next >/dev/null # super-key needs the overlay's key catcher
 wait_step menu
 
 say "Back (Ctrl + ,) to the Super key step, then forward again"
@@ -133,14 +133,14 @@ wait_step super-key
 "${CLI[@]}" next >/dev/null
 wait_step menu
 
-say "Step 4: Super + Space, then close"
+say "Menu: Super + Space, then close"
 omarchy-menu toggle; sleep 1.2
 omarchy-menu toggle
 wait_step tiling
 
 dispatch "hl.dsp.focus({ workspace = '$WS_A' })"; sleep 0.5
 
-say "Step 5: Super + Return, Super + Shift + Return, Super + J, Super + Arrow"
+say "Tiling: Super + Return, Super + Shift + Return, Super + J, Super + Arrow"
 before=$(hyprctl -j clients | jq -c '[.[].address]')
 setsid -f omarchy-launch-terminal >/dev/null 2>&1 </dev/null
 terminal=$(wait_window '^foot$' "$WS_A" "$before"); sleep 0.6
@@ -155,7 +155,7 @@ direction=$(hyprctl -j clients | jq -r --arg t "$terminal" --arg b "$browser" '
 dispatch "hl.dsp.focus({ direction = '$direction' })"
 wait_step window-controls
 
-say "Step 6: Super + T twice, Super + F twice, Super + W on the browser"
+say "Window controls: Super + T twice, Super + F twice, Super + W on the browser"
 require_active "$terminal" "the terminal"
 dispatch "hl.dsp.window.float({ action = 'toggle' })"; sleep 0.6
 dispatch "hl.dsp.window.float({ action = 'toggle' })"; sleep 0.6
@@ -166,7 +166,7 @@ require_active "$browser" "the browser"
 dispatch "hl.dsp.window.close()"; browser=""
 wait_step workspaces
 
-say "Step 7: Super + $WS_B, Super + $WS_A, Super + Shift + $WS_B"
+say "Workspaces: Super + $WS_B, Super + $WS_A, Super + Shift + $WS_B"
 dispatch "hl.dsp.focus({ workspace = '$WS_B' })"; sleep 0.6
 dispatch "hl.dsp.focus({ workspace = '$WS_A' })"; sleep 0.6
 require_active "$terminal" "the terminal"
@@ -177,7 +177,7 @@ dispatch "hl.dsp.window.move({ workspace = '$WS_B' })"
 wait_step clipboard
 sample_terminal=$(wait_window '^org\.omarchy\.onboarding-sample$' "^($WS_A|$WS_B)$" "$before")
 
-say "Step 8: Super + C on the card's line, Super + V in the terminal"
+say "Clipboard: Super + C on the card's line, Super + V in the terminal"
 saved_clipboard=$(wl-paste --no-newline 2>/dev/null || true)
 wl-copy "$SAMPLE" >/dev/null 2>&1 # wl-copy forks a server that keeps stdout open; what Super + C on the card's selected line does
 sleep 1.5          # the overlay sees it, ticks, and focuses the terminal
@@ -189,13 +189,13 @@ dispatch "hl.dsp.send_key_state({ mods = 'SHIFT', key = 'Insert', state = 'up' }
 wait_step shortcuts
 printf '%s' "$saved_clipboard" | wl-copy >/dev/null 2>&1
 
-say "Step 9: Super + K, then Esc"
+say "Shortcuts: Super + K, then Esc"
 setsid -f omarchy-menu-keybindings >/dev/null 2>&1 </dev/null
 sleep 1.5
 omarchy-menu toggle # what Esc does to the list: the menu's layer closes
 wait_step theme
 
-say "Steps 10 and 11: skipped, to be done again from the finish screen"
+say "Theme and display: skipped, to be done again from the finish screen"
 "${CLI[@]}" skip >/dev/null
 wait_step display
 "${CLI[@]}" skip >/dev/null

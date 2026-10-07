@@ -48,8 +48,8 @@ code, because Omarchy ships only bash and QML. Built against Omarchy 4.0.4
 - **Never touch the real state** in `~/.local/state/omarchy/onboarding.json`
   or the `onboarding` marker in `~/.local/state/omarchy/done/`. Always pass
   `--state /tmp/…` or set `OMARCHY_ONBOARDING_STATE`.
-- **`--state` implies `--dry-run`.** In dry-run, system changes such as updates
-  and installs are logged instead of run. `--live` overrides this, so don't use
+- **`--state` implies `--dry-run`.** In dry-run, the Omarchy update, the
+  one system change onboarding runs, is logged instead of run. `--live` overrides this, so don't use
   it. This rule exists because a scripted "yes" against a non-dry test state
   once launched the real `omarchy-update-firmware`, which stopped at sudo.
 - **Never run these for real:** `omarchy update`, Wi-Fi changes, global git
@@ -114,7 +114,7 @@ code, because Omarchy ships only bash and QML. Built against Omarchy 4.0.4
   descending, so a negative order draws last, on top. Named rules replace each
   other, so re-applying the rule is safe.
 - **Keyboard first: every button has a key.** Centered cards have the
-  keyboard, so plain keys work there (Y, U, R, Q, M, D, Enter, Esc). The
+  keyboard, so plain keys work there (Y, U, Q, M, D, Enter, Esc). The
   corner card never has it, so its buttons' keys are Hyprland binds, added with
   `hl.bind` by `bin/onboarding-binds` while a tutorial step is up, removed
   after, and re-added on `configreloaded`: Ctrl + / (skip), Ctrl + Enter
@@ -165,7 +165,7 @@ code, because Omarchy ships only bash and QML. Built against Omarchy 4.0.4
   must stay under `org.omarchy.`: Omarchy tags only known classes as
   terminals, and Super + C / V copy and paste in a terminal only when it's
   tagged. The tiling drill's terminal and browser close, by address, when
-  onboarding closes (finish, quit, pause, or a replay ending), and focus
+  onboarding closes (finish, quit, or a replay ending), and focus
   returns to the workspace the tutorial began on. `bin/onboarding-close-windows`
   does it, detached (the plugin is unloading), and leaves a terminal open
   when anything but a shell runs under it: the user may have started work

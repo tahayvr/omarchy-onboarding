@@ -23,7 +23,7 @@ bin/omarchy-onboarding status              # where the flow is
 bin/omarchy-onboarding steps               # step names
 ```
 
-While developing, always pass `--state /tmp/onboarding-test.json` (or set `OMARCHY_ONBOARDING_STATE`) so the real state in `~/.local/state/omarchy/onboarding.json` is never touched. A test state also turns on `--dry-run`: theme changes, updates, firmware and app installs are logged instead of run, unless you add `--live`. With the overlay open, `tutorial`, `close-welcome`, `connect`, `update`, `keys`, `come-back` (the checklist's "come back" card), `previous` (the card's Back), `redo` (the finish screen's Do them now), `next`, `skip`, `dismiss`, `do-it` and `info` drive the flow by hand. `--facts '{"online":false}'` or `--facts '{"update":"available"}'` shows the checklist's other states.
+While developing, always pass `--state /tmp/onboarding-test.json` (or set `OMARCHY_ONBOARDING_STATE`) so the real state in `~/.local/state/omarchy/onboarding.json` is never touched. A test state also turns on `--dry-run`: the Omarchy update is logged instead of run, unless you add `--live`. With the overlay open, `tutorial`, `close-welcome`, `connect`, `update`, `keys`, `come-back` (the checklist's "come back" card), `previous` (the card's Back), `redo` (the finish screen's Do them now), `next`, `skip`, `dismiss`, `do-it` and `info` drive the flow by hand. `--facts '{"online":false}'` or `--facts '{"update":"available"}'` shows the checklist's other states.
 
 ## Test
 

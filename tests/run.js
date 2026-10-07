@@ -121,7 +121,7 @@ test("corrupt or newer state is refused", () => {
 });
 
 test("older state gains missing keys and keeps old ones harmlessly", () => {
-    const s = E.parseState(JSON.stringify({ version: 1, status: "paused", track: "mac", steps: {} }), 7);
+    const s = E.parseState(JSON.stringify({ version: 1, status: "paused", pause_notified: false, track: "mac", steps: {} }), 7);
     eq(s.mode, "full");
     eq(s.pause_notified, undefined);
 });
@@ -150,7 +150,7 @@ function started(facts) {
 
 test("not started autostarts at login", () => {
     const r = run();
-    eq(E.login(r.s, NOW).action, "start");
+    eq(E.login(r.s).action, "start");
     eq(r.current(), null);
 });
 
@@ -173,7 +173,7 @@ test("Close on the welcome checklist finishes without the tutorial", () => {
     eq(r.s.current, null);
     eq(r.s.steps.welcome.outcome, "done");
     eq(Object.keys(r.s.steps), ["welcome"], "tutorial steps untouched");
-    eq(E.login(r.s, NOW).action, "nothing");
+    eq(E.login(r.s).action, "nothing");
 });
 
 test("only the welcome checklist can be closed that way", () => {
@@ -186,7 +186,7 @@ test("in progress resumes at the current step after a reboot", () => {
     const r = started(ONLINE).done(); // super-key
     eq(r.current(), "menu");
     const saved = E.parseState(E.serialize(r.s), NOW);
-    eq(E.login(saved, NOW), { action: "resume", step: "menu", state: saved });
+    eq(E.login(saved), { action: "resume", step: "menu" });
     eq(E.currentStep(MANIFEST, E.start(MANIFEST, saved, ONLINE, NOW)).id, "menu");
 });
 
@@ -194,7 +194,7 @@ test("functions never mutate their input", () => {
     const r = started(ONLINE);
     const before = copy(r.s);
     E.complete(MANIFEST, r.s, ONLINE, NOW);
-    E.login(r.s, NOW);
+    E.login(r.s);
     eq(r.s, before);
 });
 
@@ -208,7 +208,7 @@ test("a paused state from an older build stays quiet at login and resumes by han
     const step = r.current();
     r.s = pausedByOldBuild(r.s);
     eq(r.current(), null);
-    eq(E.login(r.s, NOW).action, "nothing");
+    eq(E.login(r.s).action, "nothing");
     throws(() => r.done(), "while onboarding is paused");
     r.start();
     eq(r.current(), step);
@@ -218,7 +218,7 @@ test("finishing completes and never autostarts again", () => {
     const r = started(ONLINE);
     r.walk();
     eq(r.s.status, "completed");
-    eq(E.login(r.s, NOW).action, "nothing");
+    eq(E.login(r.s).action, "nothing");
     throws(() => r.start(), "while onboarding is completed");
 });
 
@@ -236,7 +236,7 @@ test("dismiss is reachable from every step", () => {
         eq(r.current(), expected);
         r.s = E.dismiss(r.s, NOW);
         eq(r.s.status, "dismissed");
-        eq(E.login(r.s, NOW).action, "nothing");
+        eq(E.login(r.s).action, "nothing");
     });
 });
 
@@ -259,21 +259,6 @@ test("every requirement is collected once", () => {
     const all = E.allRequirements(MANIFEST);
     ok(all.includes("omarchy-theme-switcher"));
     eq(all.length, new Set(all).size);
-});
-
-test("auto-skip records the reason and moves on", () => {
-    const r = started(ONLINE);
-    const step = r.current();
-    r.s = E.autoSkip(MANIFEST, r.s, ONLINE, NOW, "command omarchy-foo is missing");
-    eq(r.s.steps[step], { outcome: "auto-skipped", at: NOW, reason: "command omarchy-foo is missing" });
-    ok(r.current() !== step);
-});
-
-test("failures are listed on the finish screen", () => {
-    const r = started(ONLINE);
-    const step = r.current();
-    r.s = E.failStep(MANIFEST, r.s, ONLINE, NOW, "panel did not open");
-    eq(E.openSteps(MANIFEST, r.s).map(s => s.id), [step]);
 });
 
 test("skipped steps are still to do", () => {
@@ -306,7 +291,7 @@ test("Back returns to the step before, forgetting its result", () => {
 test("Back passes over steps the user never saw", () => {
     const r = started(ONLINE);
     r.done(); // super-key
-    r.s = E.failStep(MANIFEST, r.s, ONLINE, NOW, "no menu");
+    r.skip(); // menu
     const facts = { online: true, missing: ["omarchy-theme-switcher"] };
     while (r.current() !== "display") r.s = E.complete(MANIFEST, r.s, facts, NOW);
     eq(r.s.steps.theme.outcome, "auto-skipped");
@@ -717,7 +702,7 @@ test("welcome checklist: each row has its icon; the update row uses Omarchy's lo
 
 test("welcome checklist: keybindings", () => {
     const k = row({}, "keys");
-    eq([k.action, k.keys, k.info, k.clickable], ["", "Super + K", true, true], "the whole row opens the list");
+    eq([k.action, k.keys, k.clickable], ["", "Super + K", true], "the whole row opens the list");
 });
 
 function argvs(plan) { return plan.run.map(s => s.argv.join(" ")); }
@@ -830,7 +815,7 @@ test("the bash login hook decides like Engine.login", () => {
     const done = (() => { const r = started(ONLINE); r.walk(); return r.s; })();
     const dismissed = E.dismiss(running, NOW);
     [fresh, running, paused, done, dismissed].forEach(s => {
-        const l = E.login(s, NOW);
+        const l = E.login(s);
         eq(decide(s), l.action + (l.action === "resume" ? " " + l.step : ""), s.status);
     });
     eq(decide(undefined), "start", "no state file");
@@ -860,20 +845,47 @@ test("install adds one autostart line and uninstall removes it", () => {
 
 // ================================================================ recordings
 
+// Runs the drills in flow order, from `from` (a drill step id, default the
+// first), moving on as each completes. feed(obs) returns what happened:
+// [{type: "tick", step, subtask, ticked}] and {type: "complete", step};
+// after the last drill, done() is true.
+function walker(options, from) {
+    var start = from ? D.DRILL_STEPS.indexOf(from) : 0;
+    if (start < 0) throw new Error("'" + from + "' is not a drill (expected one of: " + D.DRILL_STEPS.join(", ") + ")");
+    var w = { index: start, drill: D.create(D.DRILL_STEPS[start], options) };
+    w.done = function () { return w.drill === null; };
+    w.feed = function (obs) {
+        var out = [];
+        if (!w.drill) return out;
+        w.drill.observe(obs).forEach(function (c) {
+            out.push({ type: "tick", step: w.drill.step, subtask: c.subtask, ticked: c.ticked });
+        });
+        if (w.drill.complete()) {
+            out.push({ type: "complete", step: w.drill.step });
+            // The tiling drill's windows carry over, as in the overlay.
+            if (w.drill.windows) options = Object.assign({}, options, { browser: w.drill.windows().browser });
+            w.index++;
+            w.drill = w.index < D.DRILL_STEPS.length ? D.create(D.DRILL_STEPS[w.index], options) : null;
+        }
+        return out;
+    };
+    return w;
+}
+
 function recording(name) {
     return fs.readFileSync(path.join(__dirname, "fixtures", name), "utf8").split("\n")
         .map(l => l.trim()).filter(l => l && !l.startsWith("#")).map(l => JSON.parse(l));
 }
 
 function replay(name, from) {
-    const w = D.walker({ defaultBrowser: "chromium" }, from);
+    const w = walker({ defaultBrowser: "chromium" }, from);
     const events = [];
     recording(name).forEach(obs => { events.push(...w.feed(obs)); });
     return { w, events };
 }
 
-// The M2 done condition, from a live walkthrough through the plugin: every
-// drill sub-task ticks, in order, with no resets.
+// From a live walkthrough through the plugin: every drill sub-task ticks, in
+// order, with no resets.
 test("live walkthrough ticks every drill sub-task", () => {
     const { w, events } = replay("walkthrough-live.jsonl");
     ok(w.done(), "all drills complete");
@@ -946,8 +958,8 @@ test("a short recording stops at the unfinished drill", () => {
 });
 
 test("the walker can start later and rejects non-drills", () => {
-    eq(D.walker({}, "shortcuts").drill.step, "shortcuts");
-    throws(() => D.walker({}, "theme"), "'theme' is not a drill");
+    eq(walker({}, "shortcuts").drill.step, "shortcuts");
+    throws(() => walker({}, "theme"), "'theme' is not a drill");
 });
 
 // ================================================================

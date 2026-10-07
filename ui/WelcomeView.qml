@@ -12,7 +12,7 @@ FocusScope {
     property var host
     // Omarchy's logo.svg: black on transparent, tinted to the theme's accent.
     property string logoPath: ""
-    // From Ui.welcomeChecklist: [{id, done, info, title, detail, action, keys}].
+    // From Ui.welcomeChecklist: [{id, done, icon, iconFont, title, detail, action, keys, clickable}].
     property var rows: []
     // The checklist's status, {online, update}: Omi's mode comes from it
     // (Ui.welcomeOmi), and so do its reactions (Ui.welcomeOmiReaction).
@@ -228,8 +228,7 @@ FocusScope {
             width: parent.width
             spacing: Style.space(16)
 
-            // Omi, the Omarchy mascot, in the theme's accent. It starts as the
-            // plain logo and comes to life once the card is up.
+            // Omi, the Omarchy mascot, in the theme's accent.
             Omi {
                 id: omi
                 anchors.verticalCenter: parent.verticalCenter

@@ -31,7 +31,6 @@ Item {
         color: row.done ? Qt.rgba(Color.foreground.r, Color.foreground.g, Color.foreground.b, 0.62) : Color.foreground
         font.family: Style.font.family
         font.pixelSize: Style.font.body
-        font.strikeout: false
         wrapMode: Text.Wrap
     }
 

@@ -8,7 +8,6 @@ Row {
 
     property string keys: ""
     property bool big: false
-    property bool lit: false
 
     spacing: Style.space(4)
 
@@ -29,7 +28,6 @@ Row {
             KeyCap {
                 label: modelData.label
                 big: caps.big
-                lit: caps.lit
             }
         }
     }

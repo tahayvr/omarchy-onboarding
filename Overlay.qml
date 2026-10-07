@@ -14,7 +14,7 @@ import "lib/Ui.js" as Ui
 // events, and saves every change. The logic lives in lib/; the views in ui/.
 //
 // Two windows, never both: a centered card that takes the keyboard (the
-// welcome checklist, the Super key, the theme picker, finish, and dialogs),
+// welcome checklist, the Super key, finish, and dialogs),
 // and a corner card for the drills that leaves the keyboard to Hyprland. When
 // the checklist hands over to a panel, a terminal or the keybindings list, it
 // steps aside to the corner until that's done.
@@ -25,14 +25,16 @@ import "lib/Ui.js" as Ui
 //   step         replay one lesson (omarchy-onboarding --step)
 //   onlySkipped  when re-running, pass over steps already done
 //   record       also save every observation, for replay tests
-//   dryRun       log system changes (theme, updates, installs) instead of running them
+//   dryRun       log the Omarchy update instead of running it
 //   facts        pin facts, for testing: {"online": false} keeps the checklist
 //                offline whatever the network says, {"update": "available"}
 //                pins the update check
 //
-// Calls (omarchy-shell shell call <id> <fn> <arg>): startTutorial,
-// closeWelcome, connect, update, showKeybindings, next, skip, dismiss,
-// doIt, info.
+// Calls (omarchy-shell shell call <id> <fn> <arg>): from the CLI,
+// startTutorial, closeWelcome, connect, update, showKeybindings, comeBack,
+// next, skip, back, redoOpen, dismiss, doIt, info; key, from the tutorial's
+// Hyprland binds (bin/onboarding-binds); pastedInTerminal, from the clipboard
+// step's terminal (bin/onboarding-clipboard-sample).
 Item {
     id: root
 
@@ -76,7 +78,7 @@ Item {
     property var confirm: null
     property bool dryRun: false
     property var factsOverride: ({})
-    property var marked: ({})
+    property bool markedDone: false
 
     // The welcome checklist.
     property string ssid: ""
@@ -194,7 +196,6 @@ Item {
     // The corner card's main button for the tutorial's action steps.
     readonly property string primaryText: !step ? "" : step.id === "theme" ? "Keep my theme"
                                         : step.id === "display" ? "Looks right" : ""
-    readonly property bool primaryEnabled: true
     // How far through the tutorial, 0 to 1: the current tutorial step counts,
     // and the finish screen is full. -1 (no line) on the welcome page.
     readonly property real progress: {
@@ -465,9 +466,9 @@ Item {
     // The `onboarding` omarchy-done marker once finished or dismissed, only for
     // the real state file so test runs never mark the real account.
     function markDone() {
-        if (statePath !== defaultStatePath || marked.onboarding) return;
+        if (statePath !== defaultStatePath || markedDone) return;
         if (flow.status !== "completed" && flow.status !== "dismissed") return;
-        marked = { onboarding: true };
+        markedDone = true;
         Quickshell.execDetached(["omarchy-done", "mark", "onboarding"]);
         log("omarchy-done mark onboarding");
     }
@@ -1062,7 +1063,8 @@ Item {
         }
     }
 
-    // Super + J sends no event, so the tiling drill watches window positions.
+    // Super + J sends no event, so the tiling and window-controls drills watch
+    // window positions (and --record logs them).
     Timer {
         interval: 400
         repeat: true
@@ -1163,7 +1165,6 @@ Item {
         }
 
         Rectangle {
-            id: centerCard
             anchors.centerIn: parent
             // 32 of padding on every side.
             width: centerView.implicitWidth + Style.space(64)
@@ -1189,16 +1190,15 @@ Item {
                                : !root.step ? null
                                : root.step.id === "welcome" ? welcomeView
                                : root.step.id === "super-key" ? superKeyView
-                               : genericView
+                               : finishView
             }
         }
     }
 
-    // Corner: the drills, and the checklist while it has stepped aside. Leaves
-    // the keyboard to Hyprland, except the clipboard step, whose field the
-    // user clicks to paste into. The window spans the screen (inside the bar
-    // and the margins) and takes input only on the card, so the card can
-    // slide from one placement to the next instead of jumping.
+    // Corner: the drills, and the checklist while it has stepped aside. The
+    // window spans the screen (inside the bar and the margins) and takes input
+    // only on the card, so the card can slide from one placement to the next
+    // instead of jumping.
     PanelWindow {
         id: cornerWindow
         visible: root.opened && root.flow !== null && !root.centered && (root.step !== null || root.away !== "")
@@ -1279,7 +1279,7 @@ Item {
 
     Component {
         id: superKeyView
-        SuperKeyView { host: root; step: root.step; hint: root.hint }
+        SuperKeyView { host: root; step: root.step }
     }
 
     Component {
@@ -1293,14 +1293,14 @@ Item {
     }
 
     Component {
-        id: genericView
-        StepView {
+        id: finishView
+        FinishView {
             host: root
             step: root.step
-            openSteps: root.flow ? Engine.openSteps(root.steps, root.flow).map(function (s) {
+            openSteps: root.openSteps.map(function (s) {
                 var r = root.flow.steps[s.id];
                 return { title: s.title, reason: r ? r.reason : "" };
-            }) : []
+            })
         }
     }
 

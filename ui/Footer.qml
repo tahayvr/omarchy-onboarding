@@ -9,11 +9,8 @@ Item {
     id: footer
 
     property var host
-    property int hint: 0
-    property bool canDoIt: false
-    // An optional main button, e.g. "Looks right" or "Continue".
+    // An optional main button: "Looks right" or "Keep my theme".
     property string primaryText: ""
-    property bool primaryEnabled: true
     signal primary()
 
     readonly property bool legendShown: !!host && Object.keys(host.tutorialKeys).length > 0
@@ -42,7 +39,7 @@ Item {
         Button { visible: footer.host.canBack; text: "Back"; key: footer.host.tutorialKeys.back || ""; onClicked: footer.host.back() }
         Button { text: "Skip"; key: footer.host.tutorialKeys.skip || ""; onClicked: footer.host.skip() }
         Button {
-            visible: footer.canDoIt && footer.hint > 1
+            visible: footer.host.canDoIt
             text: "Do it for me"
             key: footer.host.tutorialKeys.doit || ""
             primary: footer.primaryText === ""
@@ -52,9 +49,8 @@ Item {
             visible: footer.primaryText !== ""
             text: footer.primaryText
             key: footer.host.tutorialKeys.primary || ""
-            primary: footer.primaryEnabled
-            opacity: footer.primaryEnabled ? 1 : 0.5
-            onClicked: if (footer.primaryEnabled) footer.primary()
+            primary: true
+            onClicked: footer.primary()
         }
     }
 }

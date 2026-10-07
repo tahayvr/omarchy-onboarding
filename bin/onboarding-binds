@@ -21,17 +21,15 @@ BINDS=(
   "back CTRL + COMMA 4 COMMA"
 )
 PREFIX="Onboarding: "
-# The single skip bind from before this script, cleaned up the same way.
-OLD_DESCRIPTION="Skip this onboarding step"
 
 binds=$(hyprctl binds -j 2>/dev/null)
 
 # What's on a combo now: nothing, ours, or something else.
 bound_to() {
-  jq -r --argjson m "$1" --arg k "$2" --arg p "$PREFIX" --arg old "$OLD_DESCRIPTION" \
+  jq -r --argjson m "$1" --arg k "$2" --arg p "$PREFIX" \
     '[.[] | select(.modmask == $m and (.key | ascii_upcase) == $k and .submap == "")]
      | if length == 0 then "nothing"
-       elif any(.description | startswith($p) or . == $old) then "ours"
+       elif any(.description | startswith($p)) then "ours"
        else "other" end' <<<"$binds"
 }
 

@@ -2,8 +2,7 @@ import QtQuick
 import qs.Commons
 import "../lib/Ui.js" as Ui
 
-// A centered step without its own screen yet (the action steps arrive in M4),
-// and the finish screen.
+// The finish screen.
 FocusScope {
     id: view
 
@@ -11,20 +10,18 @@ FocusScope {
     property var step: null
     property var openSteps: []
 
-    readonly property bool finishing: step && step.id === "finish"
-
     implicitWidth: Style.space(520)
     implicitHeight: column.implicitHeight
 
     Component.onCompleted: Qt.callLater(function () { primary.forceActiveFocus(); })
-    // On the finish screen Esc is the same as Finish.
-    Keys.onEscapePressed: view.finishing ? view.host.next() : view.host.askPause()
+    // Esc is the same as Finish.
+    Keys.onEscapePressed: view.host.next()
     // M opens the step's link (the manual) and D does the steps still to
     // do, as shown on their buttons.
     Keys.onPressed: function (event) {
         if (event.modifiers & (Qt.ControlModifier | Qt.AltModifier | Qt.MetaModifier)) return;
         if (event.key === Qt.Key_M && view.step && view.step.link) { event.accepted = true; view.host.openLink(); }
-        else if (event.key === Qt.Key_D && view.finishing && view.openSteps.length > 0) { event.accepted = true; view.host.redoOpen(); }
+        else if (event.key === Qt.Key_D && view.openSteps.length > 0) { event.accepted = true; view.host.redoOpen(); }
     }
 
     // Commands in the card's text sit on a faint chip, so they read as
@@ -39,12 +36,12 @@ FocusScope {
         width: parent.width
         spacing: Style.space(20)
 
-        Header { host: view.host; step: view.step; omiSize: view.finishing ? Style.space(96) : Style.space(48) }
+        Header { host: view.host; step: view.step; omiSize: Style.space(96) }
 
         Text {
             width: parent.width
             visible: text !== ""
-            text: view.step ? (view.step.screen || view.step.goal || "") : ""
+            text: view.step ? (view.step.screen || "") : ""
             wrapMode: Text.Wrap
             color: Color.foreground
             font.family: Style.font.family
@@ -105,7 +102,7 @@ FocusScope {
         // The steps still to do (skipped, deferred or failed), and a way
         // through them: only they are shown, then the finish screen again.
         Item {
-            visible: view.finishing && view.openSteps.length > 0
+            visible: view.openSteps.length > 0
             width: parent.width
             implicitHeight: Math.max(openList.implicitHeight, redoButton.implicitHeight)
             Column {
@@ -119,7 +116,7 @@ FocusScope {
                     font.pixelSize: Style.font.body
                 }
                 Repeater {
-                    model: view.finishing ? view.openSteps : []
+                    model: view.openSteps
                     delegate: Text {
                         required property var modelData
                         width: openList.width
@@ -152,17 +149,13 @@ FocusScope {
             font.pixelSize: Style.font.body
         }
 
-        Row {
+        Button {
+            id: primary
             anchors.right: parent.right
-            spacing: Style.space(10)
-            Button { visible: !view.finishing; text: "Skip"; onClicked: view.host.skip() }
-            Button {
-                id: primary
-                text: view.finishing ? "Finish" : "Continue"
-                key: "\u21b5"
-                primary: true
-                onClicked: view.host.next()
-            }
+            text: "Finish"
+            key: "\u21b5"
+            primary: true
+            onClicked: view.host.next()
         }
     }
 }

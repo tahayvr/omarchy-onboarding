@@ -1,14 +1,13 @@
 import QtQuick
 import qs.Commons
 
-// Step 3: one concept before any drills. Catches a bare Super press, which
+// The Super key step: one concept before any drills. Catches a bare Super press, which
 // nothing in Omarchy binds, so it reaches this view while it has the keyboard.
 FocusScope {
     id: view
 
     property var host
     property var step: null
-    property int hint: 0
     property bool pressed: false
 
     implicitWidth: Style.space(560)
@@ -26,7 +25,6 @@ FocusScope {
         }
     }
     Keys.onEscapePressed: view.host.askPause()
-
 
     Column {
         id: column
@@ -50,7 +48,6 @@ FocusScope {
             spacing: Style.space(6)
             KeyCap { label: "Ctrl"; big: true }
             KeyCap {
-                id: superCap
                 label: "Super"
                 big: true
                 lit: view.pressed
@@ -66,6 +63,6 @@ FocusScope {
             KeyCap { label: "Space"; big: true; implicitWidth: Style.space(200) }
         }
 
-        Footer { host: view.host; hint: view.hint; canDoIt: true }
+        Footer { host: view.host }
     }
 }

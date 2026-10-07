@@ -1,9 +1,9 @@
 import QtQuick
 import qs.Commons
 
-// The welcome checklist while it has stepped aside for the network panel, the
-// update terminal or the keybindings list. It comes back by itself when that's
-// done, or with the button.
+// The welcome checklist while it has stepped aside (for a panel, the update
+// terminal, the keybindings list or the menu). It comes back by itself when
+// that closes, or with the button.
 Rectangle {
     id: card
 

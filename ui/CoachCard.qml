@@ -22,8 +22,7 @@ Rectangle {
     // narrower than the base width, never wider than the cap.
     readonly property real baseWidth: Style.space(480)
     property real capsNeed: 0
-    readonly property real panelNeed: panel.item && panel.item.capsNeed !== undefined ? panel.item.capsNeed : 0
-    readonly property real rowNeed: Math.max(footer.implicitWidth, Math.max(capsNeed, panelNeed) + Style.space(200))
+    readonly property real rowNeed: Math.max(footer.implicitWidth, capsNeed + Style.space(200))
     implicitWidth: Math.min(Style.space(700), Math.max(baseWidth, rowNeed + Style.space(48)))
     implicitHeight: column.implicitHeight + Style.space(48)
 
@@ -153,10 +152,7 @@ Rectangle {
         Footer {
             id: footer
             host: card.host
-            hint: card.hint
-            canDoIt: !!(card.step && Ui.doItPlan(card.step.id, { ticked: card.ticked, windows: card.host.drillWindows }))
             primaryText: card.host.primaryText
-            primaryEnabled: card.host.primaryEnabled
             onPrimary: card.host.primaryAction()
         }
     }

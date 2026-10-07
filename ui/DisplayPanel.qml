@@ -2,7 +2,7 @@ import QtQuick
 import qs.Commons
 import "../lib/Ui.js" as Ui
 
-// Step 11: what Hyprland reports for each screen, live as the scale changes.
+// The display step: what Hyprland reports for each screen, live as the scale changes.
 Column {
     id: panel
     property var host
