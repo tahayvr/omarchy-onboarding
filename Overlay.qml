@@ -31,7 +31,7 @@ import "lib/Ui.js" as Ui
 //                pins the update check
 //
 // Calls (omarchy-shell shell call <id> <fn> <arg>): startTutorial,
-// closeWelcome, connect, update, showKeybindings, next, skip, pause, dismiss,
+// closeWelcome, connect, update, showKeybindings, next, skip, dismiss,
 // doIt, info.
 Item {
     id: root
@@ -385,7 +385,6 @@ Item {
     function skip() { return change(function () { return Engine.skip(steps, flow, facts, now()); }, "skip"); }
     function back() { return change(function () { return Engine.back(steps, flow, now()); }, "back"); }
     function redoOpen() { return change(function () { return Engine.redoOpen(steps, flow, facts, now()); }, "redo"); }
-    function pause() { return change(function () { return Engine.pause(flow, now()); }, "pause"); }
     function dismiss() { return change(function () { return Engine.dismiss(flow, now()); }, "dismiss"); }
 
     // The current step's link (the manual, on the finish screen): opened as a

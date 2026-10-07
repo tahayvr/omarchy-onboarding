@@ -39,7 +39,8 @@ code, because Omarchy ships only bash and QML. Built against Omarchy 4.0.4
   decided in `lib/Ui.js` (`welcomeOmi`).
 - Onboarding starts at login through the line `omarchy-onboarding install`
   adds to the user's `autostart.lua` (`omarchy-onboarding login` decides
-  whether to start, resume, remind or do nothing). There is no upstream
+  whether to start, resume or do nothing; after the first run it only comes
+  back by hand). There is no upstream
   patch: first login is tested by hand on a new machine.
 
 ## Safety

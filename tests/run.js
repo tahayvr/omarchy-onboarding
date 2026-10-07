@@ -123,7 +123,7 @@ test("corrupt or newer state is refused", () => {
 test("older state gains missing keys and keeps old ones harmlessly", () => {
     const s = E.parseState(JSON.stringify({ version: 1, status: "paused", track: "mac", steps: {} }), 7);
     eq(s.mode, "full");
-    eq(s.pause_notified, false);
+    eq(s.pause_notified, undefined);
 });
 
 // ================================================================ lifecycle
@@ -194,35 +194,24 @@ test("functions never mutate their input", () => {
     const r = started(ONLINE);
     const before = copy(r.s);
     E.complete(MANIFEST, r.s, ONLINE, NOW);
-    E.pause(r.s, NOW);
     E.login(r.s, NOW);
     eq(r.s, before);
 });
 
-test("paused reminds once, then stays quiet", () => {
-    const r = started(ONLINE);
-    r.s = E.pause(r.s, NOW);
-    eq(r.s.status, "paused");
-    eq(r.current(), null);
-    const l = E.login(r.s, NOW);
-    eq(l.action, "remind");
-    eq(E.login(l.state, NOW).action, "nothing");
-});
+// Older builds had "Remind me later", which left the state paused.
+function pausedByOldBuild(s) {
+    return Object.assign(copy(s), { status: "paused", pause_notified: false });
+}
 
-test("paused resumes where it stopped and earns a new reminder", () => {
+test("a paused state from an older build stays quiet at login and resumes by hand", () => {
     const r = started(ONLINE);
     const step = r.current();
-    r.s = E.login(E.pause(r.s, NOW), NOW).state;
+    r.s = pausedByOldBuild(r.s);
+    eq(r.current(), null);
+    eq(E.login(r.s, NOW).action, "nothing");
+    throws(() => r.done(), "while onboarding is paused");
     r.start();
     eq(r.current(), step);
-    eq(E.login(E.pause(r.s, NOW), NOW).action, "remind");
-});
-
-test("steps cannot change while paused", () => {
-    const r = started(ONLINE);
-    r.s = E.pause(r.s, NOW);
-    throws(() => r.done(), "while onboarding is paused");
-    throws(() => E.pause(r.s, NOW), "while onboarding is paused");
 });
 
 test("finishing completes and never autostarts again", () => {
@@ -254,7 +243,7 @@ test("dismiss is reachable from every step", () => {
 test("dismiss works before starting and while paused, not after completing", () => {
     eq(E.dismiss(E.newState(NOW), NOW).status, "dismissed");
     const r = started(ONLINE);
-    eq(E.dismiss(E.pause(r.s, NOW), NOW).status, "dismissed");
+    eq(E.dismiss(pausedByOldBuild(r.s), NOW).status, "dismissed");
     r.walk();
     throws(() => E.dismiss(r.s, NOW), "while onboarding is completed");
 });
@@ -837,11 +826,10 @@ function decide(state) {
 test("the bash login hook decides like Engine.login", () => {
     const fresh = E.newState(NOW);
     const running = started(ONLINE).done().s;                       // in progress at menu
-    const paused = E.pause(running, NOW);
-    const reminded = E.login(paused, NOW).state;
+    const paused = pausedByOldBuild(running);
     const done = (() => { const r = started(ONLINE); r.walk(); return r.s; })();
     const dismissed = E.dismiss(running, NOW);
-    [fresh, running, paused, reminded, done, dismissed].forEach(s => {
+    [fresh, running, paused, done, dismissed].forEach(s => {
         const l = E.login(s, NOW);
         eq(decide(s), l.action + (l.action === "resume" ? " " + l.step : ""), s.status);
     });

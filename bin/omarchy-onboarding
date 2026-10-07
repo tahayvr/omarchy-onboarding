@@ -17,8 +17,8 @@
 #   --facts <json>   pin detected facts, for testing, e.g. '{"online":false}'
 #
 # At login (run by the autostart line that `install` adds):
-#   login            start on the first login, resume an unfinished run, remind
-#                    once when paused, otherwise do nothing
+#   login            start on the first login, resume an unfinished run,
+#                    otherwise do nothing
 #   login --decide   only print what login would do
 #   install          add the login line to ~/.config/hypr/autostart.lua
 #   uninstall        remove it
@@ -26,7 +26,7 @@
 # Development calls, answered by the open overlay:
 #   tutorial, close-welcome, connect, update, keys, come-back (the
 #   checklist, from its "come back" card), previous (the card's Back),
-#   redo (the finish screen's Do them now), next, skip, pause, dismiss,
+#   redo (the finish screen's Do them now), next, skip, dismiss,
 #   do-it, info
 
 set -euo pipefail
@@ -131,18 +131,16 @@ cmd_reset() {
 
 # Mirrors Engine.login() in lib/Engine.js; tests/run.js checks they agree.
 decide_login() {
-  local path=$1 state status notified
+  local path=$1 state status
   [[ -f $path ]] || { echo start; return; }
   if ! state=$(jq -c . "$path" 2>/dev/null) || [[ $(jq -r '.version' <<<"$state") != 1 ]]; then
     echo corrupt
     return
   fi
   status=$(jq -r '.status // "not-started"' <<<"$state")
-  notified=$(jq -r '.pause_notified // false' <<<"$state")
   case $status in
     not-started) echo start ;;
     in-progress) echo "resume $(jq -r '.current // "welcome"' <<<"$state")" ;;
-    paused) [[ $notified == true ]] && echo nothing || echo remind ;;
     *) echo nothing ;;
   esac
 }
@@ -181,15 +179,6 @@ cmd_login() {
       log_line "$path" "login: $decision"
       wait_for_shell || die "the Omarchy shell did not start"
       cmd_run
-      ;;
-    remind)
-      local tmp
-      tmp=$(mktemp "$path.XXXXXX")
-      jq '.pause_notified = true | .updated_at = (now | floor)' "$path" >"$tmp" && mv -- "$tmp" "$path"
-      log_line "$path" "login: remind"
-      wait_for_shell || true
-      omarchy-notification-send -g "󰋗" "Omi here" "Ready to pick up where we left off?" \
-        --exec "$(readlink -f "$0")" run
       ;;
     nothing)
       log_line "$path" "login: nothing to do"
@@ -259,7 +248,7 @@ case $command in
   install) cmd_install ;;
   uninstall) cmd_uninstall ;;
   steps) jq -r '.steps[] | "\(.id | . + (" " * (16 - length))) \(.title)"' "$DIR/steps.json" ;;
-  next | skip | pause | dismiss | info | connect | update) cmd_call "$command" "" ;;
+  next | skip | dismiss | info | connect | update) cmd_call "$command" "" ;;
   do-it) cmd_call doIt "" ;;
   tutorial) cmd_call startTutorial "" ;;
   close-welcome) cmd_call closeWelcome "" ;;

@@ -23,7 +23,7 @@ bin/omarchy-onboarding status              # where the flow is
 bin/omarchy-onboarding steps               # step names
 ```
 
-While developing, always pass `--state /tmp/onboarding-test.json` (or set `OMARCHY_ONBOARDING_STATE`) so the real state in `~/.local/state/omarchy/onboarding.json` is never touched. A test state also turns on `--dry-run`: theme changes, updates, firmware and app installs are logged instead of run, unless you add `--live`. With the overlay open, `tutorial`, `close-welcome`, `connect`, `update`, `keys`, `come-back` (the checklist's "come back" card), `previous` (the card's Back), `redo` (the finish screen's Do them now), `next`, `skip`, `pause`, `dismiss`, `do-it` and `info` drive the flow by hand. `--facts '{"online":false}'` or `--facts '{"update":"available"}'` shows the checklist's other states.
+While developing, always pass `--state /tmp/onboarding-test.json` (or set `OMARCHY_ONBOARDING_STATE`) so the real state in `~/.local/state/omarchy/onboarding.json` is never touched. A test state also turns on `--dry-run`: theme changes, updates, firmware and app installs are logged instead of run, unless you add `--live`. With the overlay open, `tutorial`, `close-welcome`, `connect`, `update`, `keys`, `come-back` (the checklist's "come back" card), `previous` (the card's Back), `redo` (the finish screen's Do them now), `next`, `skip`, `dismiss`, `do-it` and `info` drive the flow by hand. `--facts '{"online":false}'` or `--facts '{"update":"available"}'` shows the checklist's other states.
 
 ## Test
 
@@ -44,5 +44,5 @@ Onboarding is built to ship with Omarchy. Until it does, `omarchy-onboarding ins
 
 Shipping it upstream means two changes to Omarchy:
 
-- `default/hypr/autostart.lua` runs `omarchy-onboarding login` at every login, when it's installed. It decides whether to start, resume, remind once, or do nothing.
+- `default/hypr/autostart.lua` runs `omarchy-onboarding login` at every login, when it's installed. It decides whether to start, resume an unfinished run, or do nothing: after the first run, onboarding only comes back when you run `omarchy onboarding`.
 - `bin/omarchy-provision-first-run` skips the welcome and Wi-Fi/update notices (`welcome.sh` and `wifi.sh`) when onboarding is installed, since its welcome page gets the user online and offers the update. Everything else in first-run stays, including the agent-setup hook, which onboarding doesn't cover.
