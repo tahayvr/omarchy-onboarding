@@ -56,7 +56,7 @@ const MINIMAL = {
 };
 
 const TUTORIAL = ["super-key", "menu", "tiling", "window-controls", "workspaces", "clipboard", "shortcuts",
-                  "theme", "display", "apps"];
+                  "theme", "display"];
 
 test("the real manifest is valid: welcome, the tutorial, finish", () => {
     E.validateManifest(MANIFEST);
@@ -580,7 +580,7 @@ test("idle hints at 40 s and a minute", () => {
 
 test("centered steps take the keyboard; drills and panel steps stay in the corner", () => {
     ["welcome", "super-key", "finish"].forEach(id => ok(U.isCentered(id), id));
-    D.DRILL_STEPS.concat(["clipboard", "theme", "display", "apps"]).forEach(id => ok(!U.isCentered(id), id));
+    D.DRILL_STEPS.concat(["clipboard", "theme", "display"]).forEach(id => ok(!U.isCentered(id), id));
 });
 
 test("Omi on the cards: the step's mode, unless something more pressing", () => {
@@ -589,7 +589,7 @@ test("Omi on the cards: the step's mode, unless something more pressing", () => 
     eq(U.cardOmi({ stepId: "clipboard" }), "typing");
     eq(U.cardOmi({ stepId: "theme" }), "excited");
     eq(U.cardOmi({ stepId: "finish" }), "party");
-    ["menu", "window-controls", "workspaces", "shortcuts", "display", "apps"].forEach(id => eq(U.cardOmi({ stepId: id }), "idle", id));
+    ["menu", "window-controls", "workspaces", "shortcuts", "display"].forEach(id => eq(U.cardOmi({ stepId: id }), "idle", id));
     eq(U.cardOmi({ stepId: "tiling", hint: 1 }), "tiling", "no fuss at 40 s");
     eq(U.cardOmi({ stepId: "tiling", hint: 2 }), "confused", "stuck at a minute");
     eq(U.cardOmi({ stepId: "tiling", hint: 2, doingIt: true }), "working", "doing it for you");
@@ -618,7 +618,7 @@ test("Omi looks at what each card is about", () => {
     eq(U.cardOmiLook("clipboard", "bottom-right", {}), [0, 1], "the line to copy");
     eq(U.cardOmiLook("clipboard", "bottom-right", { copy: true }), [-1, -1], "then the terminal");
     ["menu", "window-controls", "shortcuts"].forEach(id => eq(U.cardOmiLook(id, "bottom-right"), [-1, -1], id));
-    ["tiling", "display", "apps", "finish"].forEach(id => eq(U.cardOmiLook(id, "bottom-right"), [0, 0], id));
+    ["tiling", "display", "finish"].forEach(id => eq(U.cardOmiLook(id, "bottom-right"), [0, 0], id));
     // Stalled: at the key caps, which sit below and to the right of Omi.
     eq(U.cardOmiLook("menu", "bottom-right", {}, 1), [1, 1], "40 s idle: the caps");
     eq(U.cardOmiLook("super-key", "center", {}, 1), [0, 1], "the Super key card's caps are below");
@@ -637,7 +637,7 @@ test("Omi nudges in place of the title when the user stalls", () => {
 test("the card's eyebrow says where a step sits", () => {
     eq(U.positionLabel(MANIFEST, "super-key"), "Learn the keys · 1 of 7");
     eq(U.positionLabel(MANIFEST, "shortcuts"), "Learn the keys · 7 of 7");
-    eq(U.positionLabel(MANIFEST, "display"), "Make it yours · 2 of 3");
+    eq(U.positionLabel(MANIFEST, "display"), "Make it yours · 2 of 2");
     eq(U.positionLabel(MANIFEST, "welcome"), "");
     eq(U.positionLabel(MANIFEST, "finish"), "");
     eq(U.positionLabel(MANIFEST, "nope"), "");
@@ -660,35 +660,6 @@ test("commands in card text become chips", () => {
     eq(U.richCode("`--step <name>` & more", "#000"),
        '<span style="background-color:#000;">&nbsp;--step &lt;name&gt;&nbsp;</span> &amp; more', "escaped first");
     eq(U.richCode("", "#000"), "");
-});
-
-test("the apps step sees an app open, however it was launched", () => {
-    const apps = [
-        { label: "File manager", keys: "Super + Shift + F", command: "uwsm-app -- flea --gui" },
-        { label: "Music", keys: "Super + Shift + M", command: "omarchy-launch-spotify" },
-        { label: "Passwords", keys: "Super + Shift + /", command: "omarchy-launch-1password" },
-        { label: "Email", keys: "Super + Shift + E", command: "omarchy-launch-webapp 'https://app.hey.com'" },
-        { label: "Calendar", keys: "Super + Ctrl + Alt + D", command: "omarchy-shell shell toggle omarchy.clock" },
-        { label: "Signal", keys: "Super + Shift + G", command: "omarchy-launch-signal" },
-        { label: "WhatsApp", keys: "Super + Shift + Alt + G", command: "omarchy-launch-or-focus-webapp 'WhatsApp' 'https://web.whatsapp.com/'" }
-    ];
-    const open = line => U.appOpened(apps, D.parseEvent(line));
-    eq(open("openwindow>>1,1,flea,Home"), "File manager");
-    eq(open("openwindow>>2,1,Spotify,Spotify Premium"), "Music");
-    eq(open("openwindow>>3,1,1Password,1Password"), "Passwords");
-    eq(open("openwindow>>4,1,chrome-app.hey.com__-Default,HEY"), "Email");
-    eq(open("openwindow>>5,1,signal,Signal"), "Signal");
-    eq(open("openwindow>>6,1,chrome-web.whatsapp.com__-Default,WhatsApp"), "WhatsApp");
-    eq(open("openlayer>>omarchy-keyboard-panel"), "Calendar", "every panel is the same layer; it's the one panel app");
-    eq(open("openlayer>>omarchy-clock"), null);
-    eq(U.appOpened(apps.concat([{ label: "Notes", command: "omarchy-shell shell toggle omarchy.notes" }]),
-                   D.parseEvent("openlayer>>omarchy-keyboard-panel")), null, "two panel apps: can't tell");
-    eq(open("openwindow>>7,1,foot,taha: ~"), null, "a terminal is nobody's app");
-    eq(open("openlayer>>omarchy-menu"), null);
-    eq(open("closewindow>>1"), null);
-    eq(U.appOpened([], D.parseEvent("openwindow>>1,1,flea,Home")), null);
-    eq(U.appTokens({ label: "Email", command: "omarchy-launch-webapp 'https://www.example.org/x'" }), ["example.org", "email"]);
-    eq(U.appTokens(apps[4]), ["omarchy-keyboard-panel", "calendar"]);
 });
 
 test("welcome Omi follows the checklist", () => {
@@ -715,7 +686,7 @@ test("the corner card moves out of the way while tiling", () => {
     eq(U.coachPlacement("workspaces", {}, "top"), "top-left", "next to the bar's workspaces");
     eq(U.coachPlacement("workspaces", {}, "bottom"), "bottom-left");
     eq(U.coachPlacement("workspaces", {}), "top-left", "the bar defaults to the top");
-    ["clipboard", "shortcuts", "window-controls", "display", "apps"].forEach(id => eq(U.coachPlacement(id, {}), "bottom-right", id));
+    ["clipboard", "shortcuts", "window-controls", "display"].forEach(id => eq(U.coachPlacement(id, {}), "bottom-right", id));
     eq(U.coachPlacement("tiling", {}), "bottom-right");
     eq(U.coachPlacement("tiling", { terminal: true }), "bottom-center");
     eq(U.coachPlacement("tiling", { terminal: true, browser: true }), "right-center");
@@ -947,22 +918,14 @@ test("socket2 walkthrough predates closing the shortcut list", () => {
 
 // A whole tutorial recorded through the plugin, flow changes included
 // ({kind: "flow"} lines from Overlay.change): Back from the menu step and
-// forward again, the drills, two skips, an app ticking on its own window
-// ({kind: "app"}, with the app list in {kind: "apps"}), and Do them now from
-// the finish screen through the skipped steps to completion. The engine is
+// forward again, the drills, two skips, and Do them now from the finish
+// screen through the skipped steps to completion. The engine is
 // driven by the same actions and must land where the plugin did.
-test("live walkthrough: Back, the apps tick and Do them now, through to completion", () => {
+test("live walkthrough: Back and Do them now, through to completion", () => {
     const lines = recording("walkthrough-flow.jsonl");
     const r = run(ONLINE).start(); // the welcome page, as the plugin opens
-    let apps = [], lastEvent = null;
-    const ticked = [];
     lines.forEach(l => {
-        if (l.kind === "apps") apps = l.apps;
-        else if (l.kind === "hypr") lastEvent = D.parseEvent(l.line);
-        else if (l.kind === "app") {
-            eq(U.appOpened(apps, lastEvent), l.label, "the recorded window is the app that ticked");
-            ticked.push(l.label);
-        } else if (l.kind === "flow") {
+        if (l.kind === "flow") {
             switch (l.action) {
             case "start tutorial": case "done": r.done(); break;
             case "skip": r.skip(); break;
@@ -979,7 +942,6 @@ test("live walkthrough: Back, the apps tick and Do them now, through to completi
     ok(flow.includes("redo>theme"), "Do them now re-entered the first skipped step");
     eq(flow[flow.length - 1], "done>-", "finished");
     eq(r.s.status, "completed");
-    eq(ticked.length, 1, "one app ticked");
     const { w } = replay("walkthrough-flow.jsonl");
     ok(w.done(), "every drill completed on the way");
 });

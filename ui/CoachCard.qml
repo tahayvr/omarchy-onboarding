@@ -147,7 +147,6 @@ Rectangle {
             width: parent.width
             sourceComponent: !card.step ? null
                 : card.step.id === "display" ? displayPanel
-                : card.step.id === "apps" ? appsPanel
                 : null
         }
 
@@ -163,5 +162,4 @@ Rectangle {
     }
 
     Component { id: displayPanel; DisplayPanel { host: card.host } }
-    Component { id: appsPanel; AppsPanel { host: card.host } }
 }

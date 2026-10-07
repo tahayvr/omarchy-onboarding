@@ -234,20 +234,8 @@
       "cheer": "Easy on the eyes."
     },
     {
-      "id": "apps",
-      "number": 10,
-      "phase": 2,
-      "title": "Your everyday apps",
-      "screen": "Each of your everyday apps has its own shortcut. Pick one to try.",
-      "done_when": "The user presses Continue.",
-      "requires": [
-        "omarchy-menu-keybindings"
-      ],
-      "cheer": "You're all set up."
-    },
-    {
       "id": "finish",
-      "number": 11,
+      "number": 10,
       "phase": 3,
       "title": "You're ready",
       "screen": "That's the tour! These two are all you need to remember.",

@@ -128,7 +128,11 @@ code, because Omarchy ships only bash and QML. Built against Omarchy 4.0.4
   (Super + Ctrl + W, Super + K) open the panel or list through Omarchy's own
   binds; the card sees the layer open and steps aside.
 - **Card placement** is `Ui.coachPlacement` and depends on the step, its ticked
-  sub-tasks and the bar position from `onboarding-facts`.
+  sub-tasks and the bar position from `onboarding-facts`. The corner window
+  spans the screen (inside the bar and margins) with an input mask on the
+  card, so the card can slide between placements; a layer surface that
+  changes its anchors would jump instead. The slide is skipped for the
+  first 150 ms after the window appears, so the card doesn't fly in.
 - A bare Super press reaches the centered card as `Qt.Key_Super_L`, because
   nothing in Omarchy binds Super alone.
 
@@ -165,10 +169,6 @@ code, because Omarchy ships only bash and QML. Built against Omarchy 4.0.4
   does it, detached (the plugin is unloading), and leaves a terminal open
   when anything but a shell runs under it: the user may have started work
   there. Never close a window onboarding didn't open or ask for.
-- **The apps step ticks on `openwindow` / `openlayer`**, matched to each
-  app's launch command by `Ui.appOpened` (a web app's host, a panel's name,
-  or the program name). An app already open and only focused by its
-  shortcut doesn't tick: there is no event with a class for that.
 - **Close test windows by address**, never by PID. Chromium windows share one
   process with the user's own browser.
 - **Window classes.** The terminal is `foot` (the full regex is in
@@ -203,11 +203,6 @@ code, because Omarchy ships only bash and QML. Built against Omarchy 4.0.4
   - `omarchy update` needs a TTY and sudo, and takes a snapper snapshot first.
     Launch it with
     `omarchy-launch-floating-terminal-with-presentation omarchy-update`.
-- **App bindings:** `omarchy-menu-keybindings` can't print records with their
-  commands. `bin/onboarding-apps` sources its functions and calls
-  `output_binding_records`, which is fragile. On failure the app list is empty.
-  Some launchers (Spotify, 1Password, Signal) install the app on first use, so
-  ask before trying them.
 - **Bindings differ per machine.** Read them live rather than hardcoding apps.
   - Super + / scales up and Super + Alt + / scales down.
   - Super + L toggles dwindle and scrolling.
@@ -225,12 +220,11 @@ code, because Omarchy ships only bash and QML. Built against Omarchy 4.0.4
 - `node tests/run.js` covers the engine, the drills and the UI logic. It also
   replays the recorded walkthroughs in `tests/fixtures/*.jsonl`: raw event
   lines, probe results and window positions. With `--record`, the plugin also
-  writes `{kind: "flow"}` lines for each flow change, `{kind: "app"}` for an
-  app tick and `{kind: "apps"}` for the app list, so a recording can be
+  writes `{kind: "flow"}` lines for each flow change, so a recording can be
   replayed through the engine as well as the drills.
 - `scripts/drive-drills.sh` walks the whole tutorial live through the real
-  plugin, on empty workspaces 7 and 8: the drills, Back, the apps tick and
-  Do them now, to completion. Pass it a path to record a new fixture.
+  plugin, on empty workspaces 7 and 8: the drills, Back and Do them now,
+  to completion. Pass it a path to record a new fixture.
 - **Don't pipe a script that runs `wl-copy`.** It forks a server that keeps
   the caller's stdout open, so `| tail` never ends. Send its output to
   `/dev/null`, or write to a file.

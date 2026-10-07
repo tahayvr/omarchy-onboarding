@@ -16,6 +16,8 @@
      omi.hold("success");                 // 1.2: how long to show a reaction
                                           // after its morph lands
      omi.kind("success");                 // "reaction" (or "state")
+     omi.label("thinking");               // "Omi is thinking": what a screen
+                                          // reader says for the mode
 
    Options (also settable later as properties):
      color        fill color; null follows the canvas's CSS `color`
@@ -27,6 +29,10 @@
                   be a little smaller than the canvas. Drawing only.
      mode         the mode to start in (default "mark", the plain logo)
      view         [x, y, w, h] to show, instead of the pack's view
+     label        true (default) keeps the canvas's aria-label on the mode's
+                  label, and gives it role="img" if it has no role, so a
+                  screen reader says what Omi is doing; false leaves the
+                  canvas's name to the page. Set when the player is made.
 
    Everything Omi shows is a list of axis-aligned rects with an opacity, so
    each frame is: work out the rects, fill them. In a browser, draw() fills
@@ -204,12 +210,18 @@ var Omi = (function () {
         aligned = [r.x, r.y, r.x + r.w, r.y + r.h].every(on),
         touches = this.logo.some(
           (L) =>
-            r.x < L.x + L.w && r.x + r.w > L.x && r.y < L.y + L.h && r.y + r.h > L.y,
+            r.x < L.x + L.w &&
+            r.x + r.w > L.x &&
+            r.y < L.y + L.h &&
+            r.y + r.h > L.y,
         );
       if (!aligned && !touches) return [r];
       const cuts = (a, b) => {
         const o = [a];
-        for (let v = Math.floor(a / 20) * 20 + 20; v < b - 1e-6; v += 20) o.push(v);
+        // every grid line more than 1e-6 inside: an edge a hair off a
+        // line doesn't leave a sliver of a cell
+        for (let v = Math.floor(a / 20) * 20 + 20; v < b - 1e-6; v += 20)
+          if (v > a + 1e-6) o.push(v);
         o.push(b);
         return o;
       };
@@ -218,12 +230,14 @@ var Omi = (function () {
         out = [];
       for (let i = 0; i < xs.length - 1; i++)
         for (let j = 0; j < ys.length - 1; j++)
-          out.push(Object.assign({}, r, {
-            x: xs[i],
-            y: ys[j],
-            w: xs[i + 1] - xs[i],
-            h: ys[j + 1] - ys[j],
-          }));
+          out.push(
+            Object.assign({}, r, {
+              x: xs[i],
+              y: ys[j],
+              w: xs[i + 1] - xs[i],
+              h: ys[j + 1] - ys[j],
+            }),
+          );
       return out;
     }
     // A number that is equal for two rects in the same place, of the same
@@ -244,7 +258,7 @@ var Omi = (function () {
         const pen = this.rolePenalty(r, c);
         if (pen >= BAN) continue;
         const d = dist2(r, c);
-        if (d + pen < score) (score = d + pen), (k = d), (best = c);
+        if (d + pen < score) ((score = d + pen), (k = d), (best = c));
       }
       return { c: best, k };
     }
@@ -268,7 +282,7 @@ var Omi = (function () {
           for (const s of S) {
             const k = this.key(s, dx, dy),
               c = left.get(k);
-            if (c) left.set(k, c - 1), n++;
+            if (c) (left.set(k, c - 1), n++);
           }
           return n;
         };
@@ -276,24 +290,30 @@ var Omi = (function () {
         const votes = new Map();
         for (const s of S)
           for (const d of D) {
-            if (s.role !== d.role || Math.abs(s.w - d.w) > 0.5 || Math.abs(s.h - d.h) > 0.5)
+            if (
+              s.role !== d.role ||
+              Math.abs(s.w - d.w) > 0.5 ||
+              Math.abs(s.h - d.h) > 0.5
+            )
               continue;
             const ex = d.x - s.x,
               ey = d.y - s.y,
               k = (Math.round(ex) + 4096) * 8192 + Math.round(ey) + 4096,
               v = votes.get(k);
-            if (v) v.n++, (v.x += ex), (v.y += ey);
+            if (v) (v.n++, (v.x += ex), (v.y += ey));
             else votes.set(k, { n: 1, x: ex, y: ey });
           }
         const stillV = votes.get(4096 * 8192 + 4096),
-          stillFit = stillV ? fits(stillV.x / stillV.n, stillV.y / stillV.n) : 0,
+          stillFit = stillV
+            ? fits(stillV.x / stillV.n, stillV.y / stillV.n)
+            : 0,
           enough = Math.max(12, 0.3 * Math.min(S.length, D.length));
         let g = stillV,
           gFit = stillFit;
         for (const v of votes.values()) {
           if (v === stillV || v.n < enough) continue;
           const f = fits(v.x / v.n, v.y / v.n);
-          if (f >= enough && f > gFit * 1.2) (g = v), (gFit = f);
+          if (f >= enough && f > gFit * 1.2) ((g = v), (gFit = f));
         }
         if (!gFit) break;
         const shared = g !== stillV,
@@ -308,16 +328,19 @@ var Omi = (function () {
         S = S.filter((s) => {
           const l = left.get(this.key(s, dx, dy));
           if (!l || !l.length) return true;
-          steps.push({ a: s, b: l.pop(), rigid: shared });
+          steps.push({ a: s, b: l.shift(), rigid: shared });
           return false;
         });
-        D = concat([...left.values()]);
+        const kept = new Set(concat([...left.values()]));
+        D = D.filter((d) => kept.has(d));
         if (!shared) break;
       }
       // 2. The rest travel to their cheapest partner, by distance, size and
       //    role. Frame and face never pair.
       const cost = (a, b) =>
-        dist2(a, b) + 0.5 * ((a.w - b.w) ** 2 + (a.h - b.h) ** 2) + this.rolePenalty(a, b);
+        dist2(a, b) +
+        0.5 * ((a.w - b.w) ** 2 + (a.h - b.h) ** 2) +
+        this.rolePenalty(a, b);
       const rowsSrc = S.length <= D.length,
         R = rowsSrc ? S : D,
         C = rowsSrc ? D : S,
@@ -343,7 +366,16 @@ var Omi = (function () {
         steps.push(
           n.k < this.reach2
             ? { a: Object.assign({}, n.c, { role: d.role }), b: d }
-            : { a: Object.assign({}, center(d), { w: 0, h: 0, o: 0, role: d.role }), b: d, pop: true },
+            : {
+                a: Object.assign({}, center(d), {
+                  w: 0,
+                  h: 0,
+                  o: 0,
+                  role: d.role,
+                }),
+                b: d,
+                pop: true,
+              },
         );
       }
       for (const s of S) {
@@ -351,7 +383,10 @@ var Omi = (function () {
         const n = this.nearest(s, D);
         steps.push({
           a: s,
-          b: n.k < this.reach2 ? Object.assign({}, n.c, { o: 0 }) : Object.assign({}, center(s), { w: 0, h: 0, o: 0 }),
+          b:
+            n.k < this.reach2
+              ? Object.assign({}, n.c, { o: 0 })
+              : Object.assign({}, center(s), { w: 0, h: 0, o: 0 }),
         });
       }
       return steps;
@@ -361,8 +396,13 @@ var Omi = (function () {
   /* ---------- the player ---------- */
   // without a browser frame loop (tests, other hosts), call omi.frame(ms)
   const raf =
-      typeof requestAnimationFrame !== "undefined" ? requestAnimationFrame : null,
-    noRaf = typeof cancelAnimationFrame !== "undefined" ? cancelAnimationFrame : () => {};
+      typeof requestAnimationFrame !== "undefined"
+        ? requestAnimationFrame
+        : null,
+    noRaf =
+      typeof cancelAnimationFrame !== "undefined"
+        ? cancelAnimationFrame
+        : () => {};
   const lerp = (a, b, t) => a + (b - a) * t,
     easeBack = (p) => 1 + 2.70158 * (p - 1) ** 3 + 1.70158 * (p - 1) ** 2;
 
@@ -391,7 +431,9 @@ var Omi = (function () {
       this._animate = opts.animate ?? true;
       this._bodyMotion = opts.bodyMotion ?? true;
       this.even = opts.even ?? true;
+      this._label = opts.label ?? true;
       this.mode = this.modes[opts.mode] ? opts.mode : "mark";
+      this.name();
       this.t = 0; // seconds into the current mode's loops
       this.morph = null;
       this._sync = null; // set by a shared change: { since, after }
@@ -458,7 +500,8 @@ var Omi = (function () {
       const late =
           since == null
             ? 0
-            : (Math.max(0, Date.now() - since) / 1000) * Math.max(0.05, this.speed),
+            : (Math.max(0, Date.now() - since) / 1000) *
+              Math.max(0.05, this.speed),
         total = this.pack.morph.duration + this.pack.morph.stagger;
       // a shared change runs on the wall clock, so every app shows the same
       // frame at the same moment however its own frames are timed; a local
@@ -470,10 +513,13 @@ var Omi = (function () {
           this.t = instant ? late : Math.max(0, late - total);
         return;
       }
-      const from = this.rawRects(),
+      // what is on screen: a morph in progress carries rects that have
+      // faded out, and those are no more a source than a hidden piece is
+      const from = this.rawRects().filter((r) => r.o > 0.001),
         to = this.restRects(mode);
       this.mode = id;
       this.t = 0;
+      this.name();
       if (instant || !from.length) {
         this.morph = null;
         if (this._animate) this.t = late;
@@ -481,10 +527,25 @@ var Omi = (function () {
         this.emit("settled");
         return;
       }
+      /* Every x, y, w and h goes to the nearest 1/1024 first. From there on
+         the pairing only adds, subtracts and multiplies such numbers, which
+         is exact, so a player in any language makes the same pairs: none of
+         it can turn on the last digits of an ease. */
       const P = this.planner,
-        cut = (list) => concat(list.map((r) => P.cells(r))),
+        fine = (v) => Math.round(v * 1024) / 1024,
+        snap = (r) =>
+          Object.assign({}, r, {
+            x: fine(r.x),
+            y: fine(r.y),
+            w: fine(r.w),
+            h: fine(r.h),
+          }),
+        cut = (list) => concat(list.map((r) => P.cells(snap(r)))),
         steps = P.plan(cut(from), cut(to)),
-        { stagger, center: [cx, cy] } = this.pack.morph;
+        {
+          stagger,
+          center: [cx, cy],
+        } = this.pack.morph;
       for (const s of steps) {
         const c = center(s.b.w || s.b.h ? s.b : s.a);
         s.delay = s.rigid
@@ -512,7 +573,8 @@ var Omi = (function () {
       const A = this.pack.animations;
       let t = 0;
       const use = (name, delay, duration) => {
-        if (name && A[name]) t = Math.max(t, (duration ?? A[name].duration) + (delay || 0));
+        if (name && A[name])
+          t = Math.max(t, (duration ?? A[name].duration) + (delay || 0));
       };
       use(mode.anim);
       if (mode.clip) use(mode.clip.anim);
@@ -573,8 +635,25 @@ var Omi = (function () {
         dy = room(gy * G.reach[1], by, by + bh, "y", "h");
       if (!dx && !dy) return list;
       return list.map((r) =>
-        G.roles.indexOf(r.role) >= 0 ? Object.assign({}, r, { x: r.x + dx, y: r.y + dy }) : r,
+        G.roles.indexOf(r.role) >= 0
+          ? Object.assign({}, r, { x: r.x + dx, y: r.y + dy })
+          : r,
       );
+    }
+
+    /* What a screen reader says for a mode, from the pack ("Omi is
+       thinking"): its label, or its name in a pack without labels. Give it
+       to your toolkit as the picture's accessible name. */
+    label(id) {
+      const mode = this.modes[id];
+      return mode ? mode.label || mode.name || id : "";
+    }
+    // On a page, the canvas says what Omi is doing (unless `label` is off).
+    name() {
+      const cv = this.canvas;
+      if (!this._label || !cv || !cv.setAttribute) return;
+      if (!cv.hasAttribute("role")) cv.setAttribute("role", "img");
+      cv.setAttribute("aria-label", this.label(this.mode));
     }
 
     /* A mode's kind, "state" or "reaction", from the pack. */
@@ -604,7 +683,10 @@ var Omi = (function () {
         out = [];
       // pieces seen through the window first, then the rest
       const order = win
-        ? [...mode.pieces.filter((p) => p.clip), ...mode.pieces.filter((p) => !p.clip)]
+        ? [
+            ...mode.pieces.filter((p) => p.clip),
+            ...mode.pieces.filter((p) => !p.clip),
+          ]
         : mode.pieces;
       for (const p of order) {
         const m = look(A[p.anim], t, p),
@@ -619,7 +701,7 @@ var Omi = (function () {
           role: p.role,
         };
         if (p.clip && win) {
-          if (layer) (r.x += layer.tx), (r.y += layer.ty);
+          if (layer) ((r.x += layer.tx), (r.y += layer.ty));
           r = clipTo(r, win);
           if (!r) continue;
         }
@@ -639,8 +721,14 @@ var Omi = (function () {
     }
     // What is on screen right now, before the gaze: what a morph starts from.
     rawRects() {
-      if (this.morph) return this.morph.steps.map((s) => Object.assign({}, s.now, { role: s.b.role || s.a.role }));
-      return this.modeRects(this.modes[this.mode], this._animate ? this.t : 0).filter((r) => r.o > 0.001);
+      if (this.morph)
+        return this.morph.steps.map((s) =>
+          Object.assign({}, s.now, { role: s.b.role || s.a.role }),
+        );
+      return this.modeRects(
+        this.modes[this.mode],
+        this._animate ? this.t : 0,
+      ).filter((r) => r.o > 0.001);
     }
     // What is on screen right now.
     rects() {
@@ -657,19 +745,29 @@ var Omi = (function () {
     }
     frame(ts) {
       // never backwards (a host's clock may restart), never a big jump
-      const dt = this._last ? Math.min(0.1, Math.max(0, (ts - this._last) / 1000)) : 0;
+      const dt = this._last
+        ? Math.min(0.1, Math.max(0, (ts - this._last) / 1000))
+        : 0;
       this._last = ts;
       const sp = Math.max(0.05, this.speed);
       if (this._sync) {
         const el = ((Date.now() - this._sync.since) / 1000) * sp;
         if (this.morph) this.stepMorph(Math.max(0, el - this.morph.t));
-        if (!this.morph && this._animate) this.t = Math.max(0, el - this._sync.after);
+        if (!this.morph && this._animate)
+          this.t = Math.max(0, el - this._sync.after);
       } else if (this.morph) this.stepMorph(dt * sp);
       else if (this._animate) this.t += dt * sp;
       // the gaze eases on its own clock, whatever the mode is doing
-      if (this._gaze.p < 1) this._gaze.p = Math.min(1, this._gaze.p + (dt * sp) / this.gazeSpec.duration);
+      if (this._gaze.p < 1)
+        this._gaze.p = Math.min(
+          1,
+          this._gaze.p + (dt * sp) / this.gazeSpec.duration,
+        );
       this.draw();
-      this._raf = raf && (this.morph || this._animate || this.gazing) ? raf(this._tick) : 0;
+      this._raf =
+        raf && (this.morph || this._animate || this.gazing)
+          ? raf(this._tick)
+          : 0;
     }
     stepMorph(dt) {
       const M = this.morph,
@@ -711,11 +809,12 @@ var Omi = (function () {
     draw() {
       if (!this.ctx) return; // no canvas: the host fills rects() itself
       const cv = this.canvas,
-        dpr = (typeof devicePixelRatio !== "undefined" && devicePixelRatio) || 1,
+        dpr =
+          (typeof devicePixelRatio !== "undefined" && devicePixelRatio) || 1,
         W = Math.round((cv.clientWidth || cv.width) * dpr),
         H = Math.round((cv.clientHeight || cv.height) * dpr);
       if (!W || !H) return;
-      if (cv.width !== W || cv.height !== H) (cv.width = W), (cv.height = H);
+      if (cv.width !== W || cv.height !== H) ((cv.width = W), (cv.height = H));
       const ctx = this.ctx,
         [vx, vy, vw, vh] = this.view,
         g = this.pack.grid,
@@ -728,7 +827,9 @@ var Omi = (function () {
       ctx.clearRect(0, 0, W, H);
       ctx.fillStyle =
         this.color ||
-        (typeof getComputedStyle !== "undefined" ? getComputedStyle(cv).color : "#000");
+        (typeof getComputedStyle !== "undefined"
+          ? getComputedStyle(cv).color
+          : "#000");
       for (const r of this.rects()) {
         if (r.o <= 0.001 || r.w <= 0 || r.h <= 0) continue;
         // snap edges to device pixels: crisp, and neighbours meet exactly

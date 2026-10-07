@@ -99,8 +99,6 @@ Item {
     property var lastScales: null
     // The night light sub-task's progress (Ui.nightLightStep).
     property var nightLight: null
-    property var apps: []
-    property var appsTried: ({})
     property string preparedStep: ""
 
     // Idle tracking for the 40 s and one-minute hints.
@@ -195,8 +193,7 @@ Item {
 
     // The corner card's main button for the tutorial's action steps.
     readonly property string primaryText: !step ? "" : step.id === "theme" ? "Keep my theme"
-                                        : step.id === "display" ? "Looks right"
-                                        : step.id === "apps" ? "Continue" : ""
+                                        : step.id === "display" ? "Looks right" : ""
     readonly property bool primaryEnabled: true
     // How far through the tutorial, 0 to 1: the current tutorial step counts,
     // and the finish screen is full. -1 (no line) on the welcome page.
@@ -439,8 +436,6 @@ Item {
             updating: updating,
             themeBaseline: themeBaseline,
             monitors: monitors,
-            apps: apps.map(function (a) { return a.label; }),
-            appsTried: Object.keys(appsTried),
             openSteps: openSteps.map(function (s) { return s.id; }),
             facts: facts,
             error: error
@@ -636,40 +631,7 @@ Item {
 
     // ------------------------------------------------------------ tutorial action steps
 
-    // Apps. The card ticks an app when its window or panel opens, however it
-    // was launched; the shortcut beside it is the way.
-    function appTried(label) {
-        if (appsTried[label]) return;
-        var tried = Object.assign({}, appsTried);
-        tried[label] = true;
-        appsTried = tried;
-        resetIdle();
-        omiReact("success");
-        log("app opened: " + label);
-        record({ kind: "app", label: label });
-    }
-
-    // Apps, from a script (`tryApp <label>`). An app that installs on first use asks first.
-    function tryApp(app) {
-        if (typeof app === "string") app = apps.filter(function (a) { return a.label === app; })[0];
-        if (!app) return "no such app";
-        var launch = function () {
-            if (app.installs && dryRun) log("dry-run: would install and open " + app.label);
-            else Quickshell.execDetached(["hyprctl", "dispatch", "hl.dsp.exec_cmd(" + JSON.stringify(app.command) + ")"]);
-            var tried = Object.assign({}, appsTried);
-            tried[app.label] = true;
-            appsTried = tried;
-            resetIdle();
-            log("try app " + app.label);
-        };
-        if (app.installs)
-            askConfirm(app.label + " isn't installed yet. Trying it opens a terminal that installs it first.", "Install and open", launch);
-        else
-            launch();
-        return "ok";
-    }
-
-    // Looks right, Continue, Keep my theme: done, so Omi confirms it like a
+    // Looks right, Keep my theme: done, so Omi confirms it like a
     // step that finished by itself.
     function primaryAction() {
         if (!step) return;
@@ -728,8 +690,6 @@ Item {
         } else if (step.id === "display") {
             lastScales = null;
             nightLight = null;
-        } else if (step.id === "apps") {
-            appsProbe.running = true;
         } else if (step.id === "clipboard") {
             // Spec: the app opens a terminal with a sample line to copy, on
             // every visit (re-runs and replays too), unless one is still open.
@@ -1050,17 +1010,6 @@ Item {
         }
     }
 
-    Process {
-        id: appsProbe
-        command: [root.pluginDir + "/bin/onboarding-apps"]
-        stdout: StdioCollector {
-            onStreamFinished: {
-                try { root.apps = JSON.parse(text); } catch (e) { root.apps = []; }
-                root.record({ kind: "apps", apps: root.apps });
-            }
-        }
-    }
-
     // Display: the scale and night light, as Hyprland reports them.
     Timer {
         interval: 1000
@@ -1167,20 +1116,12 @@ Item {
     Connections {
         target: Hyprland
         enabled: root.opened && (root.drill !== null || root.recordPath !== ""
-                                 || (root.step !== null && (root.step.id === "theme" || root.step.id === "welcome"
-                                                            || root.step.id === "apps")))
+                                 || (root.step !== null && (root.step.id === "theme" || root.step.id === "welcome")))
         function onRawEvent(event) {
             var name = String(event.name), data = String(event.data);
             // The theme step ticks when Omarchy's picker opens.
             if (root.step && root.step.id === "theme" && !root.drill) {
                 if (name === "openlayer" && data === "omarchy-image-selector") root.tick("open");
-                return;
-            }
-            // The apps step ticks an app whose window or panel opens.
-            if (root.step && root.step.id === "apps" && !root.drill) {
-                root.record({ kind: "hypr", line: name + ">>" + data });
-                var label = Ui.appOpened(root.apps, Drills.parseEvent(name + ">>" + data));
-                if (label) root.appTried(label);
                 return;
             }
             if (root.step && root.step.id === "welcome") {
@@ -1256,22 +1197,16 @@ Item {
 
     // Corner: the drills, and the checklist while it has stepped aside. Leaves
     // the keyboard to Hyprland, except the clipboard step, whose field the
-    // user clicks to paste into.
+    // user clicks to paste into. The window spans the screen (inside the bar
+    // and the margins) and takes input only on the card, so the card can
+    // slide from one placement to the next instead of jumping.
     PanelWindow {
         id: cornerWindow
         visible: root.opened && root.flow !== null && !root.centered && (root.step !== null || root.away !== "")
         color: "transparent"
-        // Unanchored on an axis means centred on it.
-        readonly property string place: root.cornerPlace
-        anchors {
-            top: cornerWindow.place.indexOf("top") === 0
-            bottom: cornerWindow.place.indexOf("bottom") === 0
-            left: /-left$/.test(cornerWindow.place)
-            right: /-right$/.test(cornerWindow.place) || cornerWindow.place === "right-center"
-        }
+        anchors { top: true; bottom: true; left: true; right: true }
         margins { top: Style.gapsOut * 4; bottom: Style.gapsOut * 4; left: Style.gapsOut * 4; right: Style.gapsOut * 4 }
-        implicitWidth: coach.item ? coach.item.implicitWidth : 1
-        implicitHeight: coach.item ? coach.item.implicitHeight : 1
+        mask: Region { item: coach }
         // Respect the bar's reserved space, so a top card sits under it.
         exclusionMode: ExclusionMode.Normal
         WlrLayershell.layer: WlrLayer.Overlay
@@ -1282,9 +1217,43 @@ Item {
         WlrLayershell.keyboardFocus: root.away === "" && root.step && root.step.id === "clipboard" && !root.ticked.copy
                                      ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
 
+        // Where the card is drawn: root.cornerPlace, but set here only after
+        // `moving` is, so the move animates. A card that has just appeared
+        // takes its place at once, rather than flying in from a corner.
+        property string place: ""
+        Component.onCompleted: place = root.cornerPlace
+        property bool settled: false
+        property bool moving: false
+        Connections {
+            target: root
+            function onCornerPlaceChanged() {
+                if (cornerWindow.settled) {
+                    cornerWindow.moving = true;
+                    moveDone.restart();
+                }
+                cornerWindow.place = root.cornerPlace;
+            }
+        }
+        onVisibleChanged: {
+            settled = false;
+            moving = false;
+            if (visible) settleTimer.restart();
+        }
+        Timer { id: settleTimer; interval: 150; onTriggered: cornerWindow.settled = true }
+        Timer { id: moveDone; interval: 520; onTriggered: cornerWindow.moving = false }
+
         Loader {
             id: coach
-            anchors.fill: parent
+            width: item ? item.implicitWidth : 0
+            height: item ? item.implicitHeight : 0
+            x: /-left$/.test(cornerWindow.place) ? 0
+               : /-right$/.test(cornerWindow.place) || cornerWindow.place === "right-center" ? cornerWindow.width - width
+               : (cornerWindow.width - width) / 2
+            y: cornerWindow.place.indexOf("top") === 0 ? 0
+               : cornerWindow.place.indexOf("bottom") === 0 ? cornerWindow.height - height
+               : (cornerWindow.height - height) / 2
+            Behavior on x { enabled: cornerWindow.moving; NumberAnimation { duration: 480; easing.type: Easing.InOutCubic } }
+            Behavior on y { enabled: cornerWindow.moving; NumberAnimation { duration: 480; easing.type: Easing.InOutCubic } }
             sourceComponent: root.away !== "" ? awayCard : coachCard
         }
     }

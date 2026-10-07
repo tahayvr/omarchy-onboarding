@@ -2,9 +2,8 @@
 # Walks the whole tutorial through the real plugin on the live desktop, by
 # running what each binding runs: the "Learn the keys" drills (menu to
 # shortcuts, the clipboard step included), each of which must complete its
-# step by itself, then Back and forward again, the apps step ticking on an
-# app's window, and Do them now from the finish screen through the skipped
-# steps. The run passes when the flow completes. The clipboard is restored
+# step by itself, then Back and forward again, and Do them now from the
+# finish screen through the skipped steps. The run passes when the flow completes. The clipboard is restored
 # afterwards.
 #
 #   scripts/drive-drills.sh [recording.jsonl]
@@ -200,24 +199,6 @@ say "Steps 10 and 11: skipped, to be done again from the finish screen"
 "${CLI[@]}" skip >/dev/null
 wait_step display
 "${CLI[@]}" skip >/dev/null
-wait_step apps
-
-say "Step 12: an everyday app opens by its own shortcut"
-# The first app that is a window (not a shell panel) and needs no install.
-app=$("$ROOT/bin/onboarding-apps" | jq -c '[.[] | select((.installs | not) and (.command | test("omarchy-shell") | not))][0]')
-if [[ $app == null || -z $app ]]; then
-  say "no launchable app on this machine; Continue instead"
-else
-  app_label=$(jq -r .label <<<"$app")
-  setsid -f bash -c "$(jq -r .command <<<"$app")" >/dev/null 2>&1 </dev/null
-  for _ in $(seq 1 50); do
-    info '.appsTried | index("'"$app_label"'")' | grep -qv null && break
-    sleep 0.2
-  done
-  info '.appsTried | index("'"$app_label"'")' | grep -qv null || { echo "fail: $app_label opened but didn't tick" >&2; exit 1; }
-  say "$app_label ticked"
-fi
-"${CLI[@]}" next >/dev/null # Continue
 wait_step finish
 [[ $(info '.openSteps | join(",")') == "theme,display" ]] || { echo "fail: Still to do should list theme and display, got $(info '.openSteps')" >&2; exit 1; }
 

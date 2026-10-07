@@ -2,7 +2,7 @@
 
 First-boot onboarding for [Omarchy](https://omarchy.org), built as an Omarchy shell plugin (`tahayvr.onboarding`). A welcome checklist gets you online and up to date and shows where every shortcut lives; an optional tutorial then teaches the keys by having you press them, while an overlay watches Hyprland and ticks each step off as you do it.
 
-Work in progress. The welcome checklist (Wi-Fi, Omarchy update, keybindings) and the tutorial (Super key, menu, tiling, window controls, workspaces, clipboard, Super + K, theme, display, apps) work end to end. `omarchy-onboarding install` adds the login line that starts it on first login; that path is tested by hand on a new machine. See `AGENTS.md` for the contracts with Omarchy and Hyprland and the traps found along the way.
+Work in progress. The welcome checklist (Wi-Fi, Omarchy update, keybindings) and the tutorial (Super key, menu, tiling, window controls, workspaces, clipboard, Super + K, theme, display) work end to end. `omarchy-onboarding install` adds the login line that starts it on first login; that path is tested by hand on a new machine. See `AGENTS.md` for the contracts with Omarchy and Hyprland and the traps found along the way.
 
 ## Install for development
 
@@ -32,7 +32,7 @@ node tests/run.js              # engine, drills and recorded walkthroughs; no di
 scripts/drive-drills.sh        # live: the whole tutorial through the real plugin
 ```
 
-`drive-drills.sh` uses empty workspaces 7 and 8. It only acts on windows it opened, and it refuses to run while the screen is locked. It walks every drill, Back, the apps step ticking on a real app window, and Do them now from the finish screen, through to completion, in about 35 seconds. Pass a path to save the walkthrough as a new fixture; `tests/fixtures/walkthrough-flow.jsonl` is one, and the tests replay its flow changes through the engine.
+`drive-drills.sh` uses empty workspaces 7 and 8. It only acts on windows it opened, and it refuses to run while the screen is locked. It walks every drill, Back, and Do them now from the finish screen, through to completion, in about 35 seconds. Pass a path to save the walkthrough as a new fixture; `tests/fixtures/walkthrough-flow.jsonl` is one, and the tests replay its flow changes through the engine.
 
 ## Omi
 
