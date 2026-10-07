@@ -2,6 +2,25 @@
 
 First-boot onboarding for [Omarchy](https://omarchy.org), built as an Omarchy shell plugin (`tahayvr.onboarding`). A welcome checklist gets you online and up to date and shows where every shortcut lives; an optional tutorial then teaches the keys by having you press them, while an overlay watches Hyprland and ticks each step off as you do it.
 
+<p align="center">
+  <img src="docs/screenshots/welcome.png" width="560" alt="The welcome screen: Wi-Fi, the Omarchy update and keyboard shortcuts as a checklist, with Omi offering the tour">
+</p>
+
+The tutorial's lessons sit in a corner card, so the shortcuts reach Hyprland while you practise them. Each sub-task ticks off as you press its keys.
+
+<p align="center">
+  <img src="docs/screenshots/super-key.png" width="49%" alt="Meet the Super key">
+  <img src="docs/screenshots/menu.png" width="49%" alt="Open the Omarchy menu">
+</p>
+<p align="center">
+  <img src="docs/screenshots/tiling.png" width="49%" alt="Launch and tile two apps">
+  <img src="docs/screenshots/theme.png" width="49%" alt="Pick a theme">
+</p>
+<p align="center">
+  <img src="docs/screenshots/display.png" width="49%" alt="Display and comfort">
+  <img src="docs/screenshots/finish.png" width="49%" alt="You're ready: the keys worth remembering">
+</p>
+
 Work in progress. The welcome checklist (Wi-Fi, Omarchy update, keybindings) and the tutorial (Super key, menu, tiling, window controls, workspaces, clipboard, Super + K, theme, display) work end to end. `omarchy-onboarding install` adds the login line that starts it on first login; that path is tested by hand on a new machine. See `AGENTS.md` for the contracts with Omarchy and Hyprland and the traps found along the way.
 
 ## Install for development
