@@ -262,14 +262,6 @@ FocusScope {
                     font.family: Style.font.family
                     font.pixelSize: Style.font.body
                 }
-                Text {
-                    width: parent.width
-                    text: Ui.tutorialBlurb(view.host ? view.host.lessonCount : 0)
-                    wrapMode: Text.Wrap
-                    color: view.secondary
-                    font.family: Style.font.family
-                    font.pixelSize: Style.font.bodySmall
-                }
             }
 
             Row {

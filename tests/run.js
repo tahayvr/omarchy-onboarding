@@ -615,8 +615,6 @@ test("the card's eyebrow says where a step sits", () => {
     eq(U.positionLabel(MANIFEST, "welcome"), "");
     eq(U.positionLabel(MANIFEST, "finish"), "");
     eq(U.positionLabel(MANIFEST, "nope"), "");
-    eq(U.tutorialBlurb(10), "10 short lessons, about 5 minutes.");
-    eq(U.tutorialBlurb(1), "1 short lessons, about 1 minute.");
 });
 
 test("displays read as people see them", () => {

@@ -210,8 +210,6 @@ Item {
     // steps still to do (Engine.openSteps).
     readonly property bool canBack: flow !== null && steps !== null && Engine.previousStep(steps, flow) !== null
     readonly property var openSteps: flow && steps ? Engine.openSteps(steps, flow) : []
-    // The tutorial's length, for the welcome page.
-    readonly property int lessonCount: steps ? Engine.tutorialSteps(steps).length : 0
 
     onStepChanged: stepEntered()
 
