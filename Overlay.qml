@@ -64,7 +64,8 @@ Item {
     // "Do it for me", which only ever act on these.
     property var drillWindows: ({})
     // Every window the tutorial had the user open (the tiling drill's terminal
-    // and browser), closed when onboarding closes so the desktop is left clean.
+    // and browser), closed once the workspaces step is over, or when onboarding
+    // closes, so the desktop is left clean.
     property var tutorialWindows: []
     // The workspace the tutorial began on, focused again at the end.
     property int tutorialHome: 0
@@ -307,14 +308,20 @@ Item {
     // which logs what it did; it runs detached since the plugin is unloading).
     function cleanUp() {
         closeSample();
-        if (tutorialWindows.length) {
-            log("closing the tutorial's windows: " + tutorialWindows.join(", "));
-            Quickshell.execDetached([pluginDir + "/bin/onboarding-close-windows", "--log", logFile.path].concat(tutorialWindows));
-        }
+        closeTutorialWindows();
         if (tutorialHome && Hyprland.focusedWorkspace && Hyprland.focusedWorkspace.id !== tutorialHome)
             Quickshell.execDetached(["hyprctl", "dispatch", "hl.dsp.focus({ workspace = '" + tutorialHome + "' })"]);
-        tutorialWindows = [];
         tutorialHome = 0;
+    }
+
+    // The tiling drill's terminal and browser, through
+    // bin/onboarding-close-windows.
+    function closeTutorialWindows() {
+        if (!tutorialWindows.length) return;
+        log("closing the tutorial's windows: " + tutorialWindows.join(", "));
+        Quickshell.execDetached([pluginDir + "/bin/onboarding-close-windows", "--log", logFile.path].concat(tutorialWindows));
+        tutorialWindows = [];
+        drillWindows = {};
     }
 
     // Opens the clipboard step's terminal unless one is already up (say, after
@@ -676,6 +683,8 @@ Item {
         if (!step || step.id === preparedStep) return;
         // The clipboard step is over: its terminal goes.
         if (preparedStep === "clipboard") closeSample();
+        // The workspaces step is the last to use the tiling drill's windows.
+        if (preparedStep === "workspaces") closeTutorialWindows();
         preparedStep = step.id;
         cheering = "";
         if (!tutorialHome && step.id !== "welcome")

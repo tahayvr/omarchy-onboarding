@@ -170,12 +170,12 @@ say "Workspaces: Super + $WS_B, Super + $WS_A, Super + Shift + $WS_B"
 dispatch "hl.dsp.focus({ workspace = '$WS_B' })"; sleep 0.6
 dispatch "hl.dsp.focus({ workspace = '$WS_A' })"; sleep 0.6
 require_active "$terminal" "the terminal"
-# The clipboard step opens a terminal with a line to copy as it begins, on
-# whichever test workspace is focused then: note the windows before it can.
-before=$(hyprctl -j clients | jq -c '[.[].address]')
 dispatch "hl.dsp.window.move({ workspace = '$WS_B' })"
 wait_step clipboard
-sample_terminal=$(wait_window '^org\.omarchy\.onboarding-sample$' "^($WS_A|$WS_B)$" "$before")
+# The clipboard step opens a terminal with a line to copy as it begins, on
+# whichever test workspace is focused then. Found by its class alone: it can
+# reuse the address of the drill terminal that closed as the step began.
+sample_terminal=$(wait_window '^org\.omarchy\.onboarding-sample$' "^($WS_A|$WS_B)$" '[]')
 
 say "Clipboard: Super + C on the card's line, Super + V in the terminal"
 saved_clipboard=$(wl-paste --no-newline 2>/dev/null || true)

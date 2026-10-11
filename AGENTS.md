@@ -164,8 +164,9 @@ code, because Omarchy ships only bash and QML. Built against Omarchy 4.0.4
   class (`Ui.SAMPLE_APP_ID`) and closes when that step is over. The class
   must stay under `org.omarchy.`: Omarchy tags only known classes as
   terminals, and Super + C / V copy and paste in a terminal only when it's
-  tagged. The tiling drill's terminal and browser close, by address, when
-  onboarding closes (finish, quit, or a replay ending), and focus
+  tagged. The tiling drill's terminal and browser close, by address, once the
+  workspaces step (the last drill to use them) is over, or when onboarding
+  closes (finish, quit, or a replay ending), and focus
   returns to the workspace the tutorial began on. `bin/onboarding-close-windows`
   does it, detached (the plugin is unloading), and leaves a terminal open
   when anything but a shell runs under it: the user may have started work
