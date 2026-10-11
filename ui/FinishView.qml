@@ -1,6 +1,5 @@
 import QtQuick
 import qs.Commons
-import "../lib/Ui.js" as Ui
 
 // The finish screen.
 FocusScope {
@@ -23,13 +22,6 @@ FocusScope {
         if (event.key === Qt.Key_M && view.step && view.step.link) { event.accepted = true; view.host.openLink(); }
         else if (event.key === Qt.Key_D && view.openSteps.length > 0) { event.accepted = true; view.host.redoOpen(); }
     }
-
-    // Commands in the card's text sit on a faint chip, so they read as
-    // something to type (Ui.richCode).
-    readonly property color codeFill: Qt.rgba(
-        Color.popups.background.r * 0.86 + Color.foreground.r * 0.14,
-        Color.popups.background.g * 0.86 + Color.foreground.g * 0.14,
-        Color.popups.background.b * 0.86 + Color.foreground.b * 0.14, 1)
 
     Column {
         id: column
@@ -135,18 +127,6 @@ FocusScope {
                 key: "D"
                 onClicked: view.host.redoOpen()
             }
-        }
-
-        // The card's last line (the finish screen's way back in).
-        Text {
-            width: parent.width
-            visible: text !== ""
-            textFormat: Text.RichText
-            text: view.step && view.step.outro ? Ui.richCode(view.step.outro, view.codeFill.toString()) : ""
-            wrapMode: Text.Wrap
-            color: Qt.rgba(Color.foreground.r, Color.foreground.g, Color.foreground.b, 0.62)
-            font.family: Style.font.family
-            font.pixelSize: Style.font.body
         }
 
         Button {

@@ -626,14 +626,6 @@ test("displays read as people see them", () => {
     eq(U.monitorLine(external, 2), "DP-1 · 2560×1440 · 100%");
 });
 
-test("commands in card text become chips", () => {
-    eq(U.richCode("Run `omarchy onboarding` again", "#223344"),
-       'Run <span style="background-color:#223344;">&nbsp;omarchy onboarding&nbsp;</span> again');
-    eq(U.richCode("`--step <name>` & more", "#000"),
-       '<span style="background-color:#000;">&nbsp;--step &lt;name&gt;&nbsp;</span> &amp; more', "escaped first");
-    eq(U.richCode("", "#000"), "");
-});
-
 test("welcome Omi follows the checklist", () => {
     eq(U.welcomeOmi({ online: false }), "idle", "offline is plain idle");
     eq(U.welcomeOmi({ online: false, update: "current" }), "idle");
