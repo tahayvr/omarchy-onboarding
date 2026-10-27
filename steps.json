@@ -89,8 +89,43 @@
       "cheer": "Look at them tile!"
     },
     {
-      "id": "window-controls",
+      "id": "layouts",
       "number": 4,
+      "phase": 1,
+      "title": "Tile, scroll or float",
+      "screen": "Every workspace can tile, scroll sideways, or float like a classic desktop. Floating ones get a dock to minimize windows to.",
+      "done_when": "The workspace went through scrolling and floating, a window was minimized and brought back, and the layout is back where it began.",
+      "requires": [
+        "omarchy-hyprland-workspace-layout-toggle",
+        "omarchy-hyprland-window-minimize"
+      ],
+      "subtasks": [
+        {
+          "id": "scrolling",
+          "label": "Switch to scrolling",
+          "keys": "Super + L"
+        },
+        {
+          "id": "floating",
+          "label": "Once more for floating",
+          "keys": "Super + L"
+        },
+        {
+          "id": "minimize",
+          "label": "Minimize a window, then click it in the dock",
+          "keys": "Super + M"
+        },
+        {
+          "id": "back",
+          "label": "Back to tiling",
+          "keys": "Super + L"
+        }
+      ],
+      "cheer": "Three layouts, one key."
+    },
+    {
+      "id": "window-controls",
+      "number": 5,
       "phase": 1,
       "title": "Close, float and full screen",
       "screen": "Any window can float above the others, fill the screen, or close. Let's try all three.",
@@ -116,7 +151,7 @@
     },
     {
       "id": "workspaces",
-      "number": 5,
+      "number": 6,
       "phase": 1,
       "title": "Workspaces",
       "screen": "See the numbers in the bar? Each one is a workspace: a separate desktop.",
@@ -142,7 +177,7 @@
     },
     {
       "id": "clipboard",
-      "number": 6,
+      "number": 7,
       "phase": 1,
       "title": "Copy and paste",
       "screen": "Copy and paste work the same way everywhere, even in the terminal. Copy the line below, then paste it into the terminal I opened.",
@@ -163,7 +198,7 @@
     },
     {
       "id": "shortcuts",
-      "number": 7,
+      "number": 8,
       "phase": 1,
       "title": "Find any shortcut",
       "screen": "You don't have to remember any of this. Every shortcut is in one list, any time.",
@@ -184,13 +219,13 @@
     },
     {
       "id": "theme",
-      "number": 8,
+      "number": 9,
       "phase": 2,
       "title": "Pick a theme",
       "screen": "Pick a theme and the whole desktop changes with it, me included. Keeping yours is fine too.",
       "done_when": "A theme is applied, or the user keeps theirs.",
       "requires": [
-        "omarchy-theme-switcher"
+        "omarchy theme set"
       ],
       "subtasks": [
         {
@@ -208,7 +243,7 @@
     },
     {
       "id": "display",
-      "number": 9,
+      "number": 10,
       "phase": 2,
       "title": "Display and comfort",
       "screen": "Let's make sure text is a comfortable size. Then try the night light.",
@@ -234,7 +269,7 @@
     },
     {
       "id": "finish",
-      "number": 10,
+      "number": 11,
       "phase": 3,
       "title": "You're ready",
       "screen": "That's the tour! These two are all you need to remember.",

@@ -7,8 +7,9 @@ things without touching the real system.
 
 Onboarding is an Omarchy shell plugin (`tahayvr.onboarding`, kind `overlay`)
 inside the long-lived Quickshell process. There is no daemon and no compiled
-code, because Omarchy ships only bash and QML. Built against Omarchy 4.0.4
-(Hyprland 0.56.2 with a Lua config, Quickshell 0.3.1). The `version` file in
+code, because Omarchy ships only bash and QML. Onboarding ships after Omarchy
+4.5 and needs it: no compatibility with 4.0.x is kept. Built against 4.5.0rc1
+(Hyprland 0.56.2 with a Lua config, Quickshell 0.3.2, Qt 6.12). The `version` file in
 `/usr/share/omarchy` wrongly says `4.0.0.alpha`, so read the version from
 `omarchy version`. Upstream `quattro` is cloned at `upstream/omarchy` (gitignored).
 
@@ -73,12 +74,24 @@ code, because Omarchy ships only bash and QML. Built against Omarchy 4.0.4
   running `omarchy-shell shell toggle omarchy.network` (and similar) as a
   process.
 - `omarchy-shell shell call tahayvr.onboarding <fn> <arg>` passes exactly one
-  string, and the CLI splits on spaces. JSON sent this way needs ` `
-  instead of spaces. Functions that take a choice accept a plain id.
-- The theme comes from `qs.Commons`: `Color.*` and `Style.*` update live when
-  `omarchy theme set` runs. Bind every colour to them. `Color.muted` is nearly
-  invisible on Matte Black, so secondary text uses the foreground colour at
-  62% opacity.
+  string. Before 4.5 the CLI split it on spaces, so JSON sent this way still
+  has ` ` instead of spaces. Functions that take a choice accept a plain
+  id.
+- The theme comes from `qs.Commons`: `Commons.Color.*` and `Style.*` update
+  live when `omarchy theme set` runs. Bind every colour to them.
+  - Write the palette as `Commons.Color` (`import qs.Commons as Commons`),
+    never a bare `Color`: Qt 6.12 has a `Color` type of its own, and upstream
+    requires plugins to qualify it (`docs/omarchy-shell.md`). `Style` and the
+    rest stay unqualified.
+  - `Color.muted` is nearly invisible on Matte Black, so secondary text uses
+    the foreground colour at 62% opacity.
+  - Wrap every animation's duration in `Style.duration(ms)`, and stop looping
+    ones on `Style.reduceMotion`: both follow `omarchy toggle animations`.
+- **Copy is English only.** 4.5 has a language setting (Setup > Language,
+  stored in `~/.config/omarchy/language`) and plugin catalogs
+  (`Commons.Translations`, `docs/i18n.md`), which onboarding doesn't use yet.
+  Never match on Omarchy's own user-facing text: menu titles and
+  notifications are translated.
 - **Dev loop:** the shell doesn't see edits through the symlinked checkout and
   can't hot-swap a plugin type in use. After QML changes, run
   `scripts/reload-shell.sh`. JS changes only need `node tests/run.js`. Logs go
@@ -98,14 +111,19 @@ code, because Omarchy ships only bash and QML. Built against Omarchy 4.0.4
   - `omarchy-onboarding` is the centered card over a scrim. It has `Exclusive`
     keyboard focus and is used for welcome, the Super key, finish, pause and
     confirm.
+  - The centered window is Omarchy's `OverlayWindow` (`qs.Ui`, imported as
+    `OmarchyUi`, since `ui/` has a `Button` of its own). Drive its `shown`,
+    never `visible`. It maps on the focused monitor and keeps its contents
+    transparent until it has that monitor's scale, so the first frame is
+    never blurry; keys still reach it meanwhile.
   - `omarchy-onboarding-coach` is the corner card. Its keyboard focus is `None`,
     so Super binds reach Hyprland. The clipboard step switches it to
     `Exclusive` until its line is copied, so Super + C copies the selected
     line; then the terminal is focused for the paste, and
     `bin/onboarding-clipboard-sample`, running in it, reports the paste
     through `pastedInTerminal`. Omarchy's Super + C and V send their keys to
-    the focused surface, layers included (Ctrl + Insert / Shift + Insert when
-    the active window is tagged terminal). It uses `ExclusionMode.Normal`, so
+    the focused surface, layers included (Ctrl + Shift + C / V when the active
+    window is tagged terminal). It uses `ExclusionMode.Normal`, so
     it sits below the bar.
 - **Keeping the corner card above dimming.** Menus and pickers dim everything
   beneath them. The fix is a Hyprland layer rule set at runtime:
@@ -158,6 +176,10 @@ code, because Omarchy ships only bash and QML. Built against Omarchy 4.0.4
 - **`togglesplit` (Super + J) sends no event.** The tiling drill polls
   `hyprctl -j clients` and ticks when the two windows go from side by side to
   stacked, or back.
+- **Config reloads come in bursts.** A workspace turning floating sends
+  several `configreloaded` in a row. Runtime binds and layer rules are set
+  again once the burst settles; setting the binds mid-run kills the previous
+  `onboarding-binds` halfway.
 - **A new window's first focus doesn't count.** Hyprland focuses windows as
   they open, so only focus moving between the drill windows ticks.
 - **Onboarding cleans up after itself.** The clipboard terminal has its own
@@ -180,19 +202,44 @@ code, because Omarchy ships only bash and QML. Built against Omarchy 4.0.4
 
 ## Omarchy facts the steps rely on
 
-- **Menu and Super + K** both open the `omarchy-menu` layer. On 4.0.4 that
-  fires `openlayer` / `closelayer>>omarchy-menu`. Super + K is told apart by a
-  `omarchy-menu-select Keybindings` process that started within the last 2 s
-  (`bin/onboarding-keybindings-open`). A running process alone isn't proof,
-  because it survives an external hide. Events queue behind the probe.
-  - On `quattro` (#13419) these overlays stay mapped, so the per-open layer
-    events stop. Poll `hyprctl -j layers` for the layer level instead.
+- **Menu and Super + K** both open the `omarchy-menu` layer, which the
+  `omarchy.menu` plugin maps afresh on every open, so each fires
+  `openlayer` / `closelayer>>omarchy-menu`. Super + Space goes through a
+  Hyprland global and starts no process. Super + K is told apart by an
+  `omarchy-menu-select` started within the last 2 s from a subshell of
+  `omarchy-menu-keybindings` (`bin/onboarding-keybindings-open`). Its prompt
+  is the list's translated title, so it's never matched. A running process
+  alone isn't proof, because it survives an external hide. Events queue
+  behind the probe.
   - No IPC call exposes menu state.
-- **Theme picker:** Super + Ctrl + Shift + Space runs
-  `omarchy-menu toggle theme`. That opens `omarchy-theme-switcher`, then the
-  image picker (layer `omarchy-image-selector`), then `omarchy-theme-set`. The
-  step compares `omarchy theme current` against its value at the step's start.
-  Esc in the picker changes nothing.
+- **Theme picker:** Super + Ctrl + Shift + Space opens the menu's `theme`
+  route, which summons the `omarchy.image-picker` overlay with its themes
+  (layer `omarchy-image-selector`) without showing the menu;
+  `omarchy-menu toggle theme` does the same. The step compares
+  `omarchy theme current` (a display name, "Tokyo Night") against its value
+  at the step's start. Esc in the picker changes nothing.
+- **Workspace layouts (4.5):** each workspace tiles (`dwindle`), scrolls or
+  floats. Super + L cycles dwindle → scrolling → floating
+  (`omarchy-hyprland-workspace-layout-toggle`, the focused workspace only),
+  Super + Alt + L goes back, and the default for new workspaces is a setting
+  (`omarchy-hyprland-workspace-layout-default`).
+  - `omarchy-hyprland-workspace-layout-current [ID]` reads it. Floating isn't
+    a Hyprland layout, so it comes from
+    `~/.local/state/omarchy/workspace-layouts/ID.lua`, written for any layout
+    but the default. No event says the layout changed: the layouts drill
+    polls it.
+  - Floating floats every window (`changefloatingmode` for each), and the
+    first floating workspace of a session reloads the config for titlebars.
+  - Floating workspaces show the dock. Super + M
+    (`omarchy-hyprland-window-minimize`) works only there: the window moves to
+    `special:minimized`, and a click in the dock moves it back.
+  - The tiling and window-controls lessons need tiling. If the workspace a
+    tiling or layouts step begins on isn't, `bin/onboarding-workspace-layout`
+    tiles it the way the toggle would, and puts the user's layout back when
+    onboarding closes.
+- **Per-monitor workspaces (4.5):** each monitor has workspaces 1–10, the
+  second numbered 11–20 and so on, and the bar labels them 1–10. Super + N
+  goes to the Nth of the focused monitor's block.
 - **Network:**
   - Connectivity is `nmcli networking connectivity`, where `full` means online.
   - The SSID comes from `nmcli -t -f active,ssid device wifi`.
@@ -207,7 +254,7 @@ code, because Omarchy ships only bash and QML. Built against Omarchy 4.0.4
     `omarchy-launch-floating-terminal-with-presentation omarchy-update`.
 - **Bindings differ per machine.** Read them live rather than hardcoding apps.
   - Super + / scales up and Super + Alt + / scales down.
-  - Super + L toggles dwindle and scrolling.
+  - Super + L cycles the workspace layout (see above).
 - **First run:** `autostart.lua` runs `omarchy-provision-first-run`, gated by
   `omarchy-done check first-run-user`.
   - Markers are empty files in `~/.local/state/omarchy/done/`.

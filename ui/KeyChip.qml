@@ -1,5 +1,6 @@
 import QtQuick
 import qs.Commons
+import qs.Commons as Commons
 
 // A key, drawn small and muted, beside the control it works: inside a button,
 // or next to the ✕. Not a second button: the theme's background showing
@@ -12,14 +13,14 @@ Rectangle {
     // On an accent fill (a primary button) rather than a plain one.
     property bool onAccent: false
 
-    readonly property color ink: onAccent ? Color.background : Color.foreground
+    readonly property color ink: onAccent ? Commons.Color.background : Commons.Color.foreground
 
     visible: key !== ""
     implicitWidth: Math.max(implicitHeight, label.implicitWidth + Style.space(8))
     implicitHeight: label.implicitHeight + Style.space(4)
     radius: Math.max(Style.cornerRadius, Style.space(3))
-    color: onAccent ? Qt.rgba(Color.background.r, Color.background.g, Color.background.b, 0.22)
-                    : Qt.rgba(Color.foreground.r, Color.foreground.g, Color.foreground.b, 0.1)
+    color: onAccent ? Qt.rgba(Commons.Color.background.r, Commons.Color.background.g, Commons.Color.background.b, 0.22)
+                    : Qt.rgba(Commons.Color.foreground.r, Commons.Color.foreground.g, Commons.Color.foreground.b, 0.1)
 
     Text {
         id: label

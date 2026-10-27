@@ -1,5 +1,6 @@
 import QtQuick
 import qs.Commons
+import qs.Commons as Commons
 
 // Asks before anything that changes the system (spec ground rule). Centered,
 // so it has the keyboard: Enter confirms, Esc cancels.
@@ -34,7 +35,7 @@ FocusScope {
                 anchors.verticalCenter: parent.verticalCenter
                 text: view.question
                 wrapMode: Text.Wrap
-                color: Color.foreground
+                color: Commons.Color.foreground
                 font.family: Style.font.family
                 font.pixelSize: Style.font.title
             }
@@ -42,7 +43,7 @@ FocusScope {
         Text {
             visible: view.host.dryRun
             text: "Dry run: this will only be logged."
-            color: Color.accent
+            color: Commons.Color.accent
             font.family: Style.font.family
             font.pixelSize: Style.font.bodySmall
         }

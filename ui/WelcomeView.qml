@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Effects
 import qs.Commons
+import qs.Commons as Commons
 import "../omi"
 import "../lib/Ui.js" as Ui
 
@@ -39,7 +40,7 @@ FocusScope {
     // The update row's button (Update or Try again), which U presses.
     readonly property bool updateAction: rows.some(function (r) { return r.id === "update" && r.action !== ""; })
 
-    readonly property color secondary: Qt.rgba(Color.foreground.r, Color.foreground.g, Color.foreground.b, 0.62)
+    readonly property color secondary: Qt.rgba(Commons.Color.foreground.r, Commons.Color.foreground.g, Commons.Color.foreground.b, 0.62)
 
     implicitWidth: Style.space(600)
     implicitHeight: column.implicitHeight
@@ -74,7 +75,7 @@ FocusScope {
                 width: parent.width
                 text: "Welcome to"
                 horizontalAlignment: Text.AlignHCenter
-                color: Color.foreground
+                color: Commons.Color.foreground
                 font.family: Style.font.family
                 font.pixelSize: Style.font.heading
             }
@@ -107,13 +108,13 @@ FocusScope {
                     source: logoImage
                     brightness: 1.0
                     colorization: 1.0
-                    colorizationColor: Color.accent
+                    colorizationColor: Commons.Color.accent
                 }
 
                 ParallelAnimation {
                     running: true
-                    NumberAnimation { target: logo; property: "opacity"; to: 1; duration: 420; easing.type: Easing.OutCubic }
-                    NumberAnimation { target: logo; property: "scale"; to: 1; duration: 520; easing.type: Easing.OutCubic }
+                    NumberAnimation { target: logo; property: "opacity"; to: 1; duration: Style.duration(420); easing.type: Easing.OutCubic }
+                    NumberAnimation { target: logo; property: "scale"; to: 1; duration: Style.duration(520); easing.type: Easing.OutCubic }
                 }
             }
 
@@ -143,7 +144,7 @@ FocusScope {
                     radius: Style.cornerRadius
                     color: rowMouse.containsMouse ? Style.hoverFill : Style.normalFill
                     border.width: 1
-                    border.color: rowMouse.containsMouse ? Color.accent : Style.normalBorderColor
+                    border.color: rowMouse.containsMouse ? Commons.Color.accent : Style.normalBorderColor
 
                     // A row without a button (the shortcuts one) is a button
                     // itself; its keys work too.
@@ -164,7 +165,7 @@ FocusScope {
                         size: Style.space(24)
                         glyph: row.modelData.icon || ""
                         family: row.modelData.iconFont || Style.font.family
-                        color: row.modelData.done ? Color.accent : Color.foreground
+                        color: row.modelData.done ? Commons.Color.accent : Commons.Color.foreground
                     }
 
                     Column {
@@ -175,7 +176,7 @@ FocusScope {
                             width: parent.width
                             text: row.modelData.title
                             wrapMode: Text.Wrap
-                            color: Color.foreground
+                            color: Commons.Color.foreground
                             font.family: Style.font.family
                             font.pixelSize: Style.font.title
                         }
@@ -211,7 +212,7 @@ FocusScope {
                             anchors.verticalCenter: parent.verticalCenter
                             visible: row.modelData.done
                             text: "✓"
-                            color: Color.accent
+                            color: Commons.Color.accent
                             font.family: Style.font.family
                             font.pixelSize: Style.font.heading
                         }
@@ -234,7 +235,7 @@ FocusScope {
                 anchors.verticalCenter: parent.verticalCenter
                 width: Ui.evenOmiSize(Style.space(76), dpr)
                 height: width
-                color: Color.accent
+                color: Commons.Color.accent
                 // At this size a bob is a few pixels, and snapped to whole
                 // pixels it steps rather than glides; the face still moves.
                 bodyMotion: false
@@ -249,7 +250,7 @@ FocusScope {
                     width: parent.width
                     text: "Hi, I'm Omi"
                     wrapMode: Text.Wrap
-                    color: Color.foreground
+                    color: Commons.Color.foreground
                     font.family: Style.font.family
                     font.pixelSize: Style.font.title
                     font.weight: Font.DemiBold

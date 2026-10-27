@@ -1,5 +1,6 @@
 import QtQuick
 import qs.Commons
+import qs.Commons as Commons
 
 // The welcome checklist while it has stepped aside (for a panel, the update
 // terminal, the keybindings list or the menu). It comes back by itself when
@@ -13,8 +14,8 @@ Rectangle {
 
     implicitWidth: Style.space(400)
     implicitHeight: column.implicitHeight + Style.space(48)
-    color: Color.popups.background
-    border.color: Color.popups.border
+    color: Commons.Color.popups.background
+    border.color: Commons.Color.popups.border
     border.width: 1
     radius: Style.cornerRadius
 

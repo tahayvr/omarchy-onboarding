@@ -21,7 +21,7 @@ The tutorial's lessons sit in a corner card, so the shortcuts reach Hyprland whi
   <img src="docs/screenshots/finish.png" width="49%" alt="You're ready: the keys worth remembering">
 </p>
 
-Work in progress. The welcome checklist (Wi-Fi, Omarchy update, keybindings) and the tutorial (Super key, menu, tiling, window controls, workspaces, clipboard, Super + K, theme, display) work end to end. `omarchy-onboarding install` adds the login line that starts it on first login; that path is tested by hand on a new machine. See `AGENTS.md` for the contracts with Omarchy and Hyprland and the traps found along the way.
+Work in progress. The welcome checklist (Wi-Fi, Omarchy update, keybindings) and the tutorial (Super key, menu, tiling, layouts and the dock, window controls, workspaces, clipboard, Super + K, theme, display) work end to end. It needs Omarchy 4.5 or later. `omarchy-onboarding install` adds the login line that starts it on first login; that path is tested by hand on a new machine. See `AGENTS.md` for the contracts with Omarchy and Hyprland and the traps found along the way.
 
 ## Install for development
 

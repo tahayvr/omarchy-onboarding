@@ -1,5 +1,6 @@
 import QtQuick
 import qs.Commons
+import qs.Commons as Commons
 
 // The Super key step: one concept before any drills. Catches a bare Super press, which
 // nothing in Omarchy binds, so it reaches this view while it has the keyboard.
@@ -37,7 +38,7 @@ FocusScope {
             width: parent.width
             text: view.step ? view.step.screen : ""
             wrapMode: Text.Wrap
-            color: Color.foreground
+            color: Commons.Color.foreground
             font.family: Style.font.family
             font.pixelSize: Style.font.title
         }
@@ -53,7 +54,7 @@ FocusScope {
                 lit: view.pressed
                 marked: !view.pressed
                 SequentialAnimation on scale {
-                    running: !view.pressed
+                    running: !view.pressed && !Style.reduceMotion
                     loops: Animation.Infinite
                     NumberAnimation { to: 1.08; duration: 650; easing.type: Easing.InOutSine }
                     NumberAnimation { to: 1.0; duration: 650; easing.type: Easing.InOutSine }

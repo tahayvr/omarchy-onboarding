@@ -1,0 +1,41 @@
+#!/bin/bash
+# Prints a workspace's layout (dwindle, scrolling or floating), or sets it.
+#
+#   onboarding-workspace-layout WORKSPACE           prints it
+#   onboarding-workspace-layout WORKSPACE MODE      sets it, quietly
+#
+# The tiling lessons need a tiling workspace, so onboarding sets one for them
+# and puts the user's layout back when it closes. Omarchy only cycles the
+# focused workspace (omarchy-hyprland-workspace-layout-toggle, Super + L), so
+# setting one does what that does, without its notification: apply the mode,
+# save it as the workspace's own unless it is the default, and refresh the bar
+# and the dock.
+exec </dev/null
+
+workspace=$1 mode=${2:-}
+[[ $workspace =~ ^[0-9]+$ ]] || { echo "usage: onboarding-workspace-layout WORKSPACE [dwindle|scrolling|floating]" >&2; exit 2; }
+
+if [[ -z $mode ]]; then
+  exec omarchy-hyprland-workspace-layout-current "$workspace"
+fi
+[[ $mode =~ ^(dwindle|scrolling|floating)$ ]] || { echo "onboarding-workspace-layout: unknown layout '$mode'" >&2; exit 2; }
+
+apply="o.workspace_mode({ workspace = \"$workspace\", mode = \"$mode\" })"
+hyprctl eval "$apply" >/dev/null 2>&1 || exit 1
+
+modes="${XDG_STATE_HOME:-$HOME/.local/state}/omarchy/workspace-layouts"
+if [[ $mode == "$(omarchy-hyprland-workspace-layout-default)" ]]; then
+  rm -f "$modes/$workspace.lua"
+else
+  mkdir -p "$modes" && printf '%s\n' "$apply" >"$modes/$workspace.lua"
+fi
+
+omarchy-shell -q omarchy.workspaces refresh
+omarchy-shell -q omarchy.dock refresh
+
+# Floating workspaces get titlebars from a Hyprland plugin that only loads with
+# the config, as Omarchy's own toggle does.
+if [[ $mode == floating ]] && ! hyprctl plugin list -j 2>/dev/null | jq -e 'any(.[]?; .name == "hyprbars")' >/dev/null 2>&1; then
+  hyprctl reload >/dev/null
+fi
+exit 0

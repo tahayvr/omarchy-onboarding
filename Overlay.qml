@@ -4,6 +4,8 @@ import Quickshell.Io
 import Quickshell.Wayland
 import Quickshell.Hyprland
 import qs.Commons
+import qs.Commons as Commons
+import qs.Ui as OmarchyUi
 import "ui"
 import "lib/Engine.js" as Engine
 import "lib/Drills.js" as Drills
@@ -71,6 +73,14 @@ Item {
     property int tutorialHome: 0
     // The workspace a drill began on: "Do it for me" comes back to it.
     property int drillHome: 1
+    // The tiling lessons need a tiling workspace (Omarchy 4.5 can also scroll
+    // or float one). When the user's isn't, onboarding sets it to tiling and
+    // keeps {workspace, mode} here to put it back when it closes.
+    property var layoutRestore: null
+    // Whether that check is done, so the layouts drill's first reading is
+    // the layout it really begins in.
+    property bool layoutReady: false
+    property string lastLayout: ""
     property double startedAt: 0
 
     // Esc or ✕ shows the pause dialog over whatever step is current.
@@ -228,6 +238,7 @@ Item {
         drillWindows = {};
         tutorialWindows = [];
         tutorialHome = 0;
+        layoutRestore = null;
         statePath = payload.state ? String(payload.state) : defaultStatePath;
         recordPath = payload.record ? String(payload.record) : "";
         dryRun = !!payload.dryRun;
@@ -309,6 +320,7 @@ Item {
     function cleanUp() {
         closeSample();
         closeTutorialWindows();
+        restoreLayout();
         if (tutorialHome && Hyprland.focusedWorkspace && Hyprland.focusedWorkspace.id !== tutorialHome)
             Quickshell.execDetached(["hyprctl", "dispatch", "hl.dsp.focus({ workspace = '" + tutorialHome + "' })"]);
         tutorialHome = 0;
@@ -322,6 +334,52 @@ Item {
         Quickshell.execDetached([pluginDir + "/bin/onboarding-close-windows", "--log", logFile.path].concat(tutorialWindows));
         tutorialWindows = [];
         drillWindows = {};
+    }
+
+    // Before the tiling and layouts lessons: the focused workspace becomes a
+    // tiling one if it isn't (bin/onboarding-workspace-layout).
+    function ensureTiling() {
+        layoutReady = false;
+        lastLayout = "";
+        var ws = Hyprland.focusedWorkspace ? Hyprland.focusedWorkspace.id : 0;
+        if (!(ws >= 1)) {
+            layoutReady = true;
+            return;
+        }
+        layoutCheck.workspace = ws;
+        layoutCheck.command = [pluginDir + "/bin/onboarding-workspace-layout", String(ws)];
+        layoutCheck.running = true;
+    }
+
+    function restoreLayout() {
+        if (!layoutRestore) return;
+        log("workspace " + layoutRestore.workspace + " back to " + layoutRestore.mode);
+        Quickshell.execDetached([pluginDir + "/bin/onboarding-workspace-layout",
+                                 String(layoutRestore.workspace), layoutRestore.mode]);
+        layoutRestore = null;
+    }
+
+    Process {
+        id: layoutCheck
+        property int workspace: 0
+        stdout: StdioCollector {
+            onStreamFinished: {
+                var mode = String(text || "").trim();
+                if (!mode || mode === "dwindle") {
+                    root.layoutReady = true;
+                    return;
+                }
+                if (!root.layoutRestore) root.layoutRestore = { workspace: layoutCheck.workspace, mode: mode };
+                root.log("workspace " + layoutCheck.workspace + " is " + mode + "; tiling it for the lesson");
+                layoutSetter.command = [root.pluginDir + "/bin/onboarding-workspace-layout", String(layoutCheck.workspace), "dwindle"];
+                layoutSetter.running = true;
+            }
+        }
+    }
+
+    Process {
+        id: layoutSetter
+        onExited: root.layoutReady = true
     }
 
     // Opens the clipboard step's terminal unless one is already up (say, after
@@ -440,6 +498,8 @@ Item {
             updateStatus: updateStatus,
             updating: updating,
             themeBaseline: themeBaseline,
+            layout: lastLayout,
+            layoutRestore: layoutRestore,
             monitors: monitors,
             openSteps: openSteps.map(function (s) { return s.id; }),
             facts: facts,
@@ -571,7 +631,8 @@ Item {
             ticked: ticked,
             windows: drillWindows,
             workspace: Hyprland.focusedWorkspace ? Hyprland.focusedWorkspace.id : 1,
-            home: drillHome
+            home: drillHome,
+            layout: drill && drill.layouts ? drill.layouts() : null
         });
         if (!plan) return "nothing to do";
         log("do it for me: " + step.id + " " + JSON.stringify(plan));
@@ -697,6 +758,8 @@ Item {
         } else if (step.id === "display") {
             lastScales = null;
             nightLight = null;
+        } else if (step.id === "tiling" || step.id === "layouts") {
+            ensureTiling();
         } else if (step.id === "clipboard") {
             // Spec: the app opens a terminal with a sample line to copy, on
             // every visit (re-runs and replays too), unless one is still open.
@@ -1092,6 +1155,29 @@ Item {
         }
     }
 
+    // Layouts: Super + L sends no event, so the drill workspace's layout is
+    // read, and passed on when it changes.
+    Timer {
+        interval: 500
+        repeat: true
+        running: root.opened && root.layoutReady && root.drill !== null && root.drill.step === "layouts"
+        triggeredOnStart: true
+        onTriggered: if (!layoutProbe.running) layoutProbe.running = true
+    }
+
+    Process {
+        id: layoutProbe
+        command: [root.pluginDir + "/bin/onboarding-workspace-layout", String(root.drillHome)]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                var mode = String(text || "").trim();
+                if (!mode || mode === root.lastLayout || !root.drill || root.drill.step !== "layouts") return;
+                root.lastLayout = mode;
+                root.enqueue({ kind: "layout", mode: mode });
+            }
+        }
+    }
+
     // Clipboard: the copy is seen when the sample line reaches the clipboard.
     Timer {
         interval: 800
@@ -1141,12 +1227,21 @@ Item {
     }
 
     // A config reload (a theme change does one) clears runtime layer rules
-    // and binds, so both are set again.
+    // and binds, so both are set again. Reloads come in bursts (a workspace
+    // turning floating sends several), so they're set once the burst is over:
+    // setting the binds again mid-run would cut the last run short.
     Connections {
         target: Hyprland
         enabled: root.opened
         function onRawEvent(event) {
-            if (String(event.name) !== "configreloaded") return;
+            if (String(event.name) === "configreloaded") reloadSettle.restart();
+        }
+    }
+
+    Timer {
+        id: reloadSettle
+        interval: 400
+        onTriggered: {
             root.keepCornerCardOnTop();
             if (root.tutorialKeysWanted) root.setTutorialKeys();
         }
@@ -1154,20 +1249,18 @@ Item {
 
     // ------------------------------------------------------------ view
 
-    // Centered: takes the keyboard so it can catch Super and Esc.
-    PanelWindow {
-        visible: root.opened && root.flow !== null && root.centered
-        color: "transparent"
-        anchors { top: true; bottom: true; left: true; right: true }
-        exclusionMode: ExclusionMode.Ignore
-        WlrLayershell.layer: WlrLayer.Overlay
+    // Centered: takes the keyboard so it can catch Super and Esc. Omarchy's
+    // OverlayWindow opens it on the focused monitor and shows it only once it
+    // has that monitor's scale, so the first frame isn't blurry; it is on the
+    // overlay layer with the keyboard by default.
+    OmarchyUi.OverlayWindow {
+        shown: root.opened && root.flow !== null && root.centered
         WlrLayershell.namespace: "omarchy-onboarding"
-        WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
 
         // Dim the desktop so the card is the one thing to look at.
         Rectangle {
             anchors.fill: parent
-            color: Color.background
+            color: Commons.Color.background
             opacity: 0.78
         }
 
@@ -1176,8 +1269,8 @@ Item {
             // 32 of padding on every side.
             width: centerView.implicitWidth + Style.space(64)
             height: centerView.implicitHeight + Style.space(64)
-            color: Color.popups.background
-            border.color: Color.popups.border
+            color: Commons.Color.popups.background
+            border.color: Commons.Color.popups.border
             border.width: 1
             radius: Style.cornerRadius
 
@@ -1258,8 +1351,8 @@ Item {
             y: cornerWindow.place.indexOf("top") === 0 ? 0
                : cornerWindow.place.indexOf("bottom") === 0 ? cornerWindow.height - height
                : (cornerWindow.height - height) / 2
-            Behavior on x { enabled: cornerWindow.moving; NumberAnimation { duration: 480; easing.type: Easing.InOutCubic } }
-            Behavior on y { enabled: cornerWindow.moving; NumberAnimation { duration: 480; easing.type: Easing.InOutCubic } }
+            Behavior on x { enabled: cornerWindow.moving; NumberAnimation { duration: Style.duration(480); easing.type: Easing.InOutCubic } }
+            Behavior on y { enabled: cornerWindow.moving; NumberAnimation { duration: Style.duration(480); easing.type: Easing.InOutCubic } }
             sourceComponent: root.away !== "" ? awayCard : coachCard
         }
     }
@@ -1331,7 +1424,7 @@ Item {
                         anchors.verticalCenter: parent.verticalCenter
                         text: "Something went wrong, and I can't start."
                         wrapMode: Text.Wrap
-                        color: Color.foreground
+                        color: Commons.Color.foreground
                         font.family: Style.font.family
                         font.pixelSize: Style.font.heading
                     }
@@ -1340,7 +1433,7 @@ Item {
                     width: parent.width
                     text: root.error
                     wrapMode: Text.Wrap
-                    color: Qt.rgba(Color.foreground.r, Color.foreground.g, Color.foreground.b, 0.62)
+                    color: Qt.rgba(Commons.Color.foreground.r, Commons.Color.foreground.g, Commons.Color.foreground.b, 0.62)
                     font.family: Style.font.family
                     font.pixelSize: Style.font.body
                 }

@@ -1,5 +1,6 @@
 import QtQuick
 import qs.Commons
+import qs.Commons as Commons
 import "../lib/Ui.js" as Ui
 
 // Omi, the step's title and a pause button. The card's text below is Omi
@@ -32,7 +33,7 @@ Item {
             visible: text !== ""
             text: header.host && header.step ? Ui.positionLabel(header.host.steps, header.step.id) : ""
             elide: Text.ElideRight
-            color: Qt.rgba(Color.foreground.r, Color.foreground.g, Color.foreground.b, 0.62)
+            color: Qt.rgba(Commons.Color.foreground.r, Commons.Color.foreground.g, Commons.Color.foreground.b, 0.62)
             font.family: Style.font.family
             font.pixelSize: Style.font.bodySmall
         }
@@ -48,9 +49,9 @@ Item {
             width: parent.width
             text: cheering ? says : header.step ? header.step.title : ""
             wrapMode: Text.Wrap
-            color: cheering ? Color.accent : Color.foreground
+            color: cheering ? Commons.Color.accent : Commons.Color.foreground
             onSaysChanged: if (says !== "") cheerIn.restart()
-            NumberAnimation { id: cheerIn; target: titleText; property: "opacity"; from: 0; to: 1; duration: 220; easing.type: Easing.OutCubic }
+            NumberAnimation { id: cheerIn; target: titleText; property: "opacity"; from: 0; to: 1; duration: Style.duration(220); easing.type: Easing.OutCubic }
             font.family: Style.font.family
             font.pixelSize: Style.font.heading
             font.weight: Font.DemiBold
@@ -72,7 +73,7 @@ Item {
         // Pinned to the top-right corner, whatever the height of Omi and the title.
         anchors { right: parent.right; top: parent.top }
         text: "✕"
-        color: closeMouse.containsMouse ? Color.foreground : Qt.rgba(Color.foreground.r, Color.foreground.g, Color.foreground.b, 0.62)
+        color: closeMouse.containsMouse ? Commons.Color.foreground : Qt.rgba(Commons.Color.foreground.r, Commons.Color.foreground.g, Commons.Color.foreground.b, 0.62)
         font.family: Style.font.family
         font.pixelSize: Style.font.title
         MouseArea {

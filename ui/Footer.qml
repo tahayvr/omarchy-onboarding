@@ -1,5 +1,6 @@
 import QtQuick
 import qs.Commons
+import qs.Commons as Commons
 
 // Back, Skip, and after a minute without progress, "Do it for me". While the
 // tutorial's keys are bound, "Ctrl + key" is said once here, at the left,
@@ -27,7 +28,7 @@ Item {
         visible: footer.legendShown
         anchors { left: parent.left; verticalCenter: buttons.verticalCenter }
         text: "Ctrl + key"
-        color: Qt.rgba(Color.foreground.r, Color.foreground.g, Color.foreground.b, 0.62)
+        color: Qt.rgba(Commons.Color.foreground.r, Commons.Color.foreground.g, Commons.Color.foreground.b, 0.62)
         font.family: Style.font.family
         font.pixelSize: Style.font.bodySmall
     }

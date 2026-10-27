@@ -55,7 +55,7 @@ const MINIMAL = {
     ]
 };
 
-const TUTORIAL = ["super-key", "menu", "tiling", "window-controls", "workspaces", "clipboard", "shortcuts",
+const TUTORIAL = ["super-key", "menu", "tiling", "layouts", "window-controls", "workspaces", "clipboard", "shortcuts",
                   "theme", "display"];
 
 test("the real manifest is valid: welcome, the tutorial, finish", () => {
@@ -249,15 +249,16 @@ test("dismiss works before starting and while paused, not after completing", () 
 });
 
 test("a missing command auto-skips its step and names it", () => {
-    const r = started({ online: true, missing: ["omarchy-theme-switcher"] });
+    const r = started({ online: true, missing: ["omarchy theme set"] });
     const shown = r.walk();
     ok(!shown.includes("theme"), shown.join(","));
-    eq(r.s.steps.theme, { outcome: "auto-skipped", at: NOW, reason: "command 'omarchy-theme-switcher' is missing" });
+    eq(r.s.steps.theme, { outcome: "auto-skipped", at: NOW, reason: "command 'omarchy theme set' is missing" });
 });
 
 test("every requirement is collected once", () => {
     const all = E.allRequirements(MANIFEST);
-    ok(all.includes("omarchy-theme-switcher"));
+    ok(all.includes("omarchy theme set"));
+    ok(all.includes("omarchy-hyprland-workspace-layout-toggle"), "the layouts step, new in Omarchy 4.5");
     eq(all.length, new Set(all).size);
 });
 
@@ -292,7 +293,7 @@ test("Back passes over steps the user never saw", () => {
     const r = started(ONLINE);
     r.done(); // super-key
     r.skip(); // menu
-    const facts = { online: true, missing: ["omarchy-theme-switcher"] };
+    const facts = { online: true, missing: ["omarchy theme set"] };
     while (r.current() !== "display") r.s = E.complete(MANIFEST, r.s, facts, NOW);
     eq(r.s.steps.theme.outcome, "auto-skipped");
     eq(E.previousStep(MANIFEST, r.s), "shortcuts", "theme was never shown");
@@ -305,6 +306,7 @@ test("the finish screen does the steps still to do", () => {
     r.done(); // super-key
     r.skip(); // menu
     r.done(); // tiling
+    r.done(); // layouts
     r.skip(); // window-controls
     while (r.current() !== "finish") r.done();
     throws(() => E.redoOpen(MANIFEST, started(ONLINE).s, ONLINE, NOW), "finish screen");
@@ -313,7 +315,7 @@ test("the finish screen does the steps still to do", () => {
     eq(r.current(), "menu");
     eq(r.s.mode, "only-skipped");
     r.done();
-    eq(r.current(), "window-controls", "tiling was done");
+    eq(r.current(), "window-controls", "tiling and layouts were done");
     r.done();
     eq(r.current(), "finish");
     eq(E.openSteps(MANIFEST, r.s), []);
@@ -451,6 +453,27 @@ test("shortcuts need the keybindings list", () => {
     const d = D.create("shortcuts");
     eq(feed(d, [{ kind: "keybindings", open: false }, hypr("openlayer>>omarchy-menu")]), []);
     eq(feed(d, [{ kind: "keybindings", open: true }, hypr("openlayer>>omarchy-menu")]), ticks(["open"]));
+});
+
+test("layouts: scrolling, floating, a window minimized and back, then tiling again", () => {
+    const d = D.create("layouts");
+    const layout = mode => ({ kind: "layout", mode });
+    eq(feed(d, [layout("dwindle")]), [], "where it began");
+    eq(feed(d, [layout("scrolling"), layout("floating")]), ticks(["scrolling", "floating"]));
+    eq(feed(d, [hypr("movewindowv2>>t1,-98,special:minimized")]), [], "minimized");
+    eq(feed(d, [hypr("movewindowv2>>t1,1,1")]), ticks(["minimize"]), "back from the dock");
+    ok(!d.complete());
+    eq(feed(d, [layout("dwindle")]), ticks(["back"]));
+    ok(d.complete());
+    eq(d.layouts(), { start: "dwindle", mode: "dwindle" });
+});
+
+test("layouts: leaving the starting layout again undoes back", () => {
+    const d = D.create("layouts");
+    const layout = mode => ({ kind: "layout", mode });
+    feed(d, [layout("dwindle"), layout("scrolling"), layout("dwindle")]);
+    eq(feed(d, [layout("floating")]), ticks(["floating"]).concat([{ subtask: "back", ticked: false }]));
+    eq(feed(d, [hypr("movewindowv2>>t1,2,2")]), [], "a plain move is not a minimize");
 });
 
 const OPEN_PAIR = [hypr("openwindow>>t1,1,foot,foot"), hypr("activewindowv2>>t1"),
@@ -609,8 +632,8 @@ test("Omi nudges in place of the title when the user stalls", () => {
 });
 
 test("the card's eyebrow says where a step sits", () => {
-    eq(U.positionLabel(MANIFEST, "super-key"), "Learn the keys · 1 of 7");
-    eq(U.positionLabel(MANIFEST, "shortcuts"), "Learn the keys · 7 of 7");
+    eq(U.positionLabel(MANIFEST, "super-key"), "Learn the keys · 1 of 8");
+    eq(U.positionLabel(MANIFEST, "shortcuts"), "Learn the keys · 8 of 8");
     eq(U.positionLabel(MANIFEST, "display"), "Make it yours · 2 of 2");
     eq(U.positionLabel(MANIFEST, "welcome"), "");
     eq(U.positionLabel(MANIFEST, "finish"), "");
@@ -656,6 +679,7 @@ test("the corner card moves out of the way while tiling", () => {
     eq(U.coachPlacement("tiling", { terminal: true, browser: true }), "right-center");
     eq(U.coachPlacement("tiling", { terminal: true, browser: true, split: true }), "right-center");
     eq(U.coachPlacement("tiling", { browser: true }), "bottom-right", "terminal closed again");
+    eq(U.coachPlacement("layouts", {}), "right-center", "clear of the floating windows and the dock");
 });
 
 function rows(status) { return U.welcomeChecklist(status); }
@@ -730,6 +754,28 @@ test("do it for me: window controls and workspaces", () => {
        ["hyprctl dispatch hl.dsp.focus({ workspace = '3' })"], "back to where the step began");
     eq(argvs(U.doItPlan("workspaces", { ticked: { switch: true, back: true }, windows: w, workspace: 9 }))[1],
        "hyprctl dispatch hl.dsp.window.move({ workspace = '8' })");
+    // Omarchy 4.5 gives each monitor workspaces 1-10: the second's are 11-20.
+    eq(argvs(U.doItPlan("workspaces", { ticked: {}, workspace: 12 }))[0],
+       "hyprctl dispatch hl.dsp.focus({ workspace = '13' })", "the second monitor's workspace 2");
+    eq(argvs(U.doItPlan("workspaces", { ticked: {}, workspace: 19 }))[0],
+       "hyprctl dispatch hl.dsp.focus({ workspace = '18' })", "the second monitor's workspace 9 stays in its block");
+});
+
+test("do it for me: layouts cycles, minimizes, and comes back", () => {
+    const focus = "hyprctl dispatch hl.dsp.focus({ workspace = '7' })";
+    const toggle = "omarchy-hyprland-workspace-layout-toggle";
+    eq(argvs(U.doItPlan("layouts", { ticked: {}, home: 7, layout: { start: "dwindle", mode: "dwindle" } })), [focus, toggle]);
+    eq(argvs(U.doItPlan("layouts", { ticked: { scrolling: true }, home: 7, layout: { start: "dwindle", mode: "dwindle" } })),
+       [focus, toggle, toggle], "floating is two presses from tiling");
+    eq(argvs(U.doItPlan("layouts", { ticked: { scrolling: true, floating: true }, windows: { terminal: "t1" }, home: 7,
+                                      layout: { start: "dwindle", mode: "floating" } })),
+       [focus, "omarchy-hyprland-window-minimize 0xt1",
+        "hyprctl dispatch hl.dsp.window.move({ workspace = '7', window = 'address:0xt1' })",
+        "hyprctl dispatch hl.dsp.focus({ window = 'address:0xt1' })"], "minimized and brought back, as the dock does");
+    eq(U.doItPlan("layouts", { ticked: { scrolling: true, floating: true }, windows: {} }), { special: "skip" });
+    eq(argvs(U.doItPlan("layouts", { ticked: { scrolling: true, floating: true, minimize: true }, home: 7,
+                                      layout: { start: "dwindle", mode: "floating" } })), [focus, toggle], "back to tiling");
+    ok(U.doItPlan("layouts", {}) !== null, "offered before the layout is known");
 });
 
 test("do it for me: display", () => {
@@ -767,8 +813,8 @@ test("do it for me: specials and steps without one", () => {
     eq(argvs(U.doItPlan("clipboard", {})), ["wl-copy " + U.CLIPBOARD_SAMPLE], "copies the line");
     eq(argvs(U.doItPlan("clipboard", { ticked: { copy: true } })),
        ["hyprctl dispatch hl.dsp.focus({ window = 'class:^org.omarchy.onboarding-sample$' })",
-        "hyprctl dispatch hl.dsp.send_key_state({ mods = 'SHIFT', key = 'Insert', state = 'down' })",
-        "hyprctl dispatch hl.dsp.send_key_state({ mods = 'SHIFT', key = 'Insert', state = 'up' })"],
+        "hyprctl dispatch hl.dsp.send_key_state({ mods = 'CTRL SHIFT', key = 'V', state = 'down' })",
+        "hyprctl dispatch hl.dsp.send_key_state({ mods = 'CTRL SHIFT', key = 'V', state = 'up' })"],
        "then pastes it in the terminal, as Super + V does there");
     eq(argvs(U.doItPlan("theme", {})), ["omarchy-menu toggle theme"], "opens Omarchy's own picker");
     eq(U.doItPlan("welcome", {}), null);
@@ -835,14 +881,19 @@ test("install adds one autostart line and uninstall removes it", () => {
 
 // ================================================================ recordings
 
+// Recordings made before Omarchy 4.5 have no layouts step.
+const BEFORE_LAYOUTS = D.DRILL_STEPS.filter(s => s !== "layouts");
+
 // Runs the drills in flow order, from `from` (a drill step id, default the
-// first), moving on as each completes. feed(obs) returns what happened:
+// first), moving on as each completes. `drills` is the flow's drills, all of
+// them by default. feed(obs) returns what happened:
 // [{type: "tick", step, subtask, ticked}] and {type: "complete", step};
 // after the last drill, done() is true.
-function walker(options, from) {
-    var start = from ? D.DRILL_STEPS.indexOf(from) : 0;
-    if (start < 0) throw new Error("'" + from + "' is not a drill (expected one of: " + D.DRILL_STEPS.join(", ") + ")");
-    var w = { index: start, drill: D.create(D.DRILL_STEPS[start], options) };
+function walker(options, from, drills) {
+    drills = drills || D.DRILL_STEPS;
+    var start = from ? drills.indexOf(from) : 0;
+    if (start < 0) throw new Error("'" + from + "' is not a drill (expected one of: " + drills.join(", ") + ")");
+    var w = { index: start, drill: D.create(drills[start], options) };
     w.done = function () { return w.drill === null; };
     w.feed = function (obs) {
         var out = [];
@@ -855,7 +906,7 @@ function walker(options, from) {
             // The tiling drill's windows carry over, as in the overlay.
             if (w.drill.windows) options = Object.assign({}, options, { browser: w.drill.windows().browser });
             w.index++;
-            w.drill = w.index < D.DRILL_STEPS.length ? D.create(D.DRILL_STEPS[w.index], options) : null;
+            w.drill = w.index < drills.length ? D.create(drills[w.index], options) : null;
         }
         return out;
     };
@@ -867,8 +918,8 @@ function recording(name) {
         .map(l => l.trim()).filter(l => l && !l.startsWith("#")).map(l => JSON.parse(l));
 }
 
-function replay(name, from) {
-    const w = walker({ defaultBrowser: "chromium" }, from);
+function replay(name, from, drills) {
+    const w = walker({ defaultBrowser: "chromium" }, from, drills);
     const events = [];
     recording(name).forEach(obs => { events.push(...w.feed(obs)); });
     return { w, events };
@@ -877,31 +928,31 @@ function replay(name, from) {
 // From a live walkthrough through the plugin: every drill sub-task ticks, in
 // order, with no resets.
 test("live walkthrough ticks every drill sub-task", () => {
-    const { w, events } = replay("walkthrough-live.jsonl");
+    const { w, events } = replay("walkthrough-live.jsonl", null, BEFORE_LAYOUTS);
     ok(w.done(), "all drills complete");
-    D.DRILL_STEPS.forEach(step => {
+    BEFORE_LAYOUTS.forEach(step => {
         MANIFEST.steps.find(s => s.id === step).subtasks.forEach(t => {
             ok(events.some(e => e.type === "tick" && e.step === step && e.subtask === t.id && e.ticked), step + "/" + t.id);
         });
     });
     ok(!events.some(e => e.type === "tick" && !e.ticked), "no resets");
-    eq(events.filter(e => e.type === "complete").map(e => e.step), D.DRILL_STEPS);
+    eq(events.filter(e => e.type === "complete").map(e => e.step), BEFORE_LAYOUTS);
 });
 
 // The same walkthrough, recorded by the plugin through Quickshell rather than
 // by reading socket2 directly.
 test("plugin-recorded walkthrough ticks every drill sub-task", () => {
-    const { w, events } = replay("walkthrough-plugin-4.0.4.jsonl");
+    const { w, events } = replay("walkthrough-plugin-4.0.4.jsonl", null, BEFORE_LAYOUTS);
     ok(w.done(), "all drills complete");
     ok(!events.some(e => e.type === "tick" && !e.ticked), "no resets");
-    eq(events.filter(e => e.type === "complete").map(e => e.step), D.DRILL_STEPS);
+    eq(events.filter(e => e.type === "complete").map(e => e.step), BEFORE_LAYOUTS);
 });
 
 // Recorded before the shortcuts step asked to close the list: it ends with
 // the list open, so every drill completes but that one.
 test("socket2 walkthrough predates closing the shortcut list", () => {
-    const { w, events } = replay("walkthrough-4.0.4.jsonl");
-    eq(events.filter(e => e.type === "complete").map(e => e.step), D.DRILL_STEPS.slice(0, -1));
+    const { w, events } = replay("walkthrough-4.0.4.jsonl", null, BEFORE_LAYOUTS);
+    eq(events.filter(e => e.type === "complete").map(e => e.step), BEFORE_LAYOUTS.slice(0, -1));
     eq(w.drill.step, "shortcuts");
     eq(Object.keys(w.drill.ticked), ["open"]);
 });

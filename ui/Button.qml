@@ -1,5 +1,6 @@
 import QtQuick
 import qs.Commons
+import qs.Commons as Commons
 
 // A themed button that works with the mouse and the keyboard (Tab, Enter, Space).
 Rectangle {
@@ -15,17 +16,17 @@ Rectangle {
     implicitWidth: content.implicitWidth + Style.space(32)
     implicitHeight: label.implicitHeight + Style.space(16)
     radius: Style.cornerRadius
-    color: primary ? Color.accent
+    color: primary ? Commons.Color.accent
          : mouse.containsMouse || activeFocus ? Style.hoverFill : Style.normalFill
     border.width: activeFocus ? 2 : 1
-    border.color: activeFocus ? Color.accent
-                : primary ? Color.accent : Style.normalBorderColor
+    border.color: activeFocus ? Commons.Color.accent
+                : primary ? Commons.Color.accent : Style.normalBorderColor
 
     Keys.onReturnPressed: button.clicked()
     Keys.onEnterPressed: button.clicked()
     Keys.onSpacePressed: button.clicked()
 
-    readonly property color ink: primary ? Color.background : Color.foreground
+    readonly property color ink: primary ? Commons.Color.background : Commons.Color.foreground
 
     Row {
         id: content

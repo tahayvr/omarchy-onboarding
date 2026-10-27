@@ -1,5 +1,6 @@
 import QtQuick
 import qs.Commons
+import qs.Commons as Commons
 
 // The finish screen.
 FocusScope {
@@ -35,7 +36,7 @@ FocusScope {
             visible: text !== ""
             text: view.step ? (view.step.screen || "") : ""
             wrapMode: Text.Wrap
-            color: Color.foreground
+            color: Commons.Color.foreground
             font.family: Style.font.family
             font.pixelSize: Style.font.title
         }
@@ -55,7 +56,7 @@ FocusScope {
                         id: rememberLabel
                         anchors.verticalCenter: parent.verticalCenter
                         text: modelData.label
-                        color: Color.foreground
+                        color: Commons.Color.foreground
                         font.family: Style.font.family
                         font.pixelSize: Style.font.body
                     }
@@ -78,7 +79,7 @@ FocusScope {
                 anchors { left: parent.left; right: linkButton.left; rightMargin: Style.space(12); verticalCenter: parent.verticalCenter }
                 text: view.step && view.step.link ? view.step.link.text : ""
                 wrapMode: Text.Wrap
-                color: Color.foreground
+                color: Commons.Color.foreground
                 font.family: Style.font.family
                 font.pixelSize: Style.font.body
             }
@@ -103,7 +104,7 @@ FocusScope {
                 spacing: Style.space(6)
                 Text {
                     text: "Still to do"
-                    color: Qt.rgba(Color.foreground.r, Color.foreground.g, Color.foreground.b, 0.62)
+                    color: Qt.rgba(Commons.Color.foreground.r, Commons.Color.foreground.g, Commons.Color.foreground.b, 0.62)
                     font.family: Style.font.family
                     font.pixelSize: Style.font.body
                 }
@@ -114,7 +115,7 @@ FocusScope {
                         width: openList.width
                         text: "○  " + modelData.title + (modelData.reason ? " (" + modelData.reason + ")" : "")
                         wrapMode: Text.Wrap
-                        color: Color.foreground
+                        color: Commons.Color.foreground
                         font.family: Style.font.family
                         font.pixelSize: Style.font.body
                     }

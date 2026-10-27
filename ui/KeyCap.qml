@@ -1,5 +1,6 @@
 import QtQuick
 import qs.Commons
+import qs.Commons as Commons
 
 // One key, drawn as a key cap. `big` is the 40 s idle hint.
 Rectangle {
@@ -16,12 +17,12 @@ Rectangle {
     implicitWidth: Math.max(implicitHeight, text.implicitWidth + pad * 2)
     implicitHeight: text.implicitHeight + pad * 1.4
     radius: Math.max(Style.cornerRadius, Style.space(4))
-    color: lit ? Color.accent : Color.menu.selectedBackground
+    color: lit ? Commons.Color.accent : Commons.Color.menu.selectedBackground
     border.width: marked ? 2 : 1
-    border.color: lit || marked ? Color.accent : Qt.rgba(Color.foreground.r, Color.foreground.g, Color.foreground.b, 0.35)
+    border.color: lit || marked ? Commons.Color.accent : Qt.rgba(Commons.Color.foreground.r, Commons.Color.foreground.g, Commons.Color.foreground.b, 0.35)
 
-    Behavior on implicitHeight { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
-    Behavior on color { ColorAnimation { duration: 160 } }
+    Behavior on implicitHeight { NumberAnimation { duration: Style.duration(160); easing.type: Easing.OutCubic } }
+    Behavior on color { ColorAnimation { duration: Style.duration(160) } }
 
     // The cap's lower edge, so it reads as a key rather than a tag.
     Rectangle {
@@ -36,7 +37,7 @@ Rectangle {
         anchors.centerIn: parent
         anchors.verticalCenterOffset: -1
         text: cap.label
-        color: cap.lit ? Color.background : cap.marked ? Color.accent : Color.foreground
+        color: cap.lit ? Commons.Color.background : cap.marked ? Commons.Color.accent : Commons.Color.foreground
         font.family: Style.font.family
         font.pixelSize: cap.big ? Style.font.heading : Style.font.body
         font.weight: Font.DemiBold

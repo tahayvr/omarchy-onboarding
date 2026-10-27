@@ -2,13 +2,17 @@
 # Exits 0 when the Super + K keybindings list was just opened.
 #
 # Super + K opens the same omarchy-menu layer as the menu, so the layer event
-# alone can't tell them apart. While the list shows, `omarchy-menu-select
-# Keybindings` runs. That process can outlive an overlay hidden from outside,
-# so only one started in the last 2 seconds counts.
+# alone can't tell them apart. While the list shows, omarchy-menu-keybindings
+# runs `omarchy-menu-select` from a subshell of its own. The list's title is
+# translated, so the selector is known by that parent rather than by its
+# prompt. It can outlive an overlay hidden from outside, so only one started
+# in the last 2 seconds counts.
 exec </dev/null
 
-for pid in $(pgrep -f '^/bin/bash [^ ]*/omarchy-menu-select Keybindings( |$)'); do
+for pid in $(pgrep -f '^/bin/bash [^ ]*/omarchy-menu-select '); do
   age=$(ps -o etimes= -p "$pid" 2>/dev/null) || continue
-  ((age <= 2)) && exit 0
+  ((age <= 2)) || continue
+  parent=$(ps -o ppid= -p "$pid" 2>/dev/null) || continue
+  tr '\0' ' ' <"/proc/${parent// /}/cmdline" 2>/dev/null | grep -q '/omarchy-menu-keybindings\b' && exit 0
 done
 exit 1

@@ -1,6 +1,7 @@
 import QtQuick
 import Quickshell.Hyprland
 import qs.Commons
+import qs.Commons as Commons
 import "../lib/Ui.js" as Ui
 
 // The corner card for the tutorial's steps. It never takes the keyboard (the
@@ -36,8 +37,8 @@ Rectangle {
     }
 
     ProgressLine { progress: card.host ? card.host.progress : -1 }
-    color: Color.popups.background
-    border.color: Color.popups.border
+    color: Commons.Color.popups.background
+    border.color: Commons.Color.popups.border
     border.width: 1
     radius: Style.cornerRadius
 
@@ -53,7 +54,7 @@ Rectangle {
             visible: text !== ""
             text: card.step ? (card.step.screen || "") : ""
             wrapMode: Text.Wrap
-            color: Color.foreground
+            color: Commons.Color.foreground
             font.family: Style.font.family
             font.pixelSize: Style.font.body
         }
@@ -89,13 +90,13 @@ Rectangle {
                     width: Style.space(30)
                     height: Style.space(24)
                     radius: Style.cornerRadius
-                    color: here ? Color.accent : Style.normalFill
+                    color: here ? Commons.Color.accent : Style.normalFill
                     border.width: 1
-                    border.color: here ? Color.accent : Style.normalBorderColor
+                    border.color: here ? Commons.Color.accent : Style.normalBorderColor
                     Text {
                         anchors.centerIn: parent
                         text: modelData
-                        color: parent.here ? Color.background : Color.foreground
+                        color: parent.here ? Commons.Color.background : Commons.Color.foreground
                         font.family: Style.font.family
                         font.pixelSize: Style.font.body
                     }
@@ -112,7 +113,7 @@ Rectangle {
             radius: Style.cornerRadius
             color: Style.normalFill
             border.width: sample.activeFocus ? 2 : 1
-            border.color: sample.activeFocus ? Color.accent : Style.normalBorderColor
+            border.color: sample.activeFocus ? Commons.Color.accent : Style.normalBorderColor
 
             TextInput {
                 id: sample
@@ -123,9 +124,9 @@ Rectangle {
                 persistentSelection: true
                 selectByMouse: true
                 text: Ui.CLIPBOARD_SAMPLE
-                color: Color.foreground
+                color: Commons.Color.foreground
                 selectionColor: Style.selectionFill
-                selectedTextColor: Color.foreground
+                selectedTextColor: Commons.Color.foreground
                 font.family: Style.font.family
                 font.pixelSize: Style.font.body
                 Keys.onEscapePressed: card.host.askPause()

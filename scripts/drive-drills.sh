@@ -1,7 +1,7 @@
 #!/bin/bash
 # Walks the whole tutorial through the real plugin on the live desktop, by
 # running what each binding runs: the "Learn the keys" drills (menu to
-# shortcuts, the clipboard step included), each of which must complete its
+# shortcuts, the layouts and clipboard steps included), each of which must complete its
 # step by itself, then Back and forward again, and Do them now from the
 # finish screen through the skipped steps. The run passes when the flow
 # completes. The clipboard is restored afterwards.
@@ -29,11 +29,12 @@ WORK=$(mktemp -d)
 STATE="$WORK/state.json"
 CLI=("$ROOT/bin/omarchy-onboarding" --state "$STATE")
 SAMPLE="Omarchy copies and pastes the same way everywhere" # Ui.CLIPBOARD_SAMPLE
-SELECTOR='^/bin/bash /usr/share/omarchy/bin/omarchy-menu-select Keybindings'
+SELECTOR='^/bin/bash [^ ]*/omarchy-menu-select '
 
 terminal="" browser="" sample_terminal=""
 before_all=$(hyprctl -j clients | jq -c '[.[].address]')
 start_ws=$(hyprctl -j activeworkspace | jq -r .id)
+start_layout=$("$ROOT/bin/onboarding-workspace-layout" "$WS_A")
 
 say() { printf '\033[1m> %s\033[0m\n' "$*" >&2; }
 dispatch() { hyprctl dispatch "$1" >/dev/null; }
@@ -100,6 +101,9 @@ cleanup() {
       '.[] | select((.workspace.name == $a or .workspace.name == $b) and ((.address) as $x | $before | index($x) | not)) | .address'); do
     close_own "$addr"
   done
+  # The layouts step cycles WS_A; an aborted run can leave it scrolling or floating.
+  [[ $("$ROOT/bin/onboarding-workspace-layout" "$WS_A") == "$start_layout" ]] ||
+    "$ROOT/bin/onboarding-workspace-layout" "$WS_A" "$start_layout"
   dispatch "hl.dsp.focus({ workspace = '$start_ws' })"
   echo "--- log"
   cat "$WORK/state.log" 2>/dev/null
@@ -153,6 +157,16 @@ direction=$(hyprctl -j clients | jq -r --arg t "$terminal" --arg b "$browser" '
   (map(select(.address == $t))[0].at) as $ta | (map(select(.address == $b))[0].at) as $ba |
   if $ta[0] < $ba[0] then "l" elif $ta[0] > $ba[0] then "r" elif $ta[1] < $ba[1] then "u" else "d" end')
 dispatch "hl.dsp.focus({ direction = '$direction' })"
+wait_step layouts
+
+say "Layouts: Super + L twice, Super + M and the dock, Super + L"
+omarchy-hyprland-workspace-layout-toggle; sleep 1.2 # scrolling
+omarchy-hyprland-workspace-layout-toggle; sleep 2   # floating; the first one reloads the config
+omarchy-hyprland-window-minimize "$terminal"; sleep 1
+# What clicking it in the dock does: back to the workspace in front, focused.
+dispatch "hl.dsp.window.move({ workspace = '$WS_A', window = 'address:$terminal' })"
+dispatch "hl.dsp.focus({ window = 'address:$terminal' })"; sleep 0.8
+omarchy-hyprland-workspace-layout-toggle # tiling again
 wait_step window-controls
 
 say "Window controls: Super + T twice, Super + F twice, Super + W on the browser"
@@ -182,10 +196,10 @@ saved_clipboard=$(wl-paste --no-newline 2>/dev/null || true)
 wl-copy "$SAMPLE" >/dev/null 2>&1 # wl-copy forks a server that keeps stdout open; what Super + C on the card's selected line does
 sleep 1.5          # the overlay sees it, ticks, and focuses the terminal
 require_active "$sample_terminal" "the clipboard terminal"
-# What Super + V does in a terminal: Shift + Insert to the focused surface.
-dispatch "hl.dsp.send_key_state({ mods = 'SHIFT', key = 'Insert', state = 'down' })"
+# What Super + V does in a terminal: Ctrl + Shift + V to the focused surface.
+dispatch "hl.dsp.send_key_state({ mods = 'CTRL SHIFT', key = 'V', state = 'down' })"
 sleep 0.06
-dispatch "hl.dsp.send_key_state({ mods = 'SHIFT', key = 'Insert', state = 'up' })"
+dispatch "hl.dsp.send_key_state({ mods = 'CTRL SHIFT', key = 'V', state = 'up' })"
 wait_step shortcuts
 printf '%s' "$saved_clipboard" | wl-copy >/dev/null 2>&1
 

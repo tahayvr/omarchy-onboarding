@@ -1,5 +1,6 @@
 import QtQuick
 import qs.Commons
+import qs.Commons as Commons
 
 // One sub-task of a drill: a tick, what to do, and its keys.
 Item {
@@ -19,7 +20,7 @@ Item {
         anchors { left: parent.left; verticalCenter: parent.verticalCenter }
         width: Style.space(20)
         text: row.done ? "✓" : "○"
-        color: row.done ? Color.accent : Qt.rgba(Color.foreground.r, Color.foreground.g, Color.foreground.b, 0.62)
+        color: row.done ? Commons.Color.accent : Qt.rgba(Commons.Color.foreground.r, Commons.Color.foreground.g, Commons.Color.foreground.b, 0.62)
         font.family: Style.font.family
         font.pixelSize: Style.font.title
     }
@@ -28,7 +29,7 @@ Item {
         id: line
         anchors { left: mark.right; right: caps.left; rightMargin: Style.space(12); verticalCenter: parent.verticalCenter }
         text: row.label
-        color: row.done ? Qt.rgba(Color.foreground.r, Color.foreground.g, Color.foreground.b, 0.62) : Color.foreground
+        color: row.done ? Qt.rgba(Commons.Color.foreground.r, Commons.Color.foreground.g, Commons.Color.foreground.b, 0.62) : Commons.Color.foreground
         font.family: Style.font.family
         font.pixelSize: Style.font.body
         wrapMode: Text.Wrap

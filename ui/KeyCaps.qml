@@ -1,5 +1,6 @@
 import QtQuick
 import qs.Commons
+import qs.Commons as Commons
 import "../lib/Ui.js" as Ui
 
 // A shortcut such as "Super + Shift + Return" as a row of key caps.
@@ -21,7 +22,7 @@ Row {
                 visible: modelData.plus
                 anchors.verticalCenter: parent.verticalCenter
                 text: "+"
-                color: Qt.rgba(Color.foreground.r, Color.foreground.g, Color.foreground.b, 0.62)
+                color: Qt.rgba(Commons.Color.foreground.r, Commons.Color.foreground.g, Commons.Color.foreground.b, 0.62)
                 font.family: Style.font.family
                 font.pixelSize: Style.font.body
             }

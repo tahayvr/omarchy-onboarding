@@ -1,5 +1,6 @@
 import QtQuick
 import qs.Commons
+import qs.Commons as Commons
 
 // Esc from any step: keep going, or quit.
 FocusScope {
@@ -30,7 +31,7 @@ FocusScope {
             Text {
                 anchors.verticalCenter: parent.verticalCenter
                 text: "Taking a break?"
-                color: Color.foreground
+                color: Commons.Color.foreground
                 font.family: Style.font.family
                 font.pixelSize: Style.font.heading
                 font.weight: Font.DemiBold
@@ -40,7 +41,7 @@ FocusScope {
             width: parent.width
             text: "If you quit, run omarchy onboarding any time to come back to it."
             wrapMode: Text.Wrap
-            color: Qt.rgba(Color.foreground.r, Color.foreground.g, Color.foreground.b, 0.62)
+            color: Qt.rgba(Commons.Color.foreground.r, Commons.Color.foreground.g, Commons.Color.foreground.b, 0.62)
             font.family: Style.font.family
             font.pixelSize: Style.font.body
         }

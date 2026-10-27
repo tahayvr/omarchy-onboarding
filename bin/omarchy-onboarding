@@ -45,8 +45,9 @@ die() {
   exit 1
 }
 
-# omarchy-shell splits arguments on spaces, so JSON goes over compact with
-# spaces escaped.
+# omarchy-shell before Omarchy 4.5 split arguments on spaces, so JSON goes
+# over compact with spaces escaped; 4.5 passes them intact, and reads it the
+# same.
 payload() {
   jq -cn "$@" | sed 's/ /\\u0020/g'
 }

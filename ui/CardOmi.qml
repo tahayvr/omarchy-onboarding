@@ -1,5 +1,6 @@
 import QtQuick
 import qs.Commons
+import qs.Commons as Commons
 import "../omi"
 import "../lib/Ui.js" as Ui
 
@@ -15,7 +16,7 @@ Omi {
     property real size: Style.space(48)
     width: Ui.evenOmiSize(size, dpr)
     height: width
-    color: Color.accent
+    color: Commons.Color.accent
     bodyMotion: false
     mode: host ? host.omiMode : "idle"
     look: host && host.omiLook ? host.omiLook : [0, 0]
