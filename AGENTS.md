@@ -8,10 +8,11 @@ things without touching the real system.
 Onboarding is an Omarchy shell plugin (`tahayvr.onboarding`, kind `overlay`)
 inside the long-lived Quickshell process. There is no daemon and no compiled
 code, because Omarchy ships only bash and QML. Onboarding ships after Omarchy
-4.5 and needs it: no compatibility with 4.0.x is kept. Built against 4.5.0rc1
+4.5 and needs it: no compatibility with 4.0.x is kept. Built against 4.5.0
 (Hyprland 0.56.2 with a Lua config, Quickshell 0.3.2, Qt 6.12). The `version` file in
 `/usr/share/omarchy` wrongly says `4.0.0.alpha`, so read the version from
-`omarchy version`. Upstream `quattro` is cloned at `upstream/omarchy` (gitignored).
+`omarchy version`. Upstream is cloned at `upstream/omarchy` (gitignored), checked
+out at the `v4.5.0` tag, which matches the installed package file for file.
 
 ## Layout
 
@@ -144,7 +145,7 @@ code, because Omarchy ships only bash and QML. Onboarding ships after Omarchy
   "Ctrl + key" once while the binds are on, so buttons stay small. Omarchy's
   own binds shown on a card (Display settings) are key caps beside the
   button, never the button's key. Keys the welcome checklist shows
-  (Super + Ctrl + W, Super + K) open the panel or list through Omarchy's own
+  (Super + Ctrl + N, Super + K) open the panel or list through Omarchy's own
   binds; the card sees the layer open and steps aside.
 - **Card placement** is `Ui.coachPlacement` and depends on the step, its ticked
   sub-tasks and the bar position from `onboarding-facts`. The corner window
@@ -243,7 +244,7 @@ code, because Omarchy ships only bash and QML. Onboarding ships after Omarchy
 - **Network:**
   - Connectivity is `nmcli networking connectivity`, where `full` means online.
   - The SSID comes from `nmcli -t -f active,ssid device wifi`.
-  - The Wi-Fi UI is the shell panel `omarchy.network` (Super + Ctrl + W).
+  - The Wi-Fi UI is the shell panel `omarchy.network` (Super + Ctrl + N).
     `omarchy network` is a command group, not a panel launcher.
   - Panels only open if their widget is in the bar.
 - **Updates:**
@@ -255,11 +256,21 @@ code, because Omarchy ships only bash and QML. Onboarding ships after Omarchy
 - **Bindings differ per machine.** Read them live rather than hardcoding apps.
   - Super + / scales up and Super + Alt + / scales down.
   - Super + L cycles the workspace layout (see above).
+  - 4.5.0 final rebound several chords after rc1: Network is Super + Ctrl + N
+    (Super + Ctrl + W is now the background switcher), the theme picker also
+    answers Super + Ctrl + T, and the night light has no bind at all: it's in
+    the toggle menu (Super + Ctrl + O) or `omarchy toggle nightlight`. The
+    display step points at that menu. Check every key a step shows against
+    `hyprctl binds -j` after each Omarchy release.
 - **First run:** `autostart.lua` runs `omarchy-provision-first-run`, gated by
   `omarchy-done check first-run-user`.
   - Markers are empty files in `~/.local/state/omarchy/done/`.
-  - First-run sends the welcome and Wi-Fi/update notices. It also installs the
-    post-update hooks, and `setup-agent.hook` is the default-agent prompt.
+  - First-run sends the welcome and git-setup notices, then, detached and once
+    online, the agent and fingerprint invites and the update notice. Since
+    4.5.0 the update notice only goes out when `checkupdates` finds something,
+    so a fresh install may get no update toast; the Wi-Fi notice goes out
+    only when `nm-online` fails. Nothing is installed as a post-update hook
+    any more.
 - **Missing commands:** `bin/onboarding-check` checks every `requires` against
   `omarchy commands --json --all` and `command -v`. A missing one auto-skips
   its step with a log line.

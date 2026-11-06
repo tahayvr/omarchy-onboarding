@@ -586,7 +586,7 @@ Item {
 
     // The welcome card takes the keyboard, so whatever the user opens from it
     // by key needs it to step aside, as its buttons do: the network panel
-    // (Super + Ctrl + W) or another shell panel, the keybindings list
+    // (Super + Ctrl + N) or another shell panel, the keybindings list
     // (Super + K) or the menu. It comes back when that closes.
     readonly property string panelLayer: "omarchy-keyboard-panel"
     function welcomeLayer(name, data) {

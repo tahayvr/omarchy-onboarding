@@ -261,8 +261,8 @@
         },
         {
           "id": "nightlight",
-          "label": "Night light on, then off",
-          "keys": "Super + Ctrl + N"
+          "label": "Night light on, then off, from the toggle menu",
+          "keys": "Super + Ctrl + O"
         }
       ],
       "cheer": "Easy on the eyes."

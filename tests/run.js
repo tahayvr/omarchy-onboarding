@@ -694,7 +694,7 @@ test("welcome checklist: Wi-Fi", () => {
        { id: "wifi", done: true, icon: "\u{F05A9}", iconFont: "", title: "Connected to Home", detail: "", action: "" });
     eq(row({ online: true }, "wifi").title, "Connected to the internet", "wired has no SSID");
     const off = row({ online: false }, "wifi");
-    ok(!off.done && off.action === "Connect" && off.keys === "Super + Ctrl + W");
+    ok(!off.done && off.action === "Connect" && off.keys === "Super + Ctrl + N");
     eq(off.detail, "", "the keys and the button say it all");
 });
 
