@@ -3,6 +3,12 @@
 First-boot onboarding for [Omarchy](https://omarchy.org), built as an Omarchy shell plugin (`tahayvr.onboarding`). A welcome checklist gets you online and up to date and shows where every shortcut lives; an optional tutorial then teaches the keys by having you press them, while an overlay watches Hyprland and ticks each step off as you do it.
 
 <p align="center">
+  <a href="docs/demo.mp4"><img src="docs/screenshots/demo.jpg" width="720" alt="A run of the whole onboarding, at 1.6× speed: the theme lesson with the picker open"></a>
+  <br>
+  <a href="docs/demo.mp4">▶ Watch a full run (67 s, 1.6× speed)</a>
+</p>
+
+<p align="center">
   <img src="docs/screenshots/welcome.png" width="560" alt="The welcome screen while offline: a Connect button for Wi-Fi and the keyboard shortcuts, with Omi offering the tour">
 </p>
 
