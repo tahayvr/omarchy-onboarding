@@ -1,11 +1,12 @@
 import QtQuick
 import qs.Commons
 import qs.Commons as Commons
+import "../lib/Ui.js" as Ui
 
 // Back, Skip, and after a minute without progress, "Do it for me". While the
-// tutorial's keys are bound, "Ctrl + key" is said once here, at the left,
-// and each button carries only its key. What Omi says when the user
-// stalls is in the header (Ui.omiHint), not here.
+// tutorial's keys are bound, each button's chip shows its whole chord
+// (Ctrl + /). What Omi says when the user stalls is in the header
+// (Ui.omiHint), not here.
 Item {
     id: footer
 
@@ -14,42 +15,29 @@ Item {
     property string primaryText: ""
     signal primary()
 
-    readonly property bool legendShown: !!host && Object.keys(host.tutorialKeys).length > 0
-
     width: parent ? parent.width : implicitWidth
-    // The buttons and the legend: a card never gets narrower than this row.
-    implicitWidth: buttons.implicitWidth + (legendShown ? legend.implicitWidth + Style.space(16) : 0)
+    // A card never gets narrower than its buttons.
+    implicitWidth: buttons.implicitWidth
     // Room above the buttons: the footer sits apart from the content.
     implicitHeight: buttons.implicitHeight + Style.space(8)
-
-    // Every key on this card is Ctrl + what its chip shows.
-    Text {
-        id: legend
-        visible: footer.legendShown
-        anchors { left: parent.left; verticalCenter: buttons.verticalCenter }
-        text: "Ctrl + key"
-        color: Qt.rgba(Commons.Color.foreground.r, Commons.Color.foreground.g, Commons.Color.foreground.b, 0.62)
-        font.family: Style.font.family
-        font.pixelSize: Style.font.bodySmall
-    }
 
     Row {
         id: buttons
         anchors { right: parent.right; bottom: parent.bottom }
         spacing: Style.space(10)
-        Button { visible: footer.host.canBack; text: "Back"; key: footer.host.tutorialKeys.back || ""; onClicked: footer.host.back() }
-        Button { text: "Skip"; key: footer.host.tutorialKeys.skip || ""; onClicked: footer.host.skip() }
+        Button { visible: footer.host.canBack; text: "Back"; key: Ui.tutorialChord(footer.host.tutorialKeys.back); onClicked: footer.host.back() }
+        Button { text: "Skip"; key: Ui.tutorialChord(footer.host.tutorialKeys.skip); onClicked: footer.host.skip() }
         Button {
             visible: footer.host.canDoIt
             text: "Do it for me"
-            key: footer.host.tutorialKeys.doit || ""
+            key: Ui.tutorialChord(footer.host.tutorialKeys.doit)
             primary: footer.primaryText === ""
             onClicked: footer.host.doIt()
         }
         Button {
             visible: footer.primaryText !== ""
             text: footer.primaryText
-            key: footer.host.tutorialKeys.primary || ""
+            key: Ui.tutorialChord(footer.host.tutorialKeys.primary)
             primary: true
             onClicked: footer.primary()
         }

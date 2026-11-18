@@ -141,8 +141,10 @@ out at the `v4.5.0` tag, which matches the installed package file for file.
   (back). Ctrl + Backspace was avoided: terminals use it. Each calls
   the overlay's `key()`, which acts only while that button is shown. A combo
   the user has bound is left alone, and its button shows no key. A button's
-  chip carries only its key (/, ., `,`, Esc, ↵) and the footer says
-  "Ctrl + key" once while the binds are on, so buttons stay small. Omarchy's
+  chip shows the whole chord (Ctrl + /, Ctrl + Esc beside the ✕): a bare
+  key read as plain Esc or /, and a sub-task on the same card may ask for
+  plain Esc. Keys pressed one after the other are written with "then" in
+  `steps.json` ("← + → then Enter"), never "+". Omarchy's
   own binds shown on a card (Display settings) are key caps beside the
   button, never the button's key. Keys the welcome checklist shows
   (Super + Ctrl + N, Super + K) open the panel or list through Omarchy's own

@@ -59,13 +59,13 @@ Item {
     }
 
     // The ✕'s key: plain Esc on a centered card, which has the keyboard;
-    // on the corner card it's Ctrl + Esc, and the footer's "Ctrl + key"
-    // legend says so for every chip on the card.
+    // on the corner card it's Ctrl + Esc, said in full, since a sub-task on
+    // the same card may ask for plain Esc (closing the menu).
     KeyChip {
         id: pauseKey
         anchors { right: pauseButton.left; rightMargin: Style.space(8); verticalCenter: pauseButton.verticalCenter }
         key: header.step && Ui.isCentered(header.step.id) ? "Esc"
-           : header.host && header.host.tutorialKeys ? (header.host.tutorialKeys.pause || "") : ""
+           : header.host && header.host.tutorialKeys ? Ui.tutorialChord(header.host.tutorialKeys.pause) : ""
     }
 
     Text {

@@ -154,8 +154,8 @@ Item {
     // keyboard; each calls key(), which acts only while its button is shown.
     // tutorialKeys has the label of each one bound: none for a combo the user
     // has bound to something else.
-    // Each is Ctrl + the key; the card says "Ctrl + key" once (Footer) and
-    // every button carries only its key, so buttons stay small.
+    // Each is Ctrl + the key, and a button's chip says the whole chord
+    // (Ui.tutorialChord).
     readonly property var tutorialKeyLabels: ({ skip: "/", primary: "\u21b5", doit: ".", pause: "Esc", back: "," })
     readonly property bool tutorialKeysWanted: opened && flow !== null && step !== null
                                                && step.id !== "welcome" && step.id !== "finish"

@@ -563,6 +563,10 @@ test("key caps", () => {
 test("a plus between keys, but not between arrows", () => {
     eq(U.keyCapItems("Super + J").map(c => c.plus), [false, true]);
     eq(U.keyCapItems("Super + Arrows").map(c => c.label + (c.plus ? "+" : "")), ["Super", "←+", "↑", "↓", "→"]);
+    eq(U.keyCapItems("← + → then Enter").map(c => (c.then ? "then " : c.plus ? "+ " : "") + c.label), ["←", "→", "then Enter"],
+       "a sequence, not Enter held with the arrows");
+    eq(U.keyCapItems("Super + K").some(c => c.then), false);
+    eq([U.tutorialChord("/"), U.tutorialChord(""), U.tutorialChord(undefined)], ["Ctrl + /", "", ""]);
 });
 
 test("every drill sub-task names its keys", () => {

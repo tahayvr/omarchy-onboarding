@@ -3,7 +3,8 @@ import qs.Commons
 import qs.Commons as Commons
 import "../lib/Ui.js" as Ui
 
-// A shortcut such as "Super + Shift + Return" as a row of key caps.
+// A shortcut such as "Super + Shift + Return" as a row of key caps. Keys
+// pressed one after the other read "then" between them (Ui.keyCapItems).
 Row {
     id: caps
 
@@ -19,9 +20,10 @@ Row {
             spacing: Style.space(4)
 
             Text {
-                visible: modelData.plus
+                visible: modelData.plus || modelData.then
                 anchors.verticalCenter: parent.verticalCenter
-                text: "+"
+                // Held together, or pressed after.
+                text: modelData.then ? "then" : "+"
                 color: Qt.rgba(Commons.Color.foreground.r, Commons.Color.foreground.g, Commons.Color.foreground.b, 0.62)
                 font.family: Style.font.family
                 font.pixelSize: Style.font.body

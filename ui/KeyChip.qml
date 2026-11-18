@@ -20,14 +20,16 @@ Rectangle {
     implicitHeight: label.implicitHeight + Style.space(4)
     radius: Math.max(Style.cornerRadius, Style.space(3))
     color: onAccent ? Qt.rgba(Commons.Color.background.r, Commons.Color.background.g, Commons.Color.background.b, 0.22)
-                    : Qt.rgba(Commons.Color.foreground.r, Commons.Color.foreground.g, Commons.Color.foreground.b, 0.1)
+                    : Qt.rgba(Commons.Color.foreground.r, Commons.Color.foreground.g, Commons.Color.foreground.b, 0.12)
 
     Text {
         id: label
         anchors.centerIn: parent
         text: chip.key
-        color: Qt.rgba(chip.ink.r, chip.ink.g, chip.ink.b, 0.6)
+        // Strong enough to read a lone comma or slash.
+        color: Qt.rgba(chip.ink.r, chip.ink.g, chip.ink.b, 0.85)
         font.family: Style.font.family
         font.pixelSize: Style.font.bodySmall
+        font.weight: Font.DemiBold
     }
 }
