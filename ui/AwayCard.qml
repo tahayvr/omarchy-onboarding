@@ -3,14 +3,17 @@ import qs.Commons
 import qs.Commons as Commons
 
 // The welcome checklist while it has stepped aside (for a panel, the update
-// terminal, the keybindings list or the menu). It comes back by itself when
+// terminal, the agent picker, the keybindings list or the menu). It comes back by itself when
 // that closes, or with the button.
 Rectangle {
     id: card
 
     property var host
-    // "wifi", "update", "keys", "menu" or "panel" (another shell panel).
+    // "wifi", "update", "agent", "keys", "menu" or "panel" (another shell panel).
     property string reason: ""
+    // The line for "agent", which changes as the agent is picked and set up
+    // (Ui.agentAwayLine).
+    property string agentLine: ""
 
     implicitWidth: Style.space(400)
     implicitHeight: column.implicitHeight + Style.space(48)
@@ -33,18 +36,19 @@ Rectangle {
                 anchors.verticalCenter: parent.verticalCenter
                 text: card.reason === "wifi" ? "Pick your network in the panel. I'll be back once you're online."
                     : card.reason === "update" ? "Omarchy is updating in the terminal. I'll be back when it's done."
+                    : card.reason === "agent" ? card.agentLine
                     : card.reason === "menu" ? "Have a look around the menu. Close it and I'll be back."
                     : card.reason === "panel" ? "Take your time in the panel. Close it and I'll be back."
                     : "That's every shortcut, and you can search it. Close it and I'll be back."
             }
         }
-        // What closes it (everything but the update terminal closes with
-        // Esc), beside the way back.
+        // What closes it (everything but the update and agent terminals
+        // closes with Esc), beside the way back.
         Row {
             anchors.right: parent.right
             spacing: Style.space(14)
             KeyCaps {
-                visible: card.reason !== "update"
+                visible: card.reason !== "update" && (card.reason !== "agent" || card.host.agentMenuOpen)
                 anchors.verticalCenter: parent.verticalCenter
                 keys: "Esc"
             }

@@ -714,6 +714,47 @@ test("welcome checklist: each row has its icon; the update row uses Omarchy's lo
     eq(row({ online: false }, "wifi").icon, "\u{F05AA}", "Wi-Fi off when offline");
 });
 
+test("welcome checklist: the agent row offers the picker once online", () => {
+    const base = { online: true, ssid: "Home", update: "current" };
+    eq(rows(Object.assign({ agent: "" }, base)).map(r => r.id), ["wifi", "update", "agent", "keys"]);
+    const pick = row(Object.assign({ agent: "" }, base), "agent");
+    eq([pick.done, pick.title, pick.detail], [false, "Pick your coding agent", ""]);
+    eq([pick.action, pick.clickable, pick.key, pick.keys], ["", true, "A", "A"], "the whole row opens the picker, and so does A");
+    eq(rows({ online: false, agent: "" }).map(r => r.id), ["wifi", "keys"], "choosing installs, so it waits for the network");
+    eq(rows(Object.assign({ agent: null }, base)).map(r => r.id), ["wifi", "update", "keys"], "an Omarchy without agents");
+    eq(rows(base).map(r => r.id), ["wifi", "update", "keys"], "not read yet");
+});
+
+test("welcome checklist: a chosen agent shows by name, online or not", () => {
+    const set = row({ online: false, agent: "claude", agentName: "Claude" }, "agent");
+    eq([set.done, set.action, set.title], [true, "", "Your coding agent is Claude"]);
+    eq(row({ online: true, agent: "pi" }, "agent").title, "Your coding agent is pi", "the id when the name is unknown");
+});
+
+test("welcome checklist: a row's key presses its button", () => {
+    eq(row({ online: true, update: "available" }, "update").key, "U");
+    eq(row({ online: true, update: "unknown" }, "update").key, "U", "Try again");
+    eq(row({ online: true, update: "current" }, "update").key, undefined, "no button, no key");
+});
+
+test("Omi cheers a chosen agent", () => {
+    eq(U.welcomeOmiReaction({ online: true, agent: "" }, { online: true, agent: "claude" }), "success");
+    eq(U.welcomeOmiReaction({ online: true, agent: null }, { online: true, agent: "claude" }), "", "the first reading isn't news");
+    eq(U.welcomeOmiReaction({ online: true, agent: "claude" }, { online: true, agent: "claude" }), "");
+});
+
+test("the agent's stepped-aside line follows the pick", () => {
+    ok(/^Pick the agent/.test(U.agentAwayLine({ agent: "", menuOpen: true })));
+    eq(U.agentAwayLine({ agent: "", busy: true }), "Your agent is setting up in the terminal. Close it when you're done and I'll be back.");
+    eq(U.agentAwayLine({ agent: "claude", agentName: "Claude", busy: true }), "Claude is setting up in the terminal. Close it when you're done and I'll be back.");
+    eq(U.agentAwayLine({ agent: "claude", agentName: "Claude" }), "Claude is your agent now. Say hello, then come back to the checklist.");
+    eq(U.cardOmi({ away: "agent" }), "peek");
+});
+
+test("the facts' agent line", () => {
+    eq([D.parseAgent("claude\n"), D.parseAgent("none"), D.parseAgent(""), D.parseAgent(undefined)], ["claude", "", null, null]);
+});
+
 test("welcome checklist: keybindings", () => {
     const k = row({}, "keys");
     eq([k.action, k.keys, k.clickable], ["", "Super + K", true], "the whole row opens the list");

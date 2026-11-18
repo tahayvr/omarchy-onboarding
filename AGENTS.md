@@ -247,6 +247,23 @@ out at the `v4.5.0` tag, which matches the installed package file for file.
   - The Wi-Fi UI is the shell panel `omarchy.network` (Super + Ctrl + N).
     `omarchy network` is a command group, not a panel launcher.
   - Panels only open if their widget is in the bar.
+- **Agents:**
+  - Omarchy ships no default agent. `omarchy default agent` prints the
+    chosen one's id (from `~/.config/omarchy/defaults/agent`) or nothing.
+  - `omarchy menu summon setup.default.agent` opens the picker, a route of
+    the `omarchy-menu` layer. A pick runs `omarchy-default-agent <id>`: an
+    agent that isn't installed gets
+    `omarchy-launch-floating-terminal-with-presentation omarchy-default-agent
+    --install <id>`, which installs it, writes the default and then starts
+    the agent in that same terminal; an installed one is written and started
+    in a terminal of its own. The default is only written once the install
+    is through.
+  - `bin/onboarding-facts` tells these apart by anchored `pgrep -f`
+    patterns. A loose pattern also matches any shell whose command line
+    names the script, your own test command included.
+  - The welcome row's picker is real even in a dry run: never pick in it
+    while testing. Pin the row with `--facts '{"agent":""}'`, open it, and
+    close it with Esc.
 - **Updates:**
   - `omarchy update available` exits 0 when an update exists. It is
     network-bound and has no state file, so run it async.
@@ -266,7 +283,8 @@ out at the `v4.5.0` tag, which matches the installed package file for file.
   `omarchy-done check first-run-user`.
   - Markers are empty files in `~/.local/state/omarchy/done/`.
   - First-run sends the welcome and git-setup notices, then, detached and once
-    online, the agent and fingerprint invites and the update notice. Since
+    online, the agent and fingerprint invites (both called from `wifi.sh`)
+    and the update notice. Since
     4.5.0 the update notice only goes out when `checkupdates` finds something,
     so a fresh install may get no update toast; the Wi-Fi notice goes out
     only when `nm-online` fails. Nothing is installed as a post-update hook

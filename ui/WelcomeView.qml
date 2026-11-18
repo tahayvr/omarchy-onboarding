@@ -6,16 +6,16 @@ import "../omi"
 import "../lib/Ui.js" as Ui
 
 // The welcome screen: the logo, a short checklist (Wi-Fi, the Omarchy update,
-// where every shortcut lives), and Omi offering the tutorial.
+// the coding agent, where every shortcut lives), and Omi offering the tutorial.
 FocusScope {
     id: view
 
     property var host
     // Omarchy's logo.svg: black on transparent, tinted to the theme's accent.
     property string logoPath: ""
-    // From Ui.welcomeChecklist: [{id, done, icon, iconFont, title, detail, action, keys, clickable}].
+    // From Ui.welcomeChecklist: [{id, done, icon, iconFont, title, detail, action, key, keys, clickable}].
     property var rows: []
-    // The checklist's status, {online, update}: Omi's mode comes from it
+    // The checklist's status, {online, update, agent}: Omi's mode comes from it
     // (Ui.welcomeOmi), and so do its reactions (Ui.welcomeOmiReaction).
     property var omiStatus: ({})
     readonly property string omiMode: Ui.welcomeOmi(omiStatus)
@@ -37,8 +37,13 @@ FocusScope {
         }
     }
 
-    // The update row's button (Update or Try again), which U presses.
-    readonly property bool updateAction: rows.some(function (r) { return r.id === "update" && r.action !== ""; })
+    // The row the plain key presses: U the update row's button, A the agent
+    // row, which is its own button. Null for none.
+    function rowForKey(key) {
+        for (var i = 0; i < rows.length; i++)
+            if (rows[i].key && (rows[i].action !== "" || rows[i].clickable) && Qt["Key_" + rows[i].key] === key) return rows[i];
+        return null;
+    }
 
     readonly property color secondary: Qt.rgba(Commons.Color.foreground.r, Commons.Color.foreground.g, Commons.Color.foreground.b, 0.62)
 
@@ -47,17 +52,20 @@ FocusScope {
 
     Component.onCompleted: Qt.callLater(function () { yesButton.forceActiveFocus(); })
     // On the welcome page Esc is the same as "Exit": no confirmation.
-    // Y is "Teach me" and U the update row's button. The buttons only take
-    // Return, Enter and Space, so these reach here whichever button has focus.
+    // Y is "Teach me"; U is the update row's button and A the agent row. The
+    // buttons only take Return, Enter and Space, so these reach here whichever
+    // button has focus.
     Keys.onEscapePressed: view.host.closeWelcome()
     Keys.onPressed: function (event) {
         if (event.modifiers & (Qt.ControlModifier | Qt.AltModifier | Qt.MetaModifier)) return;
         if (event.key === Qt.Key_Y) {
             event.accepted = true;
             view.host.startTutorial();
-        } else if (event.key === Qt.Key_U && view.updateAction) {
+        } else {
+            const row = view.rowForKey(event.key);
+            if (!row) return;
             event.accepted = true;
-            view.host.checklistAction("update");
+            view.host.checklistAction(row.id);
         }
     }
 
@@ -146,8 +154,8 @@ FocusScope {
                     border.width: 1
                     border.color: rowMouse.containsMouse ? Commons.Color.accent : Style.normalBorderColor
 
-                    // A row without a button (the shortcuts one) is a button
-                    // itself; its keys work too.
+                    // A row without a button (the agent and shortcuts ones)
+                    // is a button itself; its keys work too.
                     MouseArea {
                         id: rowMouse
                         anchors.fill: parent
@@ -203,7 +211,7 @@ FocusScope {
                         Button {
                             visible: row.modelData.action !== ""
                             text: row.modelData.action
-                            key: row.modelData.id === "update" ? "U" : ""
+                            key: row.modelData.key || ""
                             // Getting online is the one thing to do first.
                             primary: row.modelData.id === "wifi"
                             onClicked: view.host.checklistAction(row.modelData.id)

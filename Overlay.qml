@@ -30,10 +30,11 @@ import "lib/Ui.js" as Ui
 //   dryRun       log the Omarchy update instead of running it
 //   facts        pin facts, for testing: {"online": false} keeps the checklist
 //                offline whatever the network says, {"update": "available"}
-//                pins the update check
+//                pins the update check, {"agent": ""} shows the agent row
+//                with none chosen and {"agent": "claude"} with one
 //
 // Calls (omarchy-shell shell call <id> <fn> <arg>): from the CLI,
-// startTutorial, closeWelcome, connect, update, showKeybindings, comeBack,
+// startTutorial, closeWelcome, connect, update, pickAgent, showKeybindings, comeBack,
 // next, skip, back, redoOpen, dismiss, doIt, info; key, from the tutorial's
 // Hyprland binds (bin/onboarding-binds); pastedInTerminal, from the clipboard
 // step's terminal (bin/onboarding-clipboard-sample).
@@ -95,14 +96,28 @@ Item {
     property string ssid: ""
     property string updateStatus: ""
     property bool updating: false
-    // What the checklist stepped aside for: "", "wifi", "update", "keys", "menu"
-    // or "panel".
+    // The default coding agent: its id, "" when none is chosen, null when
+    // this Omarchy has none to choose; and its name.
+    property var agent: null
+    property string agentName: ""
+    // While the checklist is away for the agent row: the picker is still
+    // open, the terminal that installs the agent and then starts it is up,
+    // and whether it ever was.
+    property bool agentMenuOpen: false
+    property bool agentBusy: false
+    property bool agentWasBusy: false
+    // What the checklist stepped aside for: "", "wifi", "update", "agent",
+    // "keys", "menu" or "panel".
     property string away: ""
     readonly property var checklist: Ui.welcomeChecklist({
         online: facts.online === true,
         ssid: ssid,
-        update: updating ? "updating" : updateStatus
+        update: updating ? "updating" : updateStatus,
+        agent: agent,
+        agentName: agentName
     })
+    readonly property string agentAwayLine: Ui.agentAwayLine({ agent: agent, agentName: agentName,
+                                                               menuOpen: agentMenuOpen, busy: agentBusy })
 
     // The tutorial's action steps. The theme step watches the current theme
     // against what it was when the step began.
@@ -246,6 +261,10 @@ Item {
         confirm = null;
         updateStatus = "";
         updating = false;
+        agent = null;
+        agentName = "";
+        agentMenuOpen = false;
+        agentBusy = false;
         recordLines = [];
         logLines = [];
         startedAt = Date.now();
@@ -497,6 +516,8 @@ Item {
             ssid: ssid,
             updateStatus: updateStatus,
             updating: updating,
+            agent: agent,
+            agentBusy: agentBusy,
             themeBaseline: themeBaseline,
             layout: lastLayout,
             layoutRestore: layoutRestore,
@@ -577,6 +598,40 @@ Item {
         updateCheck.running = true;
     }
 
+    // The coding agent: Omarchy's own picker (Setup > Defaults > Agent) does
+    // the work. Choosing one that isn't installed opens a terminal that
+    // installs it and then starts it, so the checklist stays aside until that
+    // terminal closes. One already installed starts in a terminal of its own,
+    // and the checklist waits for "Back to the checklist".
+    function pickAgent() {
+        if (agent !== "" || facts.online !== true) return "not now";
+        Quickshell.execDetached(["omarchy", "menu", "summon", "setup.default.agent"]);
+        away = "agent";
+        agentMenuOpen = true;
+        agentBusy = false;
+        agentWasBusy = false;
+        log("pick agent");
+        return "ok";
+    }
+
+    // The facts' agent lines, read every 2 s on the welcome screen and faster
+    // once the picker has closed.
+    function agentRead(idLine, nameLine, doingLine) {
+        var doing = String(doingLine || "").trim();
+        if (factsOverride.agent === undefined) {
+            var id = Drills.parseAgent(idLine);
+            if (id !== agent) log("agent: " + (id === null ? "not offered" : id || "none"));
+            agentName = String(nameLine || "").trim();
+            agent = id;
+        }
+        if (away !== "agent" || agentMenuOpen) return;
+        agentBusy = doing === "installing";
+        if (agentBusy) agentWasBusy = true;
+        // Back by itself when nothing was picked, or when the terminal that
+        // installed the agent has closed. Not while the pick is being set.
+        else if (doing === "" && (!agent || agentWasBusy)) comeBack();
+    }
+
     function showKeybindings() {
         Quickshell.execDetached(["omarchy-menu-keybindings"]);
         away = "keys";
@@ -602,6 +657,9 @@ Item {
             comeBack();
         } else if ((away === "keys" || away === "menu") && name === "closelayer" && data === Drills.MENU_LAYER) {
             comeBack();
+        } else if (away === "agent" && name === "closelayer" && data === Drills.MENU_LAYER) {
+            // What was picked, if anything, shows in the next readings.
+            agentMenuOpen = false;
         }
     }
     // A dialog over the welcome card (an update confirmation) keeps it.
@@ -610,6 +668,8 @@ Item {
     // The corner card's "Back to the checklist".
     function comeBack() {
         away = "";
+        agentMenuOpen = false;
+        agentBusy = false;
         resetIdle();
         return "ok";
     }
@@ -618,6 +678,7 @@ Item {
     function checklistAction(id) {
         if (id === "wifi") return connect();
         if (id === "update") return updateStatus === "unknown" ? checkForUpdate() : update();
+        if (id === "agent") return pickAgent();
         if (id === "keys") return showKeybindings();
         return "no such row";
     }
@@ -959,6 +1020,13 @@ Item {
                 root.defaultBrowser = String(lines[1] || "").trim();
                 root.ssid = String(lines[2] || "").trim();
                 root.barPosition = String(lines[3] || "top").trim();
+                if (root.factsOverride.agent !== undefined) {
+                    root.agent = String(root.factsOverride.agent);
+                    root.agentName = "";
+                } else {
+                    root.agent = Drills.parseAgent(lines[4]);
+                    root.agentName = String(lines[5] || "").trim();
+                }
                 // Then check that every command a step needs exists.
                 checkProbe.command = [root.pluginDir + "/bin/onboarding-check"].concat(Engine.allRequirements(root.steps));
                 checkProbe.running = true;
@@ -993,12 +1061,13 @@ Item {
         }
     }
 
-    // The checklist's Wi-Fi row, live: every 2 s on the welcome screen.
+    // The checklist's Wi-Fi and agent rows, live: every 2 s on the welcome
+    // screen, and faster once the agent picker has closed, to see what came
+    // of it.
     Timer {
-        interval: 2000
+        interval: root.away === "agent" && !root.agentMenuOpen ? 700 : 2000
         repeat: true
         running: root.opened && root.step !== null && root.step.id === "welcome"
-                 && root.factsOverride.online === undefined
         onTriggered: if (!connectionProbe.running) connectionProbe.running = true
     }
 
@@ -1008,6 +1077,9 @@ Item {
         stdout: StdioCollector {
             onStreamFinished: {
                 var lines = String(text || "").split("\n");
+                root.agentRead(lines[4], lines[5], lines[6]);
+                // Tests pin the connection, e.g. {"online": false}.
+                if (root.factsOverride.online !== undefined) return;
                 var online = Drills.parseConnectivity(lines[0]);
                 var wasOnline = root.facts.online === true;
                 root.ssid = String(lines[2] || "").trim();
@@ -1364,7 +1436,7 @@ Item {
 
     Component {
         id: awayCard
-        AwayCard { host: root; reason: root.away }
+        AwayCard { host: root; reason: root.away; agentLine: root.agentAwayLine }
     }
 
     Component {
@@ -1373,7 +1445,8 @@ Item {
             host: root
             logoPath: (root.omarchyPath || "/usr/share/omarchy") + "/logo.svg"
             rows: root.checklist
-            omiStatus: ({ online: root.facts.online === true, update: root.updating ? "updating" : root.updateStatus })
+            omiStatus: ({ online: root.facts.online === true, update: root.updating ? "updating" : root.updateStatus,
+                          agent: root.agent })
         }
     }
 

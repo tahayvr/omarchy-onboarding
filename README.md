@@ -1,6 +1,6 @@
 # Omarchy onboarding
 
-First-boot onboarding for [Omarchy](https://omarchy.org), built as an Omarchy shell plugin (`tahayvr.onboarding`). A welcome checklist gets you online and up to date and shows where every shortcut lives; an optional tutorial then teaches the keys by having you press them, while an overlay watches Hyprland and ticks each step off as you do it.
+First-boot onboarding for [Omarchy](https://omarchy.org), built as an Omarchy shell plugin (`tahayvr.onboarding`). A welcome checklist gets you online and up to date, has you pick a coding agent, and shows where every shortcut lives; an optional tutorial then teaches the keys by having you press them, while an overlay watches Hyprland and ticks each step off as you do it.
 
 <p align="center">
   <a href="docs/demo.mp4"><img src="docs/screenshots/demo.jpg" width="720" alt="A run of the whole onboarding, at 1.6× speed: the theme lesson with the picker open"></a>
@@ -27,7 +27,7 @@ The tutorial's lessons sit in a corner card, so the shortcuts reach Hyprland whi
   <img src="docs/screenshots/finish.png" width="49%" alt="You're ready: the keys worth remembering">
 </p>
 
-Work in progress. The welcome checklist (Wi-Fi, Omarchy update, keybindings) and the tutorial (Super key, menu, tiling, layouts and the dock, window controls, workspaces, clipboard, Super + K, theme, display) work end to end. It needs Omarchy 4.5 or later. `omarchy-onboarding install` adds the login line that starts it on first login; that path is tested by hand on a new machine. See `AGENTS.md` for the contracts with Omarchy and Hyprland and the traps found along the way.
+Work in progress. The welcome checklist (Wi-Fi, Omarchy update, coding agent, keybindings) and the tutorial (Super key, menu, tiling, layouts and the dock, window controls, workspaces, clipboard, Super + K, theme, display) work end to end. It needs Omarchy 4.5 or later. `omarchy-onboarding install` adds the login line that starts it on first login; that path is tested by hand on a new machine. See `AGENTS.md` for the contracts with Omarchy and Hyprland and the traps found along the way.
 
 ## Install for development
 
@@ -48,7 +48,7 @@ bin/omarchy-onboarding status              # where the flow is
 bin/omarchy-onboarding steps               # step names
 ```
 
-While developing, always pass `--state /tmp/onboarding-test.json` (or set `OMARCHY_ONBOARDING_STATE`) so the real state in `~/.local/state/omarchy/onboarding.json` is never touched. A test state also turns on `--dry-run`: the Omarchy update is logged instead of run, unless you add `--live`. With the overlay open, `tutorial`, `close-welcome`, `connect`, `update`, `keys`, `come-back` (the checklist's "come back" card), `previous` (the card's Back), `redo` (the finish screen's Do them now), `next`, `skip`, `dismiss`, `do-it` and `info` drive the flow by hand. `--facts '{"online":false}'` or `--facts '{"update":"available"}'` shows the checklist's other states.
+While developing, always pass `--state /tmp/onboarding-test.json` (or set `OMARCHY_ONBOARDING_STATE`) so the real state in `~/.local/state/omarchy/onboarding.json` is never touched. A test state also turns on `--dry-run`: the Omarchy update is logged instead of run, unless you add `--live`. With the overlay open, `tutorial`, `close-welcome`, `connect`, `update`, `agent` (the agent row), `keys`, `come-back` (the checklist's "come back" card), `previous` (the card's Back), `redo` (the finish screen's Do them now), `next`, `skip`, `dismiss`, `do-it` and `info` drive the flow by hand. `--facts '{"online":false}'`, `--facts '{"update":"available"}'` or `--facts '{"agent":""}'` (no agent chosen) shows the checklist's other states. A dry run still opens Omarchy's real agent picker, and a pick there is real.
 
 ## Test
 
@@ -65,9 +65,9 @@ scripts/drive-drills.sh        # live: the whole tutorial through the real plugi
 
 ## Upstream
 
-Onboarding is built to ship with Omarchy. Until it does, `omarchy-onboarding install` adds its login line to your own `autostart.lua`, so Omarchy's first-run welcome and Wi-Fi/update notices still appear alongside it on first login.
+Onboarding is built to ship with Omarchy. Until it does, `omarchy-onboarding install` adds its login line to your own `autostart.lua`, so Omarchy's first-run notices (keybindings, Wi-Fi, update, agent, and git and fingerprint where they apply) still appear alongside it on first login.
 
 Shipping it upstream means two changes to Omarchy:
 
 - `default/hypr/autostart.lua` runs `omarchy-onboarding login` at every login, when it's installed. It decides whether to start, resume an unfinished run, or do nothing: after the first run, onboarding only comes back when you run `omarchy onboarding`.
-- `bin/omarchy-provision-first-run` skips the welcome and Wi-Fi/update notices (`welcome.sh` and `wifi.sh`) when onboarding is installed, since its welcome page gets the user online and offers the update. Everything else in first-run stays, including the agent-setup hook, which onboarding doesn't cover.
+- `bin/omarchy-provision-first-run` skips the notices onboarding's welcome page covers when onboarding is installed: the keybindings one (`welcome.sh`) and, in `wifi.sh`, the Wi-Fi and update notices and the agent invitation (`setup-agent.hook`). `wifi.sh` can't be skipped whole: it also sends the fingerprint invitation, which onboarding doesn't cover yet, as it doesn't the git notice (`git.sh`).

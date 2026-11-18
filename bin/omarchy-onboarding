@@ -24,7 +24,7 @@
 #   uninstall        remove it
 #
 # Development calls, answered by the open overlay:
-#   tutorial, close-welcome, connect, update, keys, come-back (the
+#   tutorial, close-welcome, connect, update, agent, keys, come-back (the
 #   checklist, from its "come back" card), previous (the card's Back),
 #   redo (the finish screen's Do them now), next, skip, dismiss,
 #   do-it, info
@@ -252,6 +252,7 @@ case $command in
   do-it) cmd_call doIt "" ;;
   tutorial) cmd_call startTutorial "" ;;
   close-welcome) cmd_call closeWelcome "" ;;
+  agent) cmd_call pickAgent "" ;;
   keys) cmd_call showKeybindings "" ;;
   come-back) cmd_call comeBack "" ;;
   previous) cmd_call back "" ;;
