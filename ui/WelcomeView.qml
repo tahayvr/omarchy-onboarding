@@ -13,7 +13,7 @@ FocusScope {
     property var host
     // Omarchy's logo.svg: black on transparent, tinted to the theme's accent.
     property string logoPath: ""
-    // From Ui.welcomeChecklist: [{id, done, icon, iconFont, title, detail, action, key, keys, clickable}].
+    // From Ui.welcomeChecklist: [{id, done, icon, iconFont, title, detail, action, hint, key, keys, clickable}].
     property var rows: []
     // The checklist's status, {online, update, agent}: Omi's mode comes from it
     // (Ui.welcomeOmi), and so do its reactions (Ui.welcomeOmiReaction).
@@ -37,8 +37,8 @@ FocusScope {
         }
     }
 
-    // The row the plain key presses: U the update row's button, A the agent
-    // row, which is its own button. Null for none.
+    // The row the plain key presses: U the update row (or its Try again),
+    // A the agent row. Null for none.
     function rowForKey(key) {
         for (var i = 0; i < rows.length; i++)
             if (rows[i].key && (rows[i].action !== "" || rows[i].clickable) && Qt["Key_" + rows[i].key] === key) return rows[i];
@@ -52,7 +52,7 @@ FocusScope {
 
     Component.onCompleted: Qt.callLater(function () { yesButton.forceActiveFocus(); })
     // On the welcome page Esc is the same as "Exit": no confirmation.
-    // Y is "Teach me"; U is the update row's button and A the agent row. The
+    // Y is "Teach me"; U is the update row and A the agent row. The
     // buttons only take Return, Enter and Space, so these reach here whichever
     // button has focus.
     Keys.onEscapePressed: view.host.closeWelcome()
@@ -154,8 +154,8 @@ FocusScope {
                     border.width: 1
                     border.color: rowMouse.containsMouse ? Commons.Color.accent : Style.normalBorderColor
 
-                    // A row without a button (the agent and shortcuts ones)
-                    // is a button itself; its keys work too.
+                    // A row without a button (an update on offer, the agent
+                    // and the shortcuts) is a button itself; its keys work too.
                     MouseArea {
                         id: rowMouse
                         anchors.fill: parent
@@ -203,6 +203,15 @@ FocusScope {
                         id: actions
                         anchors { right: parent.right; rightMargin: Style.space(14); verticalCenter: parent.verticalCenter }
                         spacing: Style.space(12)
+                        // What the key does, when the title doesn't say.
+                        Text {
+                            anchors.verticalCenter: parent.verticalCenter
+                            visible: !!row.modelData.hint
+                            text: row.modelData.hint || ""
+                            color: view.secondary
+                            font.family: Style.font.family
+                            font.pixelSize: Style.font.body
+                        }
                         KeyCaps {
                             anchors.verticalCenter: parent.verticalCenter
                             visible: !!row.modelData.keys && !row.modelData.done

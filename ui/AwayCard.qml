@@ -42,18 +42,14 @@ Rectangle {
                     : "That's every shortcut, and you can search it. Close it and I'll be back."
             }
         }
-        // What closes it (everything but the update and agent terminals
-        // closes with Esc), beside the way back.
+        // The way back. Everything but the update and agent terminals also
+        // closes with Esc, which brings the checklist back, so the button
+        // carries that key.
         Row {
             anchors.right: parent.right
-            spacing: Style.space(14)
-            KeyCaps {
-                visible: card.reason !== "update" && (card.reason !== "agent" || card.host.agentMenuOpen)
-                anchors.verticalCenter: parent.verticalCenter
-                keys: "Esc"
-            }
             Button {
                 text: "Back to the checklist"
+                key: card.reason !== "update" && (card.reason !== "agent" || card.host.agentMenuOpen) ? "Esc" : ""
                 onClicked: card.host.comeBack()
             }
         }

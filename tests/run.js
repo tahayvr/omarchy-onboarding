@@ -701,9 +701,11 @@ test("welcome checklist: Wi-Fi", () => {
 test("welcome checklist: the update row only appears online", () => {
     eq(rows({ online: false, update: "available" }).map(r => r.id), ["wifi", "keys"]);
     eq(row({ online: true }, "update").title, "Checking for updates…");
-    eq(row({ online: true, update: "available" }, "update").action, "Update");
+    const offer = row({ online: true, update: "available" }, "update");
+    eq([offer.action, offer.clickable, offer.key, offer.keys], ["", true, "U", "U"], "the whole row updates, and so does U");
     ok(row({ online: true, update: "current" }, "update").done);
-    eq(row({ online: true, update: "unknown" }, "update").action, "Try again");
+    const again = row({ online: true, update: "unknown" }, "update");
+    eq([again.action, again.hint, again.clickable, again.keys], ["", "Try again", true, "U"]);
     eq(row({ online: true, update: "updating" }, "update").action, "");
 });
 
@@ -734,7 +736,7 @@ test("welcome checklist: a chosen agent shows by name, online or not", () => {
 test("welcome checklist: a row's key presses its button", () => {
     eq(row({ online: true, update: "available" }, "update").key, "U");
     eq(row({ online: true, update: "unknown" }, "update").key, "U", "Try again");
-    eq(row({ online: true, update: "current" }, "update").key, undefined, "no button, no key");
+    eq(row({ online: true, update: "current" }, "update").key, undefined, "nothing to do, no key");
 });
 
 test("Omi cheers a chosen agent", () => {
